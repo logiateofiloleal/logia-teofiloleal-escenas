@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/svg+xml" href="assets/img/favicon-logo.svg">
+  <title>Logia Teófilo Leal N° 115 — Recorrido Institucional</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Jost:wght@300;400;500&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="css/escenas.css">
+</head>
+<body>
+
+  <!-- ══════════════════════════════════════════════════════
+       PRELOADER CEREMONIAL — antesala institucional
+  ══════════════════════════════════════════════════════ -->
+  <div id="preloader" aria-hidden="true">
+    <div class="pre-contenido">
+      <div class="pre-logo-wrap">
+        <img class="pre-logo-img" id="pre-logo-img"
+             src="assets/img/logo.png" alt="" draggable="false">
+      </div>
+      <div class="pre-info">
+        <div class="pre-barra-track" id="pre-barra-track">
+          <div class="pre-barra" id="pre-barra"></div>
+        </div>
+        <div class="pre-identidad" id="pre-identidad">
+          <span class="pre-id-nombre">Logia Teófilo Leal N° 115</span>
+          <span class="pre-id-oriente">Oriente de Barquisimeto</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="pre-panel" aria-hidden="true"></div>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       CABECERA FLOTANTE — identidad + hamburguesa
+  ══════════════════════════════════════════════════════ -->
+  <header id="escenas-header" aria-label="Cabecera institucional">
+
+    <a class="eh-brand"
+       href="#"
+       id="eh-brand-link"
+       aria-label="Ir al inicio del recorrido">
+      <div class="eh-mark">
+        <img src="assets/img/logo.png"
+             alt="Logia Teófilo Leal N° 115"
+             draggable="false">
+      </div>
+      <div class="eh-name">
+        <b>Logia Teófilo Leal N° 115</b>
+        <span>Oriente de Barquisimeto</span>
+      </div>
+    </a>
+
+    <button class="eh-toggle"
+            id="eh-toggle"
+            aria-label="Abrir menú de navegación"
+            aria-expanded="false"
+            aria-controls="eh-menu">
+      <span class="eh-bar"></span>
+      <span class="eh-bar"></span>
+      <span class="eh-bar"></span>
+    </button>
+
+  </header>
+
+  <!-- Panel de menú lateral -->
+  <nav id="eh-menu"
+       class="eh-menu"
+       aria-label="Menú principal"
+       aria-hidden="true">
+    <div class="eh-emblem" aria-hidden="true">
+      <img src="assets/img/logo.png" alt="" draggable="false">
+    </div>
+    <ul>
+      <li>
+        <a href="#" id="eh-link-inicio" class="eh-link">
+          <span class="eh-link-sym">✦</span>
+          Inicio del recorrido
+        </a>
+      </li>
+      <li>
+        <a href="pages/teofilo-leal.html" class="eh-link">
+          <span class="eh-link-sym">✦</span>
+          Teófilo Leal
+        </a>
+      </li>
+      <li>
+        <a href="#" id="eh-link-puerta" class="eh-link">
+          <span class="eh-link-sym">✦</span>
+          Tocar la puerta
+        </a>
+      </li>
+      <li>
+        <a href="pages/aspirantes.html" class="eh-link">
+          <span class="eh-link-sym">✦</span>
+          Solicitud de aspirante
+        </a>
+      </li>
+      <li>
+        <a href="pages/login.html" class="eh-link">
+          <span class="eh-link-sym">✦</span>
+          Acceso interno
+        </a>
+      </li>
+    </ul>
+
+    <div class="eh-contactos" aria-label="Redes sociales">
+      <a href="https://wa.me/584247259897?text=Hola%20quiero%20información%20sobre%20la%20logia"
+         class="eh-contacto-link" target="_blank" rel="noopener noreferrer" aria-label="WhatsApp">WhatsApp</a>
+      <a href="https://www.instagram.com/logiateofiloleal115/"
+         class="eh-contacto-link" target="_blank" rel="noopener noreferrer" aria-label="Instagram">Instagram</a>
+      <a href="https://www.facebook.com/logiateofilo.leal.5"
+         class="eh-contacto-link" target="_blank" rel="noopener noreferrer" aria-label="Facebook">Facebook</a>
+    </div>
+
+  </nav>
+
+  <!-- Fondo oscuro al abrir menú -->
+  <div id="eh-overlay" aria-hidden="true"></div>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       NAV LATERAL — dots sincronizados con la escena activa
+  ══════════════════════════════════════════════════════ -->
+  <nav id="escenas-nav" aria-label="Navegación por escenas">
+    <button class="dot activo"
+            title="El Umbral"
+            aria-label="Ir a Escena 1: El Umbral"></button>
+    <button class="dot"
+            title="Los Principios"
+            aria-label="Ir a Escena 2: Los Principios"></button>
+    <button class="dot"
+            title="La Memoria"
+            aria-label="Ir a Escena 3: La Memoria"></button>
+    <button class="dot"
+            title="La Puerta"
+            aria-label="Ir a Escena 4: La Puerta"></button>
+    <button class="dot"
+            title="Acceso Interno"
+            aria-label="Ir a Escena 5: Acceso Interno"></button>
+  </nav>
+
+
+  <!-- ══════════════════════════════════════════════════════
+       STORY HERO — contenedor 600vh que captura el scroll
+       El usuario scrollea aquí; #storySticky permanece fijo.
+  ══════════════════════════════════════════════════════ -->
+  <div id="storyHero">
+    <div id="storySticky">
+
+
+      <!-- ══════════════════════════════════════════════
+           FRAMES — fondos cinematográficos por escena
+           Basados en scroll-logia-demo/img/
+           Los 5 frames se cruzan con fade+scale por JS
+      ══════════════════════════════════════════════ -->
+      <div class="story-frames" aria-hidden="true">
+
+        <!-- Frame 1 → Escena 1: El Umbral (el despertar) -->
+        <img class="sf"
+             src="assets/escenas/frame-1.jpg"
+             alt="">
+
+        <!-- Frame 2 → Escena 2: Los Principios (la búsqueda) -->
+        <img class="sf"
+             src="assets/escenas/frame-2.jpg"
+             alt="">
+
+        <!-- Frame 3 → Escena 3: La Memoria (ante la puerta) -->
+        <img class="sf"
+             src="assets/escenas/frame-3.jpg"
+             alt="">
+
+        <!-- Frame 4 → Escena 4: La Puerta (el umbral) -->
+        <img class="sf"
+             src="assets/escenas/frame-4.jpg"
+             alt="">
+
+        <!-- Frame 5 → Escena 5: Acceso Interno (la luz) -->
+        <img class="sf"
+             src="assets/escenas/frame-5.jpg"
+             alt="">
+
+      </div><!-- /story-frames -->
+
+
+      <!-- ══════════════════════════════════════════════
+           CAPAS CINEMATOGRÁFICAS
+           Copiadas de scroll-logia-demo
+      ══════════════════════════════════════════════ -->
+      <div class="cinematic-overlay" aria-hidden="true"></div>
+      <div class="golden-pulse"      aria-hidden="true"></div>
+
+
+      <!-- ══════════════════════════════════════════════
+           ESCENA 1 — EL UMBRAL
+           Entrada solemne. Identidad institucional.
+           Centrada sobre el frame cinematográfico.
+      ══════════════════════════════════════════════ -->
+      <div class="scene-copy centered" id="sc-1">
+        <span>El umbral del camino</span>
+
+        <img class="sc-logo"
+             src="assets/img/logo.png"
+             alt="Logia Teófilo Leal N° 115"
+             draggable="false">
+
+        <h1>Sabiduría, Fuerza<br>y <em>Belleza</em></h1>
+
+        <div class="sc-sep" aria-hidden="true">
+          <span class="sc-sep-dot"></span>
+        </div>
+
+        <p class="sc-kicker">
+          Respetable Logia Simbólica · Oriente de Barquisimeto
+        </p>
+        <p class="sc-lema">A∴ L∴ G∴ D∴ G∴ A∴ D∴ U∴</p>
+      </div>
+
+
+      <!-- ══════════════════════════════════════════════
+           ESCENA 2 — LOS PRINCIPIOS
+           Libertad · Igualdad · Fraternidad
+           Centrada, ancha, tres medallones en fila.
+      ══════════════════════════════════════════════ -->
+      <div class="scene-copy centered sc-wide" id="sc-2">
+        <span>Tres principios, una misma búsqueda</span>
+
+        <h2>Libertad · Igualdad · Fraternidad</h2>
+
+        <div class="sc-sep" aria-hidden="true">
+          <span class="sc-sep-dot"></span>
+        </div>
+
+        <div class="sc-principios">
+
+          <article class="sc-principio">
+            <div class="sc-principio__medallion" aria-hidden="true">
+              <img src="assets/img/acto2-icon-libertad-antorcha.png" alt="">
+            </div>
+            <p class="sc-principio__num">I</p>
+            <h3 class="sc-principio__titulo">Libertad</h3>
+            <p class="sc-principio__texto">
+              El pensamiento libre es la primera piedra<br>del hombre que trabaja en sí mismo.
+            </p>
+          </article>
+
+          <article class="sc-principio">
+            <div class="sc-principio__medallion" aria-hidden="true">
+              <img src="assets/img/acto2-icon-igualdad-balanza.png" alt="">
+            </div>
+            <p class="sc-principio__num">II</p>
+            <h3 class="sc-principio__titulo">Igualdad</h3>
+            <p class="sc-principio__texto">
+              Ante la verdad, todos los hombres son iguales<br>sin distinción de origen ni nombre.
+            </p>
+          </article>
+
+          <article class="sc-principio">
+            <div class="sc-principio__medallion" aria-hidden="true">
+              <img src="assets/img/acto2-icon-fraternidad-manos.png" alt="">
+            </div>
+            <p class="sc-principio__num">III</p>
+            <h3 class="sc-principio__titulo">Fraternidad</h3>
+            <p class="sc-principio__texto">
+              El trabajo compartido une lo que la diferencia<br>separa y edifica lo perdurable.
+            </p>
+          </article>
+
+        </div><!-- /sc-principios -->
+      </div><!-- /sc-2 -->
+
+
+      <!-- ══════════════════════════════════════════════
+           ESCENA 3 — LA MEMORIA / TEÓFILO LEAL
+           Panel alineado a la derecha.
+           CTA → pages/teofilo-leal.html
+      ══════════════════════════════════════════════ -->
+      <div class="scene-copy" id="sc-3">
+        <span>La memoria que ilumina el presente</span>
+
+        <a class="sc-retrato"
+           href="pages/teofilo-leal.html"
+           aria-label="Conocer la biografía de Teófilo Leal">
+          <img src="assets/img/acto3-cuadro-teofilo-leal-memoria.png"
+               alt="Retrato de Teófilo Leal Berra"
+               draggable="false">
+          <span class="sc-retrato-legado">Conocer su legado</span>
+        </a>
+
+        <p class="sc-overline">In Memoriam</p>
+
+        <h2 class="sc-nombre">Teófilo Leal<br>Berra</h2>
+
+        <p class="sc-fechas">1866 — 1940</p>
+
+        <div class="sc-sep" aria-hidden="true">
+          <span class="sc-sep-dot"></span>
+        </div>
+
+        <blockquote class="sc-cita">
+          Actor, poeta, músico y pintor. Ejemplo luminoso de que la Masonería
+          no separa al hombre de la cultura, sino que lo eleva por ella.
+          Su memoria vive en cada trabajo de esta institución.
+        </blockquote>
+      </div><!-- /sc-3 -->
+
+
+      <!-- ══════════════════════════════════════════════
+           ESCENA 4 — LA PUERTA / ASPIRANTES
+           Centrada. El momento de la invitación.
+           CTA → pages/aspirantes.html
+      ══════════════════════════════════════════════ -->
+      <div class="scene-copy centered" id="sc-4">
+
+        <!-- Arco simbólico SVG -->
+        <svg class="sc-arco"
+             viewBox="0 0 100 130"
+             fill="none"
+             xmlns="http://www.w3.org/2000/svg"
+             aria-hidden="true">
+          <!-- Arco exterior -->
+          <path d="M12,128 L12,52 Q12,12 50,12 Q88,12 88,52 L88,128"
+                stroke="#9a7432" stroke-width="1.5" fill="none"/>
+          <!-- Arco interior -->
+          <path d="M22,128 L22,56 Q22,23 50,23 Q78,23 78,56 L78,128"
+                stroke="#9a7432" stroke-width="0.7" fill="none" opacity="0.4"/>
+          <!-- Clave del arco -->
+          <circle cx="50" cy="12" r="5"   stroke="#9a7432" stroke-width="1.2" fill="none"/>
+          <circle cx="50" cy="12" r="2.2" fill="#c9a84c"/>
+          <!-- Línea divisoria -->
+          <line x1="50" y1="24" x2="50" y2="128"
+                stroke="#9a7432" stroke-width="0.5" opacity="0.26"/>
+          <!-- Umbral -->
+          <line x1="10" y1="127" x2="90" y2="127"
+                stroke="#9a7432" stroke-width="1" opacity="0.5"/>
+        </svg>
+
+        <h2>¿Sientes<br>el llamado?</h2>
+
+        <div class="sc-sep" aria-hidden="true">
+          <span class="sc-sep-dot"></span>
+        </div>
+
+        <p>
+          La Logia Teófilo Leal N° 115 recibe a hombres que buscan
+          el perfeccionamiento moral e intelectual. Si sientes que
+          este es tu camino, da el primer paso.
+        </p>
+
+        <a href="pages/aspirantes.html" class="sc-btn sc-btn--primary">
+          Tocar la puerta &nbsp;✦
+        </a>
+      </div><!-- /sc-4 -->
+
+
+      <!-- ══════════════════════════════════════════════
+           ESCENA 5 — ACCESO INTERNO
+           Mínima, discreta. Solo para quienes saben.
+           CTA → pages/login.html
+      ══════════════════════════════════════════════ -->
+      <div class="scene-copy centered sc-minimal" id="sc-5">
+
+        <p class="sc-emblema">✦</p>
+
+        <div class="sc-sep" aria-hidden="true">
+          <span class="sc-sep-dot"></span>
+        </div>
+
+        <h2>Acceso<br>Administrativo</h2>
+
+        <p class="sc-subtitulo">Exclusivo para miembros de la Logia</p>
+
+        <a href="pages/login.html" class="sc-btn sc-btn--discreto">
+          Ingresar →
+        </a>
+      </div><!-- /sc-5 -->
+
+
+      <!-- ══════════════════════════════════════════════
+           SCROLL HINT (desaparece al avanzar)
+           Tomado de scroll-logia-demo
+      ══════════════════════════════════════════════ -->
+      <div class="scroll-hint" aria-hidden="true">
+        <span>Desliza</span>
+        <div></div>
+      </div>
+
+
+    </div><!-- /storySticky -->
+  </div><!-- /storyHero -->
+
+
+  <!-- ══════════════════════════════════════════════════════
+       CIERRE CEREMONIAL — al terminar el recorrido
+  ══════════════════════════════════════════════════════ -->
+  <section class="sc-cierre" aria-label="Cierre del recorrido institucional">
+    <div class="sc-cierre-inner">
+
+      <div class="sc-cierre-ornamento" aria-hidden="true">
+        <span class="sc-cierre-linea"></span>
+        <span class="sc-cierre-sym">✦</span>
+        <span class="sc-cierre-linea"></span>
+      </div>
+
+      <figure class="sc-cierre-placa-wrap">
+        <img class="sc-cierre-placa"
+             src="assets/img/acto3-placa-logia-teofilo-leal-115.png"
+             alt="Placa de la Respetable Logia Teófilo Leal N° 115"
+             loading="lazy">
+      </figure>
+
+      <blockquote class="sc-cierre-frase">
+        Una puerta no se abre<br>
+        por curiosidad, sino por propósito.
+      </blockquote>
+
+      <p class="sc-cierre-firma">
+        Respetable Logia Simbólica Teófilo Leal N° 115<br>
+        Or∴ de Barquisimeto · A∴ L∴ G∴ D∴ G∴ A∴ D∴ U∴
+      </p>
+
+    </div>
+  </section>
+
+
+  <script src="js/escenas.js"></script>
+</body>
+</html>

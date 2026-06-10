@@ -1,0 +1,1212 @@
+/* ════════════════════════════════════════════════════════════
+   LOGIA TEÓFILO LEAL N° 115 · escenas.css · v2
+   Arquitectura: contenedor alto (600vh) + stage sticky (100vh)
+   Basado en scroll-logia-demo — escenario fijo, scroll-driven
+════════════════════════════════════════════════════════════ */
+
+/* ─── VARIABLES ─────────────────────────────────────────── */
+:root {
+  --bg:           #050302;
+  --bg-deep:      #0b0705;
+  --oro:          #9a7432;
+  --oro-claro:    #c9a84c;
+  --oro-brillo:   #f8d982;
+  --oro-tenue:    #d6a84f;
+  --txt:          rgba(255,255,255,.82);
+  --txt-atenuado: rgba(255,255,255,.72);
+  --sombra-titulo: 0 0 30px rgba(0,0,0,.88);
+  --sombra-texto:  0 0 18px rgba(0,0,0,.85);
+  --serif: 'Cormorant Garamond','Playfair Display',Georgia,serif;
+  --sans:  'Jost',system-ui,sans-serif;
+}
+
+/* ─── RESET ─────────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+img { display: block; max-width: 100%; }
+a   { color: inherit; text-decoration: none; }
+
+/* body scrolls normalmente — sin overflow:hidden */
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--txt);
+  font-family: var(--serif);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   PRELOADER CEREMONIAL
+════════════════════════════════════════════════════════════ */
+#preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 600;
+  background: #000000;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: all;
+}
+#preloader.oculto { display: none; }
+
+.pre-contenido {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(3rem, 6vh, 5rem);
+}
+
+.pre-logo-wrap {
+  width: clamp(160px, 20vw, 220px);
+  height: clamp(160px, 20vw, 220px);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pre-logo-wrap::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 320%;
+  height: 320%;
+  background: radial-gradient(circle, rgba(184,149,58,0.09) 0%, rgba(184,149,58,0.03) 38%, transparent 65%);
+  pointer-events: none;
+  opacity: 0;
+  animation: logiaFadeIn 2.5s 0.4s ease forwards;
+}
+
+.pre-logo-img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  opacity: 0;
+  transform: scale(0.94);
+  transition: opacity 1.1s ease, transform 1.6s cubic-bezier(0.22, 0.61, 0.21, 1);
+  filter: invert(1) sepia(0.18) saturate(1.5) brightness(0.88);
+}
+
+.pre-info {
+  position: relative;
+  width: clamp(180px, 22vw, 280px);
+  height: clamp(52px, 8vh, 68px);
+}
+
+.pre-barra-track {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translateY(-50%);
+  width: 100%;
+  height: 1px;
+  background: rgba(184,149,58,.05);
+  overflow: hidden;
+  opacity: 1;
+  transition: opacity 0.55s ease;
+}
+
+.pre-barra-track.oculta { opacity: 0; }
+
+.pre-barra {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0%;
+  height: 100%;
+  background: #B8953A;
+  transition: width 0.1s linear;
+  box-shadow: 0 0 6px rgba(184,149,58,0.4);
+}
+
+.pre-identidad {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .55rem;
+  text-align: center;
+  white-space: nowrap;
+  opacity: 0;
+  transition: opacity 0.85s ease;
+}
+
+.pre-identidad.visible { opacity: 1; }
+
+.pre-id-nombre {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: clamp(14px, 1.6vw, 18px);
+  letter-spacing: .13em;
+  color: #E8E0D0;
+  font-style: italic;
+  font-weight: normal;
+}
+
+.pre-id-oriente {
+  font-family: 'Jost', system-ui, sans-serif;
+  font-size: clamp(8px, .8vw, 10px);
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: rgba(184,149,58,.3);
+}
+
+#pre-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 599;
+  background: #0E0D0B;
+  transform: translateY(101%);
+  transition: transform 0.8s cubic-bezier(0.5, 0, 0.75, 0);
+  pointer-events: none;
+}
+
+#pre-panel.cubriendo {
+  transform: translateY(0);
+  pointer-events: all;
+}
+
+#pre-panel.retirando {
+  transform: translateY(-101%);
+  transition: transform 0.95s cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: none;
+}
+
+@keyframes logiaFadeIn { to { opacity: 1; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .pre-logo-wrap::before { animation: none; opacity: 0.7; }
+  .pre-logo-img { transform: scale(1); transition: opacity 0.3s ease; }
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   NAV LATERAL — DOTS (posición fija, fuera del story hero)
+════════════════════════════════════════════════════════════ */
+#escenas-nav {
+  position: fixed;
+  right: 28px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 500;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1px solid rgba(154,116,50,.45);
+  background: transparent;
+  cursor: pointer;
+  padding: 0;
+  transition: background .35s ease, border-color .35s ease, transform .35s ease, box-shadow .35s ease;
+}
+.dot:hover    { border-color: var(--oro-claro); transform: scale(1.4); }
+.dot.activo   { background: var(--oro-claro); border-color: var(--oro-claro); transform: scale(1.25); box-shadow: 0 0 8px rgba(201,168,76,.5); }
+.dot:focus-visible { outline: 2px solid var(--oro-claro); outline-offset: 3px; }
+
+
+/* ════════════════════════════════════════════════════════════
+   STORY HERO — contenedor alto que captura el scroll
+════════════════════════════════════════════════════════════ */
+#storyHero {
+  height: 600vh;
+  position: relative;
+  background: var(--bg);
+}
+
+/* ════════════════════════════════════════════════════════════
+   STORY STICKY — el escenario fijo de 100vh
+   Toda la acción visual ocurre aquí dentro.
+   El usuario hace scroll en el documento; el stage no se mueve.
+════════════════════════════════════════════════════════════ */
+#storySticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   FRAMES — imágenes de fondo por escena
+   Directamente del patrón scroll-logia-demo
+════════════════════════════════════════════════════════════ */
+.story-frames {
+  position: absolute;
+  inset: 0;
+}
+
+.sf {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center center;
+  opacity: 0;
+  transform: scale(1.06);
+  filter: brightness(.88) contrast(1.06) saturate(1.05);
+  transition: opacity .85s ease, transform 1.1s ease, filter .85s ease;
+  will-change: opacity, transform, filter;
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   CAPAS CINEMATOGRÁFICAS — tomadas directamente de scroll-logia-demo
+════════════════════════════════════════════════════════════ */
+
+/* Vignette + gradiente lateral */
+.cinematic-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 50% 45%,
+      rgba(0,0,0,0) 0%, rgba(0,0,0,.06) 48%, rgba(0,0,0,.32) 100%),
+    linear-gradient(to left,
+      rgba(0,0,0,.5) 0%, rgba(0,0,0,.26) 24%,
+      rgba(0,0,0,.04) 58%, rgba(0,0,0,.14) 100%);
+}
+
+/* Pulso dorado que aumenta con el progreso */
+.golden-pulse {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(circle at 50% 38%,
+      rgba(255,215,120,.18),
+      rgba(255,170,50,.07) 28%,
+      transparent 62%);
+  mix-blend-mode: screen;
+  transition: opacity .8s ease, transform .8s ease;
+}
+
+/* Capa de legibilidad para el texto (lado derecho) */
+#storySticky::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  pointer-events: none;
+  background:
+    linear-gradient(to left,
+      rgba(0,0,0,.46) 0%, rgba(0,0,0,.24) 26%,
+      rgba(0,0,0,.03) 55%, rgba(0,0,0,.08) 100%);
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   SCENE COPY — paneles de texto por escena
+   Base tomada de scroll-logia-demo, extendida para nuestro contenido
+════════════════════════════════════════════════════════════ */
+.scene-copy {
+  position: absolute;
+  z-index: 10;
+  /* alineación derecha por defecto (como scroll-logia-demo) */
+  right: clamp(18px, 4.5vw, 70px);
+  left: auto;
+  top: 50%;
+  transform: translateY(-44%);   /* el JS anima esto de -44% a -50% */
+  max-width: 540px;
+  padding: 22px 26px;
+  border-radius: 22px;
+  opacity: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(270deg,
+      rgba(0,0,0,.42),
+      rgba(0,0,0,.24),
+      rgba(0,0,0,.03));
+  backdrop-filter: blur(1.2px);
+  transition: opacity .8s ease, transform .8s ease;
+  will-change: opacity, transform;
+}
+
+/* Variante centrada — Escenas 1, 2, 4, 5 */
+.scene-copy.centered {
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%) translateY(-44%);
+  text-align: center;
+}
+
+/* Variante ancha — Escena 2 (tres principios en fila) */
+.scene-copy.sc-wide {
+  max-width: 960px;
+}
+
+/* Variante mínima — Escena 5 */
+.scene-copy.sc-minimal {
+  max-width: 400px;
+  background: rgba(0,0,0,.28);
+  backdrop-filter: blur(2px);
+}
+
+/* Etiqueta de escena (span del scene-copy) */
+.scene-copy > span:first-child {
+  display: inline-block;
+  margin-bottom: 14px;
+  color: var(--oro-tenue);
+  text-transform: uppercase;
+  letter-spacing: .22em;
+  font-size: clamp(.68rem, .82vw, .84rem);
+  font-family: var(--sans);
+  font-weight: 400;
+}
+
+/* Titulares */
+.scene-copy h1 {
+  color: var(--oro-brillo);
+  line-height: 1.02;
+  text-shadow: var(--sombra-titulo);
+  margin-bottom: 14px;
+  font-weight: 400;
+  font-size: clamp(2.2rem, 4.2vw, 5rem);
+}
+.scene-copy h1 em { font-style: italic; color: #fff; }
+
+.scene-copy h2 {
+  color: var(--oro-brillo);
+  line-height: 1.04;
+  text-shadow: var(--sombra-titulo);
+  margin-bottom: 14px;
+  font-weight: 400;
+  font-size: clamp(1.8rem, 3.3vw, 3.8rem);
+}
+
+/* Cuerpo de texto */
+.scene-copy p {
+  max-width: 500px;
+  font-size: clamp(.94rem, 1.05vw, 1.1rem);
+  line-height: 1.68;
+  color: var(--txt);
+  text-shadow: var(--sombra-texto);
+  font-family: var(--serif);
+}
+.scene-copy.centered p { margin: 0 auto; }
+
+/* Separador dorado ─── · ─── */
+.sc-sep {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0;
+}
+.sc-sep::before,
+.sc-sep::after {
+  content: '';
+  display: block;
+  width: 56px;
+  height: 1px;
+}
+.sc-sep::before { background: linear-gradient(to right, transparent, var(--oro)); }
+.sc-sep::after  { background: linear-gradient(to left,  transparent, var(--oro)); }
+.sc-sep-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--oro-claro);
+  box-shadow: 0 0 5px rgba(201,168,76,.4);
+}
+.scene-copy.centered .sc-sep { display: flex; justify-content: center; }
+
+
+/* ─── ESCENA 1 — EL UMBRAL ────────────────────────────────*/
+.sc-logo {
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  margin: 0 auto 20px;
+  filter: invert(1) sepia(.18) saturate(1.6) brightness(1.05)
+          drop-shadow(0 0 28px rgba(184,149,58,.55));
+}
+
+.sc-kicker {
+  font-family: var(--sans);
+  font-size: clamp(.66rem, .88vw, .8rem) !important;
+  font-weight: 300;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--oro-claro) !important;
+  text-shadow: none !important;
+  margin-top: 8px;
+}
+
+.sc-lema {
+  font-family: var(--sans);
+  font-size: clamp(.64rem, .82vw, .74rem) !important;
+  letter-spacing: .16em;
+  color: rgba(255,255,255,.38) !important;
+  text-shadow: none !important;
+  margin-top: 4px;
+}
+
+
+/* ─── ESCENA 2 — LOS PRINCIPIOS ──────────────────────────*/
+.sc-principios {
+  display: flex;
+  gap: 36px;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-top: 22px;
+}
+
+.sc-principio {
+  flex: 0 0 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.sc-principio__medallion {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 1px solid rgba(154,116,50,.4);
+  background: rgba(154,116,50,.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.sc-principio__medallion img {
+  width: 34px;
+  height: 34px;
+  object-fit: contain;
+}
+
+.sc-principio__num {
+  font-family: var(--sans);
+  font-size: .62rem;
+  letter-spacing: .2em;
+  color: rgba(154,116,50,.65);
+  margin-bottom: 6px;
+}
+
+.sc-principio__titulo {
+  font-size: clamp(.98rem, 1.44vw, 1.16rem);
+  font-weight: 500;
+  letter-spacing: .06em;
+  color: var(--oro-brillo);
+  margin-bottom: 8px;
+  font-family: var(--serif);
+  text-shadow: var(--sombra-titulo);
+}
+
+.sc-principio__texto {
+  font-size: clamp(.8rem, .96vw, .92rem);
+  line-height: 1.62;
+  color: var(--txt-atenuado);
+  font-style: italic;
+  text-shadow: var(--sombra-texto);
+  font-family: var(--serif);
+}
+
+
+/* ─── ESCENA 3 — LA MEMORIA ──────────────────────────────*/
+
+/* Desplaza el sujeto hacia la izquierda para despejar el lado derecho */
+.sf:nth-child(3) {
+  object-position: 68% center;
+}
+
+.sc-retrato {
+  display: block;
+  width: clamp(120px, 13vw, 180px);
+  margin-bottom: 16px;
+  border: 1px solid rgba(184,149,58,.22);
+  box-shadow: 0 4px 22px rgba(0,0,0,.5);
+  text-decoration: none;
+  transition: transform 0.4s ease, box-shadow 0.4s ease, border-color 0.4s ease;
+}
+.sc-retrato img {
+  display: block;
+  width: 100%;
+  height: auto;
+  object-fit: cover;
+  filter: sepia(.12) contrast(1.04);
+  transition: filter 0.4s ease;
+}
+.sc-retrato:hover {
+  transform: scale(1.03);
+  box-shadow: 0 6px 32px rgba(184,149,58,.28);
+  border-color: rgba(184,149,58,.5);
+}
+.sc-retrato:hover img {
+  filter: sepia(.06) contrast(1.06) brightness(1.05);
+}
+.sc-retrato-legado {
+  display: block;
+  padding: 6px 0 2px;
+  font-family: var(--sans);
+  font-size: clamp(.52rem, .58vw, .58rem);
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: rgba(184,149,58,.45);
+  text-align: center;
+  transition: color 0.3s ease;
+}
+.sc-retrato:hover .sc-retrato-legado {
+  color: rgba(184,149,58,.75);
+}
+
+.sc-overline {
+  font-family: var(--sans);
+  font-size: clamp(.64rem, .84vw, .76rem) !important;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: var(--oro-claro) !important;
+  text-shadow: none !important;
+  margin-bottom: 10px;
+}
+
+.sc-nombre {
+  color: #fff !important;
+  font-size: clamp(1.65rem, 2.9vw, 2.65rem) !important;
+  line-height: 1.1;
+  margin-bottom: 6px;
+}
+
+.sc-fechas {
+  color: var(--oro-claro) !important;
+  font-style: italic;
+  font-size: clamp(.86rem, 1.08vw, .98rem) !important;
+  letter-spacing: .1em;
+  text-shadow: none !important;
+  margin-bottom: 0;
+}
+
+.sc-cita {
+  font-size: clamp(.9rem, 1.08vw, 1.02rem) !important;
+  line-height: 1.72;
+  color: var(--txt-atenuado) !important;
+  font-style: italic;
+  padding-left: 14px;
+  border-left: 2px solid rgba(154,116,50,.5);
+  margin-bottom: 24px;
+  max-width: 440px;
+}
+
+
+/* ─── ESCENA 4 — LA PUERTA ───────────────────────────────*/
+.sc-arco {
+  width: 88px;
+  height: 116px;
+  margin: 0 auto 20px;
+  filter: drop-shadow(0 0 12px rgba(154,116,50,.35));
+  display: block;
+}
+
+
+/* ─── ESCENA 5 — ACCESO INTERNO ─────────────────────────*/
+.sc-emblema {
+  font-size: 2rem !important;
+  color: rgba(154,116,50,.6) !important;
+  letter-spacing: .08em;
+  text-shadow: none !important;
+  margin-bottom: 2px;
+}
+
+.sc-subtitulo {
+  font-family: var(--sans) !important;
+  font-size: .74rem !important;
+  font-weight: 300;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.35) !important;
+  text-shadow: none !important;
+  margin-top: 8px;
+}
+
+
+/* ─── BOTONES DE ACCIÓN (scene CTAs) ─────────────────────*/
+.sc-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 12px 26px;
+  border: 1px solid rgba(248,217,130,.65);
+  color: var(--oro-brillo);
+  background: rgba(8,6,4,.52);
+  backdrop-filter: blur(8px);
+  font-family: var(--sans);
+  font-size: .8rem;
+  font-weight: 400;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 0 24px rgba(214,168,79,.12);
+  transition:
+    transform .25s ease,
+    background .25s ease,
+    box-shadow .25s ease,
+    border-color .25s ease;
+  pointer-events: auto;
+}
+.sc-btn:hover {
+  transform: translateY(-3px);
+  background: rgba(214,168,79,.16);
+  border-color: var(--oro-brillo);
+  box-shadow: 0 0 42px rgba(214,168,79,.3);
+}
+
+/* Botón primario — Escena 4 */
+.sc-btn--primary {
+  padding: 14px 38px;
+  font-size: .84rem;
+  background: rgba(154,116,50,.14);
+}
+.sc-btn--primary:hover {
+  background: rgba(154,116,50,.28);
+}
+
+/* Botón discreto — Escena 5 */
+.sc-btn--discreto {
+  background: transparent;
+  border-color: rgba(154,116,50,.3);
+  color: rgba(255,255,255,.45);
+  font-size: .74rem;
+  box-shadow: none;
+}
+.sc-btn--discreto:hover {
+  background: rgba(154,116,50,.06);
+  border-color: rgba(154,116,50,.6);
+  color: rgba(255,255,255,.7);
+  box-shadow: none;
+}
+
+
+
+
+/* ════════════════════════════════════════════════════════════
+   INDICADOR DE SCROLL (pista inferior, desaparece al scrollear)
+   Tomado de scroll-logia-demo
+════════════════════════════════════════════════════════════ */
+.scroll-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 34px;
+  transform: translateX(-50%);
+  z-index: 12;
+  color: rgba(255,255,255,.55);
+  text-transform: uppercase;
+  letter-spacing: .22em;
+  font-size: .66rem;
+  font-family: var(--sans);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  transition: opacity .35s ease;
+}
+.scroll-hint div {
+  width: 1px;
+  height: 46px;
+  background: linear-gradient(to bottom, var(--oro-brillo), transparent);
+  animation: scrollPulse 1.8s infinite ease-in-out;
+}
+@keyframes scrollPulse {
+  0%   { transform: scaleY(.35); opacity: .35; }
+  50%  { transform: scaleY(1);   opacity: 1;   }
+  100% { transform: scaleY(.35); opacity: .35; }
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   CABECERA FLOTANTE + MENÚ HAMBURGUESA
+════════════════════════════════════════════════════════════ */
+#escenas-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 450;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px clamp(18px, 3vw, 48px);
+  background: linear-gradient(to bottom,
+    rgba(0,0,0,.55) 0%,
+    rgba(0,0,0,.18) 70%,
+    transparent 100%);
+  pointer-events: none;
+}
+
+/* Solo los hijos interactivos capturan eventos */
+.eh-brand,
+.eh-toggle {
+  pointer-events: auto;
+}
+
+/* ─── Identidad ──────────────────────────────────────── */
+.eh-brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  text-decoration: none;
+  color: inherit;
+}
+
+.eh-mark {
+  width: 42px;
+  height: 42px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(184,149,58,.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.eh-mark img {
+  width: 30px;
+  height: 30px;
+  object-fit: contain;
+  filter: invert(1) sepia(.18) saturate(1.5) brightness(.88);
+  opacity: .85;
+}
+
+.eh-name {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.eh-name b {
+  font-family: var(--serif);
+  font-size: clamp(13px, 1.1vw, 15px);
+  font-weight: 400;
+  color: rgba(232,224,208,.92);
+  letter-spacing: .05em;
+  line-height: 1.2;
+}
+
+.eh-name span {
+  font-family: var(--sans);
+  font-size: clamp(9px, .75vw, 11px);
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: rgba(184,149,58,.6);
+}
+
+/* ─── Botón hamburguesa ──────────────────────────────── */
+.eh-toggle {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 40px;
+  height: 40px;
+  padding: 9px 8px;
+  background: rgba(0,0,0,.32);
+  border: 1px solid rgba(184,149,58,.18);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+
+.eh-toggle:hover {
+  background: rgba(0,0,0,.55);
+  border-color: rgba(184,149,58,.42);
+}
+
+.eh-bar {
+  display: block;
+  height: 1.5px;
+  background: rgba(255,255,255,.72);
+  border-radius: 2px;
+  transition: transform 0.35s ease, opacity 0.25s ease, background 0.3s ease;
+  transform-origin: center;
+}
+
+.eh-toggle[aria-expanded="true"] .eh-bar:nth-child(1) {
+  transform: translateY(6.5px) rotate(45deg);
+  background: rgba(184,149,58,.9);
+}
+.eh-toggle[aria-expanded="true"] .eh-bar:nth-child(2) {
+  opacity: 0;
+}
+.eh-toggle[aria-expanded="true"] .eh-bar:nth-child(3) {
+  transform: translateY(-6.5px) rotate(-45deg);
+  background: rgba(184,149,58,.9);
+}
+
+/* ─── Emblema / marca de agua en el panel ───────────── */
+.eh-emblem {
+  position: absolute;
+  top: clamp(28px, 4.5vh, 48px);
+  left: 50%;
+  transform: translateX(-50%);
+  width: clamp(68px, 8vw, 86px);
+  opacity: .22;
+  pointer-events: none;
+  user-select: none;
+}
+.eh-emblem img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  filter: invert(1) sepia(.32) saturate(1.9) brightness(1.1)
+          drop-shadow(0 0 8px rgba(184,149,58,.28));
+}
+
+/* ─── Panel de menú lateral ──────────────────────────── */
+.eh-menu {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: clamp(260px, 32vw, 360px);
+  z-index: 510;
+  background: rgba(10,9,7,.94);
+  backdrop-filter: blur(20px);
+  border-left: 1px solid rgba(184,149,58,.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transform: translateX(100%);
+  transition: transform 0.45s cubic-bezier(0.5,0,0.75,0);
+  pointer-events: none;
+}
+
+.eh-menu.abierto {
+  transform: translateX(0);
+  pointer-events: auto;
+  transition: transform 0.45s cubic-bezier(0.22,1,0.36,1);
+}
+
+.eh-menu ul {
+  list-style: none;
+  width: 100%;
+  padding: 0 clamp(28px, 3vw, 52px);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.eh-link {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 0;
+  font-family: var(--serif);
+  font-size: clamp(.92rem, 1.4vw, 1.12rem);
+  font-weight: 400;
+  color: rgba(232,224,208,.65);
+  text-decoration: none;
+  letter-spacing: .06em;
+  border-bottom: 1px solid rgba(184,149,58,.07);
+  transition: color 0.25s ease;
+}
+
+.eh-menu ul li:last-child .eh-link {
+  border-bottom: none;
+}
+
+.eh-link-sym {
+  font-size: .5rem;
+  color: rgba(184,149,58,.35);
+  flex-shrink: 0;
+  transition: color 0.25s ease, transform 0.25s ease;
+}
+
+.eh-link:hover {
+  color: rgba(232,224,208,.95);
+}
+
+.eh-link:hover .eh-link-sym {
+  color: rgba(184,149,58,.85);
+  transform: scale(1.4);
+}
+
+/* ─── Overlay oscuro de fondo ────────────────────────── */
+#eh-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 505;
+  background: rgba(0,0,0,.48);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.38s ease;
+}
+
+#eh-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ─── Accesibilidad: movimiento reducido ─────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .eh-menu,
+  .eh-bar,
+  .eh-toggle,
+  .eh-link,
+  .eh-link-sym,
+  #eh-overlay { transition: none; }
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   RESPONSIVE — móvil (desde scroll-logia-demo, adaptado)
+════════════════════════════════════════════════════════════ */
+@media (max-width: 1024px) {
+  .scene-copy { max-width: 500px; padding: 22px 22px; }
+  .sc-wide    { max-width: 880px; }
+}
+
+@media (max-width: 768px) {
+
+  #storyHero { height: 820vh; }
+
+  /* En móvil, todos los paneles se posicionan en la parte inferior */
+  .scene-copy {
+    left: 18px;
+    right: 18px;
+    top: auto;
+    bottom: 108px;
+    max-width: none;
+    padding: 18px 18px;
+    transform: translateY(22px);
+    border-radius: 18px;
+    background: linear-gradient(0deg,
+      rgba(0,0,0,.58), rgba(0,0,0,.32), rgba(0,0,0,.06));
+  }
+  /* Clase centrada pierde su posicionamiento horizontal en móvil */
+  .scene-copy.centered {
+    left: 18px;
+    right: 18px;
+    transform: translateY(22px);
+  }
+  .sc-wide  { max-width: none; }
+
+  .sc-principios { gap: 22px; }
+  .sc-principio  { flex: 0 0 140px; }
+
+  .sc-arco { width: 72px; height: 96px; }
+
+  #escenas-nav { right: 14px; gap: 12px; }
+
+  .scroll-hint   { display: none; }
+
+  /* Overlay cinematográfico en móvil (desde scroll-logia-demo) */
+  .cinematic-overlay {
+    background:
+      radial-gradient(circle at center,
+        transparent 22%, rgba(0,0,0,.12) 52%, rgba(0,0,0,.45) 100%),
+      linear-gradient(to top,
+        rgba(0,0,0,.58), rgba(0,0,0,.06) 58%, rgba(0,0,0,.2));
+  }
+  #storySticky::after {
+    background:
+      linear-gradient(to top,
+        rgba(0,0,0,.62) 0%, rgba(0,0,0,.22) 42%, rgba(0,0,0,.06) 100%);
+  }
+}
+
+@media (max-width: 480px) {
+  .sc-principios { flex-direction: column; align-items: center; gap: 18px; }
+  .sc-principio  { flex: none; width: 100%; max-width: 200px; }
+  .scene-copy h1 { font-size: clamp(2.2rem, 9vw, 3.6rem); }
+  .scene-copy h2 { font-size: clamp(1.8rem, 7.5vw, 3rem); }
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   CIERRE CEREMONIAL — sección posterior al scroll-driven
+   Aparece al terminar el recorrido, fuera del storyHero
+════════════════════════════════════════════════════════════ */
+.sc-cierre {
+  position: relative;
+  background: var(--bg-deep);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(80px, 14vh, 140px) clamp(24px, 6vw, 80px);
+  overflow: hidden;
+}
+
+/* Transición continua desde el storyHero */
+.sc-cierre::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 120px;
+  background: linear-gradient(to bottom, var(--bg), transparent);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Resplandor dorado difuso */
+.sc-cierre::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 80% 55% at 50% 65%,
+    rgba(184,149,58,.055) 0%,
+    transparent 68%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.sc-cierre-inner {
+  position: relative;
+  z-index: 2;
+  max-width: 620px;
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: clamp(30px, 5vh, 56px);
+}
+
+/* Ornamento ─── ✦ ─── */
+.sc-cierre-ornamento {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  justify-content: center;
+}
+
+.sc-cierre-linea {
+  display: block;
+  flex: 1;
+  max-width: 88px;
+  height: 1px;
+  background: linear-gradient(to right, transparent, rgba(154,116,50,.45));
+}
+
+.sc-cierre-ornamento .sc-cierre-linea:last-child {
+  background: linear-gradient(to left, transparent, rgba(154,116,50,.45));
+}
+
+.sc-cierre-sym {
+  font-size: 10px;
+  color: rgba(154,116,50,.5);
+  line-height: 1;
+}
+
+/* Placa institucional */
+.sc-cierre-placa-wrap {
+  margin: 0;
+  width: clamp(200px, 28vw, 288px);
+}
+
+.sc-cierre-placa {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 3px;
+  filter: sepia(.22) brightness(.88) contrast(1.06);
+  box-shadow:
+    0 8px 52px rgba(0,0,0,.7),
+    0 0 0 1px rgba(184,149,58,.1);
+}
+
+/* Frase de cierre */
+.sc-cierre-frase {
+  margin: 0;
+  padding: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.5rem, 3.4vw, 2.5rem);
+  font-weight: 300;
+  font-style: italic;
+  color: rgba(230,216,188,.82);
+  line-height: 1.32;
+  letter-spacing: .015em;
+}
+
+/* Pie institucional */
+.sc-cierre-firma {
+  font-family: var(--sans);
+  font-size: clamp(7.5px, .95vw, 9.5px);
+  font-weight: 300;
+  letter-spacing: .25em;
+  text-transform: uppercase;
+  color: rgba(154,116,50,.36);
+  line-height: 1.85;
+  margin: 0;
+}
+
+@media (max-width: 768px) {
+  .sc-cierre-placa-wrap { width: clamp(160px, 55vw, 220px); }
+  .sc-cierre-frase      { font-size: clamp(1.38rem, 6vw, 1.82rem); }
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   CONTACTOS EN MENÚ HAMBURGUESA (zona inferior del panel)
+════════════════════════════════════════════════════════════ */
+.eh-contactos {
+  position: absolute;
+  bottom: clamp(24px, 4vh, 40px);
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 14px clamp(28px, 3vw, 52px) 0;
+  border-top: 1px solid rgba(184,149,58,.07);
+}
+
+.eh-contacto-link {
+  flex: 1;
+  text-align: center;
+  padding: 11px 6px;
+  font-family: var(--sans);
+  font-size: clamp(7.5px, .88vw, 9px);
+  font-weight: 300;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: rgba(154,116,50,.4);
+  text-decoration: none;
+  transition: color .25s ease;
+}
+
+.eh-contacto-link:hover,
+.eh-contacto-link:focus-visible {
+  color: rgba(184,149,58,.72);
+  outline: none;
+}
+
+
+/* ════════════════════════════════════════════════════════════
+   PREFERS-REDUCED-MOTION
+   Desde scroll-logia-demo, sin cambios
+════════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration:       0.01ms !important;
+    animation-iteration-count: 1     !important;
+    scroll-behavior:          auto   !important;
+    transition-duration:      0.01ms !important;
+  }
+}
