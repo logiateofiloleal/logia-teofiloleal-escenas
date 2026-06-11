@@ -1,0 +1,24 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "Bash(Get-Content *)",
+      "Read(//mnt/c/Users/josef/Documents/**)",
+      "Bash(npx create-next-app@latest next --typescript --no-tailwind --app --src-dir --no-eslint --import-alias \"@/*\" --no-turbopack --use-npm)",
+      "PowerShell(Set-ExecutionPolicy *)",
+      "PowerShell(Copy-Item *)",
+      "PowerShell(Get-Process *)",
+      "PowerShell(ffmpeg *)",
+      "PowerShell(choco install *)",
+      "PowerShell(curl *)",
+      "PowerShell(Get-ChildItem \"C:\\\\Users\\\\josef\\\\Documents\\\\Logia-Teofilo-Leal\" -Force | Where-Object { $_.PSIsContainer -or $_.Extension -eq \".json\" -or $_.Extension -eq \".html\" } | Select-Object Name)",
+      "PowerShell($response = Invoke-WebRequest \"http://localhost:3000/index-escenas.html\" -UseBasicParsing; $response.Content | Select-String \"canvas-escena\" -Context 0,0)",
+      "PowerShell(Invoke-WebRequest \"http://localhost:3000/assets/img/logo.png\" -UseBasicParsing | Select-Object StatusCode)",
+      "PowerShell(try { $r = Invoke-WebRequest \"http://localhost:3000/assets/img/logo.png\" -UseBasicParsing; Write-Host \"Status: $\\($r.StatusCode\\)\" } catch { Write-Host \"Error: $_\" })",
+      "Bash(node scripts/extract-frames-desktop.js 16)",
+      "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
+      "Bash(pnpm *)"
+    ]
+  }
+}

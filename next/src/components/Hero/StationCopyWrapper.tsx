@@ -49,17 +49,8 @@ export default function StationCopyWrapper({
         }
       }
 
-      el.style.opacity      = String(opacity);
+      el.style.opacity       = String(opacity);
       el.style.pointerEvents = opacity > 0.75 ? 'auto' : 'none';
-
-      // Position animation: slides up slightly as opacity increases
-      const yOffset = -44 + opacity * -6; // -44% → -50%
-
-      if (align === 'center') {
-        el.style.transform = `translateX(-50%) translateY(${yOffset}%)`;
-      } else {
-        el.style.transform = `translateY(${yOffset}%)`;
-      }
     });
   }, [register, stationId, stationIndex, align]);
 

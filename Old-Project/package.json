@@ -1,0 +1,15 @@
+{
+  "name": "logia-teofiloleal",
+  "version": "1.0.0",
+  "description": "Landing institucional Logia Teófilo Leal N° 115",
+  "main": "backend/server.js",
+  "scripts": {
+    "start": "node backend/server.js",
+    "dev": "node --watch backend/server.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  },
+  "license": "ISC"
+}

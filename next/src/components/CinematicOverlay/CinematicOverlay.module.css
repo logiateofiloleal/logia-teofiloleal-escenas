@@ -1,6 +1,6 @@
 /* Vignette + gradient lateral — pure CSS, no scroll-driven logic */
 .overlay {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 5;
   pointer-events: none;
@@ -14,7 +14,7 @@
 
 /* Golden glow — opacity/scale driven by scroll (globalProgress) */
 .pulse {
-  position: absolute;
+  position: fixed;
   inset: 0;
   z-index: 6;
   pointer-events: none;

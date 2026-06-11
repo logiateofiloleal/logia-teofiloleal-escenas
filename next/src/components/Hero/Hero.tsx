@@ -31,30 +31,6 @@ function Sep() {
   );
 }
 
-// ── Station 1: El Umbral ──────────────────────────────────────
-function S1Copy() {
-  return (
-    <StationCopyWrapper stationId="s1" stationIndex={0} align="center">
-      <span>El umbral del camino</span>
-      <Image
-        src="/assets/img/logo.png"
-        alt="Logia Teófilo Leal N° 115"
-        width={96} height={96}
-        className={styles.scLogo}
-        draggable={false}
-      />
-      <h1>
-        Sabiduría, Fuerza<br />y <em>Belleza</em>
-      </h1>
-      <Sep />
-      <p className={styles.kicker}>
-        Respetable Logia Simbólica · Oriente de Barquisimeto
-      </p>
-      <p className={styles.lema}>A∴ L∴ G∴ D∴ G∴ A∴ D∴ U∴</p>
-    </StationCopyWrapper>
-  );
-}
-
 // ── Station 2: Los Principios ─────────────────────────────────
 function S2Copy() {
   const principios = [
@@ -182,7 +158,6 @@ function S5Copy() {
 }
 
 const COPY: Record<string, React.ReactNode> = {
-  s1: <S1Copy />,
   s2: <S2Copy />,
   s3: <S3Copy />,
   s4: <S4Copy />,
@@ -196,8 +171,8 @@ export default function Hero() {
       {SEGMENTS.map(seg => (
         <HeroSection key={seg.id} seg={seg}>
           {seg.type === 'station' && COPY[seg.id]}
-          {/* First station also shows scroll hint and cinematic overlays */}
-          {seg.id === 's1' && (
+          {/* First transition shows scroll hint and cinematic overlays */}
+          {seg.id === 't1' && (
             <>
               <CinematicOverlay />
               <ScrollHint />

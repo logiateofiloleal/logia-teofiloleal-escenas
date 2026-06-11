@@ -159,8 +159,14 @@ export default function Canvas() {
         ctx.drawImage(bitmap, 0, 0, W, H);
         loader.setLastDrawn(targetIdx);
         lastFrameRef.current.set(transition.id, targetIdx);
+      } else if (!lastFrameRef.current.has(transition.id)) {
+        // No frame drawn yet — show startImg so canvas isn't black on first load
+        const still = imgsRef.current.get(transition.startImg);
+        if (still?.complete && still.naturalWidth > 0) {
+          ctx.drawImage(still, 0, 0, W, H);
+        }
       }
-      // No else: keep last valid frame on canvas (no clear)
+      // else: keep last valid frame on canvas (no clear)
 
       // Preload next transition at 60%
       if (lp > 0.6 && segIdx + 1 < SEGMENTS.length) {

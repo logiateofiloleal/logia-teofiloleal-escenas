@@ -10,24 +10,39 @@ function ss(e0: number, e1: number, v: number): number {
 }
 
 export default function CinematicOverlay() {
-  const pulseRef = useRef<HTMLDivElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const pulseRef   = useRef<HTMLDivElement>(null);
   const { register } = useScrollEngine();
 
   useEffect(() => {
     return register(state => {
-      const el = pulseRef.current;
-      if (!el) return;
-      const gp = state.globalProgress;
-      const power = ss(0.48, 0.9, gp);
-      el.style.opacity   = String(power * 0.75);
-      el.style.transform = `scale(${0.95 + power * 0.18})`;
+      const overlay = overlayRef.current;
+      const pulse   = pulseRef.current;
+
+      // Exit animation — matches UmbralOverlay: lp 0.82→1.0 of t1
+      if (overlay) {
+        if (state.segmentId === 't1') {
+          const exit = ss(0.82, 1.0, state.localProgress);
+          overlay.style.opacity = String(1 - exit);
+        } else {
+          overlay.style.opacity = '1';
+        }
+      }
+
+      // Pulse: golden glow driven by global progress
+      if (pulse) {
+        const gp    = state.globalProgress;
+        const power = ss(0.48, 0.9, gp);
+        pulse.style.opacity   = String(power * 0.75);
+        pulse.style.transform = `scale(${0.95 + power * 0.18})`;
+      }
     });
   }, [register]);
 
   return (
     <>
-      <div className={styles.overlay} aria-hidden="true" />
-      <div ref={pulseRef} className={styles.pulse} aria-hidden="true" />
+      <div ref={overlayRef} className={styles.overlay} aria-hidden="true" />
+      <div ref={pulseRef}   className={styles.pulse}   aria-hidden="true" />
     </>
   );
 }

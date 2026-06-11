@@ -38,10 +38,12 @@ function buildBoundaries(): Boundary[] {
   const vh = window.innerHeight;
   const result: Boundary[] = [];
   let cumulative = 0;
-  let stIdx = 0;
+  // stIdx starts at 1 because s1 ("El Umbral") has no station segment —
+  // its slot (index 0) is represented by t1 which gets stationIndex = 1-1 = 0.
+  let stIdx = 1;
 
   for (const seg of SEGMENTS) {
-    const h = seg.scrollVh * vh;
+    const h = (seg.scrollVh / 100) * vh;
     result.push({
       start: cumulative,
       end: cumulative + h,
@@ -81,8 +83,8 @@ function resolveState(scrollY: number, boundaries: Boundary[]): ScrollState {
 
 export function ScrollEngineProvider({ children }: { children: ReactNode }) {
   const stateRef = useRef<ScrollState>({
-    type: 'station',
-    segmentId: 's1',
+    type: 'transition',
+    segmentId: 't1',
     localProgress: 0,
     stationIndex: 0,
     globalProgress: 0,

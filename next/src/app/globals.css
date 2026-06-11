@@ -30,6 +30,11 @@ a    { color: inherit; text-decoration: none; }
 /* ── BASE ───────────────────────────────────────────────── */
 html {
   scroll-behavior: smooth;
+  scrollbar-width: none; /* Firefox */
+}
+
+html::-webkit-scrollbar {
+  display: none; /* Chrome / Safari / Edge */
 }
 
 body {

@@ -33,21 +33,15 @@ const D = '/frames/desktop'; // desktop frame base path
 
 export const SEGMENTS: Segment[] = [
   {
-    type: 'station',
-    id: 's1',
-    frameImg: `${D}/frame-1.webp`,
-    align: 'center',
-    scrollVh: 80,
-  },
-  {
     type: 'transition',
     id: 't1',
-    mode: 'stills',
-    startImg: `${D}/frame-1.webp`,
+    mode: 'frames',
+    startImg: '/frames/escena-1-desktop/frame_0001.webp',
     endImg: `${D}/frame-2.webp`,
-    frameCount: 0, // placeholder — replace with actual count when Higgsfield video is ready
-    easing: 'smoothstep',
-    scrollVh: 50,
+    framesDir: '/frames/escena-1-desktop',
+    frameCount: 130,
+    easing: 'linear',
+    scrollVh: 300,
   },
   {
     type: 'station',
@@ -109,10 +103,9 @@ export const SEGMENTS: Segment[] = [
   },
 ];
 
-// Ordered station IDs (for nav dots)
-export const STATION_IDS = SEGMENTS
-  .filter((s): s is Station => s.type === 'station')
-  .map(s => s.id);
+// Ordered station IDs (for nav dots) — s1 listed explicitly because it has
+// no station segment; its dot stays active during the t1 frame transition.
+export const STATION_IDS = ['s1', 's2', 's3', 's4', 's5'] as const;
 
 // Total hero height in vh units (5×80 + 4×50 = 600)
 export const HERO_VH = SEGMENTS.reduce((acc, s) => acc + s.scrollVh, 0);
