@@ -1,0 +1,396 @@
+.hero {
+  position: relative;
+  z-index: 1; /* above canvas (z-index:0) */
+}
+
+/* ── Sections ────────────────────────────────────────────────── */
+.section {
+  position: relative;
+}
+
+.sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* ── Scene copy base ─────────────────────────────────────────── */
+.copy {
+  position: absolute;
+  z-index: 10;
+  right: clamp(18px, 4.5vw, 70px);
+  left: auto;
+  top: 50%;
+  transform: translateY(-44%);
+  max-width: 540px;
+  padding: 22px 26px;
+  border-radius: 22px;
+  opacity: 0;
+  pointer-events: none;
+  background: linear-gradient(270deg,
+    rgba(0,0,0,.42),
+    rgba(0,0,0,.24),
+    rgba(0,0,0,.03));
+  backdrop-filter: blur(1.2px);
+  will-change: opacity, transform;
+}
+
+.centered {
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%) translateY(-44%);
+  text-align: center;
+}
+
+.wide { max-width: 960px; }
+
+.minimal {
+  max-width: 400px;
+  background: rgba(0,0,0,.28);
+  backdrop-filter: blur(2px);
+}
+
+/* ── Label (span first-child) ────────────────────────────────── */
+.copy > span:first-child {
+  display: inline-block;
+  margin-bottom: 14px;
+  color: var(--oro-tenue);
+  text-transform: uppercase;
+  letter-spacing: .22em;
+  font-size: clamp(.68rem, .82vw, .84rem);
+  font-family: var(--sans);
+  font-weight: 400;
+}
+
+/* ── Headings ────────────────────────────────────────────────── */
+.copy h1 {
+  color: var(--oro-brillo);
+  line-height: 1.02;
+  text-shadow: var(--sombra-titulo);
+  margin-bottom: 14px;
+  font-weight: 400;
+  font-size: clamp(2.2rem, 4.2vw, 5rem);
+}
+
+.copy h1 em { font-style: italic; color: #fff; }
+
+.copy h2 {
+  color: var(--oro-brillo);
+  line-height: 1.04;
+  text-shadow: var(--sombra-titulo);
+  margin-bottom: 14px;
+  font-weight: 400;
+  font-size: clamp(1.8rem, 3.3vw, 3.8rem);
+}
+
+/* ── Body text ───────────────────────────────────────────────── */
+.copy p {
+  max-width: 500px;
+  font-size: clamp(.94rem, 1.05vw, 1.1rem);
+  line-height: 1.68;
+  color: var(--txt);
+  text-shadow: var(--sombra-texto);
+  font-family: var(--serif);
+}
+
+.centered p { margin: 0 auto; }
+
+/* ── Separator ───────────────────────────────────────────────── */
+.sep {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  margin: 16px 0;
+}
+
+.sep::before,
+.sep::after {
+  content: '';
+  display: block;
+  width: 56px;
+  height: 1px;
+}
+
+.sep::before { background: linear-gradient(to right, transparent, var(--oro)); }
+.sep::after  { background: linear-gradient(to left,  transparent, var(--oro)); }
+
+.sepDot {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: var(--oro-claro);
+  box-shadow: 0 0 5px rgba(201,168,76,.4);
+}
+
+.centered .sep { display: flex; justify-content: center; }
+
+/* ── Station 1 ───────────────────────────────────────────────── */
+.scLogo {
+  width: 96px !important; height: 96px !important;
+  object-fit: contain;
+  margin: 0 auto 20px;
+  filter: invert(1) sepia(.18) saturate(1.6) brightness(1.05)
+          drop-shadow(0 0 28px rgba(184,149,58,.55));
+}
+
+.kicker {
+  font-family: var(--sans) !important;
+  font-size: clamp(.66rem, .88vw, .8rem) !important;
+  font-weight: 300;
+  letter-spacing: .28em;
+  text-transform: uppercase;
+  color: var(--oro-claro) !important;
+  text-shadow: none !important;
+  margin-top: 8px;
+}
+
+.lema {
+  font-family: var(--sans) !important;
+  font-size: clamp(.64rem, .82vw, .74rem) !important;
+  letter-spacing: .16em;
+  color: rgba(255,255,255,.38) !important;
+  text-shadow: none !important;
+  margin-top: 4px;
+}
+
+/* ── Station 2 ───────────────────────────────────────────────── */
+.principios {
+  display: flex;
+  gap: 36px;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  margin-top: 22px;
+}
+
+.principio {
+  flex: 0 0 180px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.medallion {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  border: 1px solid rgba(154,116,50,.4);
+  background: rgba(154,116,50,.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.medallion img { width: 34px !important; height: 34px !important; object-fit: contain; }
+
+.num {
+  font-family: var(--sans);
+  font-size: .62rem;
+  letter-spacing: .2em;
+  color: rgba(154,116,50,.65);
+  margin-bottom: 6px;
+}
+
+.principioTitulo {
+  font-size: clamp(.98rem, 1.44vw, 1.16rem);
+  font-weight: 500;
+  letter-spacing: .06em;
+  color: var(--oro-brillo);
+  margin-bottom: 8px;
+  font-family: var(--serif);
+  text-shadow: var(--sombra-titulo);
+}
+
+.principioTexto {
+  font-size: clamp(.8rem, .96vw, .92rem) !important;
+  line-height: 1.62;
+  color: var(--txt-atenuado) !important;
+  font-style: italic;
+  text-shadow: var(--sombra-texto) !important;
+  font-family: var(--serif) !important;
+  max-width: none;
+}
+
+/* ── Station 3 ───────────────────────────────────────────────── */
+.retrato {
+  display: block;
+  width: clamp(120px, 13vw, 180px);
+  margin-bottom: 16px;
+  border: 1px solid rgba(184,149,58,.22);
+  box-shadow: 0 4px 22px rgba(0,0,0,.5);
+  text-decoration: none;
+  transition: transform .4s ease, box-shadow .4s ease, border-color .4s ease;
+}
+
+.retrato img { display: block; width: 100% !important; height: auto !important; object-fit: cover;
+  filter: sepia(.12) contrast(1.04); transition: filter .4s ease; }
+
+.retrato:hover { transform: scale(1.03); box-shadow: 0 6px 32px rgba(184,149,58,.28); border-color: rgba(184,149,58,.5); }
+.retrato:hover img { filter: sepia(.06) contrast(1.06) brightness(1.05); }
+
+.retratoLegado {
+  display: block;
+  padding: 6px 0 2px;
+  font-family: var(--sans);
+  font-size: clamp(.52rem, .58vw, .58rem);
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: rgba(184,149,58,.45);
+  text-align: center;
+  transition: color .3s ease;
+}
+.retrato:hover .retratoLegado { color: rgba(184,149,58,.75); }
+
+.overline {
+  font-family: var(--sans) !important;
+  font-size: clamp(.64rem, .84vw, .76rem) !important;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: var(--oro-claro) !important;
+  text-shadow: none !important;
+  margin-bottom: 10px;
+}
+
+.nombre {
+  color: #fff !important;
+  font-size: clamp(1.65rem, 2.9vw, 2.65rem) !important;
+  line-height: 1.1;
+  margin-bottom: 6px;
+}
+
+.fechas {
+  color: var(--oro-claro) !important;
+  font-style: italic;
+  font-size: clamp(.86rem, 1.08vw, .98rem) !important;
+  letter-spacing: .1em;
+  text-shadow: none !important;
+  margin-bottom: 0;
+}
+
+.cita {
+  font-size: clamp(.9rem, 1.08vw, 1.02rem) !important;
+  line-height: 1.72;
+  color: var(--txt-atenuado) !important;
+  font-style: italic;
+  padding-left: 14px;
+  border-left: 2px solid rgba(154,116,50,.5);
+  margin-bottom: 24px;
+  max-width: 440px;
+}
+
+/* ── Station 4 ───────────────────────────────────────────────── */
+.arco {
+  width: 88px; height: 116px;
+  margin: 0 auto 20px;
+  filter: drop-shadow(0 0 12px rgba(154,116,50,.35));
+  display: block;
+}
+
+/* ── Station 5 ───────────────────────────────────────────────── */
+.emblema {
+  font-size: 2rem !important;
+  color: rgba(154,116,50,.6) !important;
+  letter-spacing: .08em;
+  text-shadow: none !important;
+  margin-bottom: 2px;
+}
+
+.subtitulo {
+  font-family: var(--sans) !important;
+  font-size: .74rem !important;
+  font-weight: 300;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.35) !important;
+  text-shadow: none !important;
+  margin-top: 8px;
+}
+
+/* ── CTAs ────────────────────────────────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding: 12px 26px;
+  border: 1px solid rgba(248,217,130,.65);
+  color: var(--oro-brillo);
+  background: rgba(8,6,4,.52);
+  backdrop-filter: blur(8px);
+  font-family: var(--sans);
+  font-size: .8rem;
+  font-weight: 400;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  border-radius: 999px;
+  cursor: pointer;
+  box-shadow: 0 0 24px rgba(214,168,79,.12);
+  transition: transform .25s ease, background .25s ease, box-shadow .25s ease, border-color .25s ease;
+  pointer-events: auto;
+}
+
+.btn:hover {
+  transform: translateY(-3px);
+  background: rgba(214,168,79,.16);
+  border-color: var(--oro-brillo);
+  box-shadow: 0 0 42px rgba(214,168,79,.3);
+}
+
+.btnPrimary {
+  padding: 14px 38px;
+  font-size: .84rem;
+  background: rgba(154,116,50,.14);
+}
+.btnPrimary:hover { background: rgba(154,116,50,.28); }
+
+.btnDiscreto {
+  background: transparent;
+  border-color: rgba(154,116,50,.3);
+  color: rgba(255,255,255,.45);
+  font-size: .74rem;
+  box-shadow: none;
+}
+.btnDiscreto:hover {
+  background: rgba(154,116,50,.06);
+  border-color: rgba(154,116,50,.6);
+  color: rgba(255,255,255,.7);
+  box-shadow: none;
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .copy  { max-width: 500px; padding: 22px; }
+  .wide  { max-width: 880px; }
+}
+
+@media (max-width: 768px) {
+  /* Mobile: all text bottom-anchored (never at mid-height — character occupies center) */
+  .copy {
+    left: 18px;
+    right: 18px;
+    top: auto;
+    bottom: 10%;
+    max-width: none;
+    padding: 18px;
+    transform: translateY(22px) !important;
+    border-radius: 18px;
+    background: linear-gradient(0deg, rgba(0,0,0,.58), rgba(0,0,0,.32), rgba(0,0,0,.06));
+  }
+  .centered {
+    left: 18px;
+    right: 18px;
+    transform: translateY(22px) !important;
+  }
+  .wide { max-width: none; }
+  .principios { gap: 22px; }
+  .principio  { flex: 0 0 140px; }
+  .arco { width: 72px; height: 96px; }
+}
+
+@media (max-width: 480px) {
+  .principios { flex-direction: column; align-items: center; gap: 18px; }
+  .principio  { flex: none; width: 100%; max-width: 200px; }
+  .copy h1 { font-size: clamp(2.2rem, 9vw, 3.6rem); }
+  .copy h2 { font-size: clamp(1.8rem, 7.5vw, 3rem); }
+}

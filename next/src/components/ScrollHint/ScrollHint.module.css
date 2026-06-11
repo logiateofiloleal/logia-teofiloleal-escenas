@@ -1,0 +1,34 @@
+.hint {
+  position: absolute;
+  left: 50%;
+  bottom: 34px;
+  transform: translateX(-50%);
+  z-index: 12;
+  color: rgba(255,255,255,.55);
+  text-transform: uppercase;
+  letter-spacing: .22em;
+  font-size: .66rem;
+  font-family: var(--sans);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  transition: opacity .35s ease;
+}
+
+.line {
+  width: 1px;
+  height: 46px;
+  background: linear-gradient(to bottom, var(--oro-brillo), transparent);
+  animation: pulse 1.8s infinite ease-in-out;
+}
+
+@keyframes pulse {
+  0%   { transform: scaleY(.35); opacity: .35; }
+  50%  { transform: scaleY(1);   opacity: 1; }
+  100% { transform: scaleY(.35); opacity: .35; }
+}
+
+@media (max-width: 768px) {
+  .hint { display: none; }
+}

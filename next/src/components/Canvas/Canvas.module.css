@@ -1,0 +1,10 @@
+.canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  /* mix-blend-mode:screen fuses blacks of frames with #050302 background */
+  mix-blend-mode: screen;
+  pointer-events: none;
+}

@@ -1,0 +1,54 @@
+/* ── DESIGN TOKENS ──────────────────────────────────────── */
+:root {
+  --bg:           #050302;
+  --bg-deep:      #0b0705;
+  --oro:          #9a7432;
+  --oro-claro:    #c9a84c;
+  --oro-brillo:   #f8d982;
+  --oro-tenue:    #d6a84f;
+  --txt:          rgba(255, 255, 255, 0.82);
+  --txt-atenuado: rgba(255, 255, 255, 0.72);
+  --sombra-titulo: 0 0 30px rgba(0, 0, 0, 0.88);
+  --sombra-texto:  0 0 18px rgba(0, 0, 0, 0.85);
+  --serif: var(--font-cormorant), 'Playfair Display', Georgia, serif;
+  --sans:  var(--font-jost), system-ui, sans-serif;
+  --playfair: var(--font-playfair), Georgia, serif;
+}
+
+/* ── RESET ──────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+img  { display: block; max-width: 100%; }
+a    { color: inherit; text-decoration: none; }
+
+/* ── BASE ───────────────────────────────────────────────── */
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--bg);
+  color: var(--txt);
+  font-family: var(--serif);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+/* ── REDUCED MOTION ─────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration:        0.01ms !important;
+    animation-iteration-count: 1      !important;
+    scroll-behavior:           auto   !important;
+    transition-duration:       0.01ms !important;
+  }
+}
