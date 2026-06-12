@@ -135,7 +135,7 @@ function S4Copy() {
         el perfeccionamiento moral e intelectual. Si sientes que
         este es tu camino, da el primer paso.
       </p>
-      <a href="/aspirantes" className={`${styles.btn} ${styles.btnPrimary}`}>
+      <a href="#" className={`${styles.btn} ${styles.btnPrimary}`} onClick={e => e.preventDefault()}>
         Tocar la puerta &nbsp;✦
       </a>
     </StationCopyWrapper>
@@ -150,7 +150,7 @@ function S5Copy() {
       <Sep />
       <h2>Acceso<br />Administrativo</h2>
       <p className={styles.subtitulo}>Exclusivo para miembros de la Logia</p>
-      <a href="/login" className={`${styles.btn} ${styles.btnDiscreto}`}>
+      <a href="#" className={`${styles.btn} ${styles.btnDiscreto}`} onClick={e => e.preventDefault()}>
         Ingresar →
       </a>
     </StationCopyWrapper>

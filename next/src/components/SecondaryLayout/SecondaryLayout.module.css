@@ -1,7 +1,23 @@
+/* ── Página / fondo atmosférico ──────────────────────────── */
+.page {
+  background-color: #050302;
+  background-image:
+    radial-gradient(ellipse 82% 38% at 50% -2%,   rgba(184,149,58,.13) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 28% at 50% 102%,  rgba(154,116,50,.07) 0%, transparent 65%),
+    radial-gradient(ellipse 26% 60% at 0%   42%,  rgba(184,149,58,.030) 0%, transparent 60%),
+    radial-gradient(ellipse 26% 60% at 100% 58%,  rgba(184,149,58,.022) 0%, transparent 60%);
+  background-attachment: fixed;
+  min-height: 100vh;
+}
+@media (max-width: 768px) {
+  .page { background-attachment: scroll; }
+}
+
+/* ── Cabecera ────────────────────────────────────────────── */
 .header {
-  position: fixed;
-  top: 0; left: 0; right: 0;
-  z-index: 450;
+  position: sticky;
+  top: 0;
+  z-index: 100;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -9,14 +25,10 @@
   background: linear-gradient(to bottom,
     rgba(0,0,0,.55) 0%,
     rgba(0,0,0,.18) 70%,
-    transparent 100%);
-  pointer-events: none;
+    transparent    100%);
 }
 
-.brand,
-.toggle { pointer-events: auto; }
-
-/* ── Brand ────────────────────────────────────────────────── */
+/* ── Brand ───────────────────────────────────────────────── */
 .brand {
   display: flex;
   align-items: center;
@@ -66,7 +78,7 @@
   color: rgba(184,149,58,.6);
 }
 
-/* ── Toggle / Hamburger ───────────────────────────────────── */
+/* ── Toggle / Hamburger ──────────────────────────────────── */
 .toggle {
   display: flex;
   flex-direction: column;
@@ -78,9 +90,8 @@
   border: 1px solid rgba(184,149,58,.18);
   border-radius: 8px;
   cursor: pointer;
-  transition: background .3s ease, border-color .3s ease;
+  transition: background .3s, border-color .3s;
 }
-
 .toggle:hover {
   background: rgba(0,0,0,.55);
   border-color: rgba(184,149,58,.42);
@@ -91,15 +102,14 @@
   height: 1.5px;
   background: rgba(255,255,255,.72);
   border-radius: 2px;
-  transition: transform .35s ease, opacity .25s ease, background .3s ease;
+  transition: transform .35s ease, opacity .25s ease, background .3s;
   transform-origin: center;
 }
-
-.barOpen1 { transform: translateY(6.5px) rotate(45deg);  background: rgba(184,149,58,.9); }
+.barOpen1 { transform: translateY(6.5px)  rotate(45deg);  background: rgba(184,149,58,.9); }
 .barOpen2 { opacity: 0; }
 .barOpen3 { transform: translateY(-6.5px) rotate(-45deg); background: rgba(184,149,58,.9); }
 
-/* ── Menu panel ───────────────────────────────────────────── */
+/* ── Panel de menú ───────────────────────────────────────── */
 .emblem {
   position: absolute;
   top: clamp(28px, 4.5vh, 48px);
@@ -110,7 +120,6 @@
   pointer-events: none;
   user-select: none;
 }
-
 .emblem img {
   width: 100% !important; height: auto !important;
   filter: invert(1) sepia(.32) saturate(1.9) brightness(1.1)
@@ -121,7 +130,7 @@
   position: fixed;
   top: 0; right: 0; bottom: 0;
   width: clamp(260px, 32vw, 360px);
-  z-index: 510;
+  z-index: 200;
   background: rgba(10,9,7,.94);
   backdrop-filter: blur(20px);
   border-left: 1px solid rgba(184,149,58,.1);
@@ -132,7 +141,6 @@
   transition: transform .45s cubic-bezier(.5,0,.75,0);
   pointer-events: none;
 }
-
 .abierto {
   transform: translateX(0);
   pointer-events: auto;
@@ -160,26 +168,33 @@
   text-decoration: none;
   letter-spacing: .06em;
   border-bottom: 1px solid rgba(184,149,58,.07);
-  transition: color .25s ease;
+  transition: color .25s;
+  cursor: pointer;
 }
-
 .menu ul li:last-child .link { border-bottom: none; }
-
 .link:hover { color: rgba(232,224,208,.95); }
 
 .linkSym {
   font-size: .5rem;
   color: rgba(184,149,58,.35);
   flex-shrink: 0;
-  transition: color .25s ease, transform .25s ease;
+  transition: color .25s, transform .25s;
 }
-
 .link:hover .linkSym {
   color: rgba(184,149,58,.85);
   transform: scale(1.4);
 }
 
-/* ── Contacts footer ──────────────────────────────────────── */
+/* Ítems aún no disponibles */
+.pendiente {
+  color: rgba(232,224,208,.25);
+  cursor: default;
+}
+.pendiente:hover { color: rgba(232,224,208,.25); }
+.pendiente .linkSym { color: rgba(184,149,58,.12); }
+.pendiente:hover .linkSym { color: rgba(184,149,58,.12); transform: none; }
+
+/* ── Redes sociales en el panel ──────────────────────────── */
 .contactos {
   position: absolute;
   bottom: clamp(24px, 4vh, 40px);
@@ -201,29 +216,82 @@
   text-transform: uppercase;
   color: rgba(154,116,50,.4);
   text-decoration: none;
-  transition: color .25s ease;
+  transition: color .25s;
 }
+.contactoLink:hover { color: rgba(184,149,58,.72); }
 
-.contactoLink:hover,
-.contactoLink:focus-visible { color: rgba(184,149,58,.72); outline: none; }
-
-/* ── Overlay ──────────────────────────────────────────────── */
+/* ── Overlay ─────────────────────────────────────────────── */
 .overlay {
   position: fixed;
   inset: 0;
-  z-index: 505;
+  z-index: 190;
   background: rgba(0,0,0,.48);
   cursor: pointer;
 }
 
-/* Ítems aún no disponibles */
-.pendiente {
-  color: rgba(232,224,208,.25);
-  cursor: default;
+/* ── Footer ──────────────────────────────────────────────── */
+.footer {
+  background: #050302;
+  border-top: 1px solid rgba(184,149,58,.12);
+  padding: clamp(40px, 6vw, 72px) 24px clamp(32px, 5vw, 56px);
+  text-align: center;
 }
-.pendiente:hover { color: rgba(232,224,208,.25); }
-.pendiente .linkSym { color: rgba(184,149,58,.12); }
-.pendiente:hover .linkSym { color: rgba(184,149,58,.12); transform: none; }
+
+.footerInner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+  max-width: 480px;
+  margin: 0 auto;
+}
+
+.footerEmblema {
+  font-size: .55rem;
+  color: rgba(184,149,58,.45);
+  margin-bottom: 10px;
+}
+
+.footerNombre {
+  font-family: var(--serif);
+  font-size: clamp(.9rem, 1.05vw, 1.02rem);
+  color: rgba(232,224,208,.72);
+  letter-spacing: .07em;
+  margin: 0;
+}
+
+.footerOriente {
+  font-family: var(--sans);
+  font-size: clamp(.68rem, .78vw, .76rem);
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: rgba(184,149,58,.45);
+  margin: 0;
+}
+
+.footerSep {
+  width: 28px;
+  height: 1px;
+  background: rgba(184,149,58,.18);
+  margin: 10px 0 5px;
+}
+
+.footerLema {
+  font-family: var(--serif);
+  font-size: clamp(.76rem, .88vw, .86rem);
+  font-style: italic;
+  color: rgba(255,255,255,.28);
+  letter-spacing: .04em;
+  margin: 0;
+}
+
+.footerYear {
+  font-family: var(--sans);
+  font-size: .66rem;
+  color: rgba(255,255,255,.18);
+  letter-spacing: .15em;
+  margin: 7px 0 0;
+}
 
 @media (prefers-reduced-motion: reduce) {
   .menu, .bar, .toggle, .link, .linkSym, .overlay { transition: none; }

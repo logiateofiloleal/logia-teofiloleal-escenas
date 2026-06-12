@@ -77,17 +77,28 @@ export default function Header() {
 
         <ul>
           {[
-            { label: 'Inicio del recorrido',   href: '#',                   onClick: (e: React.MouseEvent) => { scrollAlInicio(e); close(); } },
-            { label: 'Teófilo Leal',           href: '/teofilo-leal',       onClick: close },
-            { label: 'Tocar la puerta',        href: '#',                   onClick: (e: React.MouseEvent) => { scrollALaPuerta(e); close(); } },
-            { label: 'Solicitud de aspirante', href: '/aspirantes',         onClick: close },
-            { label: 'Acceso interno',         href: '/login',              onClick: close },
+            { label: 'Inicio del recorrido',   href: '#',             onClick: (e: React.MouseEvent) => { scrollAlInicio(e); close(); } },
+            { label: 'Teófilo Leal',           href: '/teofilo-leal', onClick: close },
+            { label: 'Tocar la puerta',        href: '#',             onClick: (e: React.MouseEvent) => { scrollALaPuerta(e); close(); } },
+            { label: 'Solicitud de aspirante', href: '',              onClick: close, pendiente: true },
+            { label: 'Acceso interno',         href: '',              onClick: close, pendiente: true },
           ].map(item => (
             <li key={item.label}>
-              <a href={item.href} className={styles.link} onClick={item.onClick}>
-                <span className={styles.linkSym} aria-hidden="true">✦</span>
-                {item.label}
-              </a>
+              {item.pendiente ? (
+                <span
+                  className={`${styles.link} ${styles.pendiente}`}
+                  aria-disabled="true"
+                  title="Próximamente disponible"
+                >
+                  <span className={styles.linkSym} aria-hidden="true">✦</span>
+                  {item.label}
+                </span>
+              ) : (
+                <a href={item.href} className={styles.link} onClick={item.onClick}>
+                  <span className={styles.linkSym} aria-hidden="true">✦</span>
+                  {item.label}
+                </a>
+              )}
             </li>
           ))}
         </ul>
