@@ -30,9 +30,9 @@ export default function TransitionCopyWrapper({
       const lp = state.direction === 1 ? state.progress : 1 - state.progress;
 
       if (state.playState === 'playing' && state.transitionIdx === transitionIdx) {
-        // Fade in: lp 0→0.05, fade out: lp 0.95→1.0
+        // Fade in: lp 0→0.05, fade out: lp 0.75→0.85 (before station copy fade-in at 0.85)
         const fadeIn = ss(0, 0.05, lp);
-        const fadeOut = 1 - ss(0.95, 1.0, lp);
+        const fadeOut = 1 - ss(0.75, 0.85, lp);
         opacity = Math.min(fadeIn, fadeOut);
       }
 
