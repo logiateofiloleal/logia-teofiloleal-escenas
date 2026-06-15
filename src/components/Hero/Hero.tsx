@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import { SEGMENTS, type Segment } from '@/config/segments';
 import StationCopyWrapper from './StationCopyWrapper';
+import TransitionCopyWrapper from './TransitionCopyWrapper';
 import ScrollHint from '@/components/ScrollHint/ScrollHint';
 import CinematicOverlay from '@/components/CinematicOverlay/CinematicOverlay';
 import styles from './Hero.module.css';
@@ -104,6 +105,24 @@ function S3Copy() {
   );
 }
 
+// ── Transition 3: La Puerta (overlay during animation) ────────
+function T3Copy() {
+  return (
+    <TransitionCopyWrapper transitionIdx={2}>
+      <h2>¿Sientes<br />el llamado?</h2>
+      <Sep />
+      <p>
+        La Logia Teófilo Leal N° 115 recibe a hombres que buscan
+        el perfeccionamiento moral e intelectual. Si sientes que
+        este es tu camino, da el primer paso.
+      </p>
+      <a href="/aspirantes" className={`${styles.btn} ${styles.btnPrimary}`}>
+        Tocar la puerta &nbsp;✦
+      </a>
+    </TransitionCopyWrapper>
+  );
+}
+
 // ── Station 4: La Puerta ──────────────────────────────────────
 function S4Copy() {
   return (
@@ -178,6 +197,8 @@ export default function Hero() {
               <ScrollHint />
             </>
           )}
+          {/* Escena 3: overlay copy during t3 animation */}
+          {seg.id === 't3' && <T3Copy />}
         </HeroSection>
       ))}
     </div>
