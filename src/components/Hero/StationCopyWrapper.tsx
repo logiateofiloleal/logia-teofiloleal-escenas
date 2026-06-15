@@ -45,8 +45,9 @@ export default function StationCopyWrapper({
           // Fade IN at the end of the preceding transition — synced with s1 exit
           opacity = ss(0.85, 1.0, lp);
         } else if (state.transitionIdx === nextTransIdx) {
-          // Fade OUT quickly at the start of the following transition
-          opacity = 1 - ss(0.0, 0.25, lp);
+          // Stay opaque through the following transition, fade OUT at the end
+          // (0.85→1.0). Crossfades with the next station copy fading in.
+          opacity = 1 - ss(0.85, 1.0, lp);
         }
       }
 

@@ -28,7 +28,9 @@
       "PowerShell(Stop-Process *)",
       "Bash(git commit -m 'feat\\(escena-3\\): implement frame transition with overlay copy *)",
       "Bash(git commit -m 'fix\\(escena-3\\): T3Copy fade-out sync with S4Copy fade-in *)",
-      "Bash(git commit -m 'fix\\(escena-3\\): unify T3Copy and S4Copy content with arch icon *)"
+      "Bash(git commit -m 'fix\\(escena-3\\): unify T3Copy and S4Copy content with arch icon *)",
+      "Bash(git commit -m 'tune\\(escena-3\\): slow t3 duration 5500ms -> 8000ms *)",
+      "Bash(git commit -m 'fix: each station copy persists through next transition *)"
     ]
   }
 }
