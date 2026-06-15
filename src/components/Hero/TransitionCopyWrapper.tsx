@@ -30,10 +30,9 @@ export default function TransitionCopyWrapper({
       const lp = state.direction === 1 ? state.progress : 1 - state.progress;
 
       if (state.playState === 'playing' && state.transitionIdx === transitionIdx) {
-        // Fade in: lp 0→0.05, fade out: lp 0.75→0.85 (before station copy fade-in at 0.85)
-        const fadeIn = ss(0, 0.05, lp);
-        const fadeOut = 1 - ss(0.75, 0.85, lp);
-        opacity = Math.min(fadeIn, fadeOut);
+        // Fade in: lp 0→0.05. Stay opaque through end — S4Copy fades in 0.85→1.0
+        // with identical content for a seamless handoff to the idle station copy.
+        opacity = ss(0, 0.05, lp);
       }
 
       el.style.opacity = String(opacity);

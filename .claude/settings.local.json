@@ -21,7 +21,14 @@
       "Bash(pnpm *)",
       "Bash(npx tsc *)",
       "Bash(node -e ' *)",
-      "Bash(git add *)"
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git push *)",
+      "Bash(node *)",
+      "PowerShell(Stop-Process *)",
+      "Bash(git commit -m 'feat\\(escena-3\\): implement frame transition with overlay copy *)",
+      "Bash(git commit -m 'fix\\(escena-3\\): T3Copy fade-out sync with S4Copy fade-in *)",
+      "Bash(git commit -m 'fix\\(escena-3\\): unify T3Copy and S4Copy content with arch icon *)"
     ]
   }
 }
