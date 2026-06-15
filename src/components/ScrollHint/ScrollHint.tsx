@@ -1,28 +1,19 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useScrollEngine } from '@/context/ScrollEngine';
+import { useSceneSnap } from '@/context/SceneSnap';
 import styles from './ScrollHint.module.css';
-
-function ss(e0: number, e1: number, v: number): number {
-  const x = Math.min(Math.max((v - e0) / (e1 - e0), 0), 1);
-  return x * x * (3 - 2 * x);
-}
 
 export default function ScrollHint() {
   const elRef = useRef<HTMLDivElement>(null);
-  const { register } = useScrollEngine();
+  const { register } = useSceneSnap();
 
   useEffect(() => {
+    const el = elRef.current;
+    if (!el) return;
     return register(state => {
-      const el = elRef.current;
-      if (!el) return;
-      // Only relevant during first station
-      if (state.segmentId !== 's1' || state.type !== 'station') {
-        el.style.opacity = '0';
-        return;
-      }
-      el.style.opacity = String(1 - ss(0.02, 0.12, state.localProgress));
+      // Visible only when idle at El Umbral (station 0)
+      el.style.opacity = state.station === 0 && state.playState === 'idle' ? '1' : '0';
     });
   }, [register]);
 

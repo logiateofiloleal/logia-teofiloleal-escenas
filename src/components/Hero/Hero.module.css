@@ -17,12 +17,12 @@
 
 /* ── Scene copy base ─────────────────────────────────────────── */
 .copy {
-  position: absolute;
+  position: fixed;
   z-index: 10;
   right: clamp(18px, 4.5vw, 70px);
   left: auto;
   top: 50%;
-  transform: translateY(-44%);
+  transform: translateY(-50%);
   max-width: 540px;
   padding: 22px 26px;
   border-radius: 22px;
@@ -39,8 +39,14 @@
 .centered {
   right: auto;
   left: 50%;
-  transform: translateX(-50%) translateY(-44%);
+  transform: translateX(-50%) translateY(-50%);
   text-align: center;
+}
+
+/* Force right:auto with higher specificity — prevents .copy's right:clamp() from
+   constraining the element width and breaking the 3-column medallion layout. */
+.copy.centered {
+  right: auto;
 }
 
 .wide { max-width: 960px; }

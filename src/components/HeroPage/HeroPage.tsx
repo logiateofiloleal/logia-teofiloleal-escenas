@@ -1,6 +1,7 @@
 'use client';
 
 import { ScrollEngineProvider } from '@/context/ScrollEngine';
+import { SceneSnapProvider } from '@/context/SceneSnap';
 import Canvas from '@/components/Canvas/Canvas';
 import Preloader from '@/components/Preloader/Preloader';
 import Header from '@/components/Header/Header';
@@ -12,19 +13,21 @@ import UmbralOverlay from '@/components/UmbralOverlay/UmbralOverlay';
 export default function HeroPage() {
   return (
     <ScrollEngineProvider>
-      <Preloader />
-      {/* Fixed canvas — z-index:0, behind all DOM overlays */}
-      <Canvas />
-      {/* Fixed copy for Escena 1 — spans s1 station + t1 transition */}
-      <UmbralOverlay />
-      {/* Fixed UI chrome — always on top */}
-      <Header />
-      <NavDots />
-      {/* Scrollable content */}
-      <main>
-        <Hero />
-        <Cierre />
-      </main>
+      <SceneSnapProvider>
+        <Preloader />
+        {/* Fixed canvas — z-index:0, behind all DOM overlays */}
+        <Canvas />
+        {/* Fixed copy for Escena 1 — spans s1 station + t1 transition */}
+        <UmbralOverlay />
+        {/* Fixed UI chrome — always on top */}
+        <Header />
+        <NavDots />
+        {/* Scrollable content */}
+        <main>
+          <Hero />
+          <Cierre />
+        </main>
+      </SceneSnapProvider>
     </ScrollEngineProvider>
   );
 }

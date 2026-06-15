@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type ReactNode } from 'react';
-import { useScrollEngine } from '@/context/ScrollEngine';
+import { useSceneSnap, type SceneState } from '@/context/SceneSnap';
 import styles from './Hero.module.css';
 
 function ss(e0: number, e1: number, v: number): number {
@@ -10,16 +10,14 @@ function ss(e0: number, e1: number, v: number): number {
 }
 
 interface Props {
-  stationId: string;     // 's1' … 's5'
-  stationIndex: number;  // 0-4
+  stationIndex: number;  // 1-4, matches SceneSnap station number
   align: 'center' | 'right';
-  wide?: boolean;        // Escena 2 three-column layout
-  minimal?: boolean;     // Escena 5
+  wide?: boolean;
+  minimal?: boolean;
   children: ReactNode;
 }
 
 export default function StationCopyWrapper({
-  stationId,
   stationIndex,
   align,
   wide = false,
@@ -27,32 +25,35 @@ export default function StationCopyWrapper({
   children,
 }: Props) {
   const elRef = useRef<HTMLDivElement>(null);
-  const { register } = useScrollEngine();
+  const { register } = useSceneSnap();
 
   useEffect(() => {
     const el = elRef.current;
     if (!el) return;
 
-    return register(state => {
-      const active = state.segmentId === stationId && state.type === 'station';
-      let opacity = 0;
+    const prevTransIdx = stationIndex - 1; // transition arriving at this station
+    const nextTransIdx = stationIndex;     // transition leaving this station
 
-      if (active) {
-        const lp = state.localProgress;
-        if (stationIndex === 0) {
-          // S1: always visible, only fades OUT
-          opacity = 1 - ss(0.75, 1.0, lp);
-        } else {
-          const fadeIn  = ss(0.0, 0.25, lp);
-          const fadeOut = 1 - ss(0.75, 1.0, lp);
-          opacity = Math.min(fadeIn, fadeOut);
+    return register((state: SceneState) => {
+      let opacity = 0;
+      const lp = state.direction === 1 ? state.progress : 1 - state.progress;
+
+      if (state.playState === 'idle' && state.station === stationIndex) {
+        opacity = 1;
+      } else if (state.playState === 'playing') {
+        if (state.transitionIdx === prevTransIdx) {
+          // Fade IN at the end of the preceding transition — synced with s1 exit
+          opacity = ss(0.85, 1.0, lp);
+        } else if (state.transitionIdx === nextTransIdx) {
+          // Fade OUT quickly at the start of the following transition
+          opacity = 1 - ss(0.0, 0.25, lp);
         }
       }
 
       el.style.opacity       = String(opacity);
       el.style.pointerEvents = opacity > 0.75 ? 'auto' : 'none';
     });
-  }, [register, stationId, stationIndex, align]);
+  }, [register, stationIndex]);
 
   const cls = [
     styles.copy,

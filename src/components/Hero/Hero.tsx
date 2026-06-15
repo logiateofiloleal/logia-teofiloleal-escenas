@@ -52,7 +52,7 @@ function S2Copy() {
   ];
 
   return (
-    <StationCopyWrapper stationId="s2" stationIndex={1} align="center" wide>
+    <StationCopyWrapper stationIndex={1} align="center" wide>
       <span>Tres principios, una misma búsqueda</span>
       <h2>Libertad · Igualdad · Fraternidad</h2>
       <Sep />
@@ -75,7 +75,7 @@ function S2Copy() {
 // ── Station 3: La Memoria ─────────────────────────────────────
 function S3Copy() {
   return (
-    <StationCopyWrapper stationId="s3" stationIndex={2} align="right">
+    <StationCopyWrapper stationIndex={2} align="right">
       <span>La memoria que ilumina el presente</span>
       {/* Floating portrait — visible while station is at rest */}
       <a
@@ -107,7 +107,7 @@ function S3Copy() {
 // ── Station 4: La Puerta ──────────────────────────────────────
 function S4Copy() {
   return (
-    <StationCopyWrapper stationId="s4" stationIndex={3} align="center">
+    <StationCopyWrapper stationIndex={3} align="center">
       {/* Masonic arch SVG — inline, gold stroke, no fill */}
       <svg
         className={styles.arco}
@@ -145,7 +145,7 @@ function S4Copy() {
 // ── Station 5: Acceso Interno ─────────────────────────────────
 function S5Copy() {
   return (
-    <StationCopyWrapper stationId="s5" stationIndex={4} align="center" minimal>
+    <StationCopyWrapper stationIndex={4} align="center" minimal>
       <p className={styles.emblema}>✦</p>
       <Sep />
       <h2>Acceso<br />Administrativo</h2>

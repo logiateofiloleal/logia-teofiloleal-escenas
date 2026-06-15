@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import Image from 'next/image';
-import { useScrollEngine } from '@/context/ScrollEngine';
+import { useSceneSnap, type SceneState } from '@/context/SceneSnap';
 import styles from './UmbralOverlay.module.css';
 
 function ss(e0: number, e1: number, v: number): number {
@@ -12,20 +12,26 @@ function ss(e0: number, e1: number, v: number): number {
 
 export default function UmbralOverlay() {
   const elRef = useRef<HTMLDivElement>(null);
-  const { register } = useScrollEngine();
+  const { register } = useSceneSnap();
 
   useEffect(() => {
     const el = elRef.current;
     if (!el) return;
 
-    return register(state => {
+    return register((state: SceneState) => {
       let opacity = 0;
-      let yOffset = -44; // base: matches CSS transform translateY(-44%)
+      let yOffset = -44;
 
-      if (state.segmentId === 't1') {
-        const exit = ss(0.82, 1.0, state.localProgress);
-        opacity  = 1 - exit;
-        yOffset  = -44 - exit * 9; // rises to -53% as it fades out
+      if (state.playState === 'idle' && state.station === 0) {
+        // Resting at El Umbral — fully visible
+        opacity = 1;
+        yOffset = -44;
+      } else if (state.transitionIdx === 0) {
+        // t1 is active (forward or reverse)
+        const lp    = state.direction === 1 ? state.progress : 1 - state.progress;
+        const exit  = ss(0.85, 1.0, lp); // exits at end of t1, synced with s2 entry
+        opacity     = 1 - exit;
+        yOffset     = -44 - exit * 9; // rises to -53% on exit
       }
 
       el.style.opacity       = String(opacity);

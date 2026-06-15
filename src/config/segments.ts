@@ -21,8 +21,9 @@ export interface Transition {
   mode: 'stills' | 'frames';
   startImg: string;
   endImg: string;
-  framesDir?: string;   // e.g. '/frames/desktop/t1' — set when mode:'frames'
-  frameCount: number;   // 0 = placeholder; set actual count when frames are ready
+  framesDir?: string;    // e.g. '/frames/desktop/t1' — set when mode:'frames'
+  frameCount: number;    // 0 = placeholder; set actual count when frames are ready
+  durationMs?: number;   // override DURATION_FRAMES for this transition
   easing: Easing;
   scrollVh: number;
 }
@@ -46,19 +47,22 @@ export const SEGMENTS: Segment[] = [
   {
     type: 'station',
     id: 's2',
-    frameImg: `${D}/frame-2.webp`,
+    // Last frame of t1 — matches what canvas shows when idle at this station.
+    frameImg: '/frames/escena-1-desktop/frame_0130.webp',
     align: 'center',
     scrollVh: 80,
   },
   {
     type: 'transition',
     id: 't2',
-    mode: 'stills',
-    startImg: `${D}/frame-2.webp`,
+    mode: 'frames',
+    startImg: '/frames/escena-2-desktop/frame_0001.webp',
     endImg: `${D}/frame-3.webp`,
-    frameCount: 0,
-    easing: 'smoothstep',
-    scrollVh: 50,
+    framesDir: '/frames/escena-2-desktop',
+    frameCount: 130,
+    durationMs: 6500,
+    easing: 'linear',
+    scrollVh: 300,
   },
   {
     type: 'station',

@@ -18,7 +18,10 @@
       "PowerShell(try { $r = Invoke-WebRequest \"http://localhost:3000/assets/img/logo.png\" -UseBasicParsing; Write-Host \"Status: $\\($r.StatusCode\\)\" } catch { Write-Host \"Error: $_\" })",
       "Bash(node scripts/extract-frames-desktop.js 16)",
       "Bash(grep -E \"\\\\.\\(tsx|ts\\)$\")",
-      "Bash(pnpm *)"
+      "Bash(pnpm *)",
+      "Bash(npx tsc *)",
+      "Bash(node -e ' *)",
+      "Bash(git add *)"
     ]
   }
 }

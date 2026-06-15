@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import { useScrollEngine } from '@/context/ScrollEngine';
+import { useSceneSnap, type SceneState } from '@/context/SceneSnap';
 import styles from './CinematicOverlay.module.css';
 
 function ss(e0: number, e1: number, v: number): number {
@@ -12,26 +12,30 @@ function ss(e0: number, e1: number, v: number): number {
 export default function CinematicOverlay() {
   const overlayRef = useRef<HTMLDivElement>(null);
   const pulseRef   = useRef<HTMLDivElement>(null);
-  const { register } = useScrollEngine();
+  const { register } = useSceneSnap();
 
   useEffect(() => {
-    return register(state => {
+    return register((state: SceneState) => {
       const overlay = overlayRef.current;
       const pulse   = pulseRef.current;
 
-      // Exit animation — matches UmbralOverlay: lp 0.82→1.0 of t1
+      // globalProgress proxy: 0 (s1) → 1 (s5), continuous across transitions
+      const gp = state.playState === 'playing'
+        ? (Math.min(state.station, state.target) + state.progress) / 4
+        : state.station / 4;
+
       if (overlay) {
-        if (state.segmentId === 't1') {
-          const exit = ss(0.82, 1.0, state.localProgress);
+        if (state.transitionIdx === 0 && state.direction === 1) {
+          const lp   = state.progress;
+          const exit = ss(0.85, 1.0, lp);
           overlay.style.opacity = String(1 - exit);
         } else {
           overlay.style.opacity = '1';
         }
       }
 
-      // Pulse: golden glow driven by global progress
+      // Golden pulse: grows with globalProgress
       if (pulse) {
-        const gp    = state.globalProgress;
         const power = ss(0.48, 0.9, gp);
         pulse.style.opacity   = String(power * 0.75);
         pulse.style.transform = `scale(${0.95 + power * 0.18})`;

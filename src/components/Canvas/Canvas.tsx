@@ -2,8 +2,8 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import { useIsMobile } from '@/hooks/useIsMobile';
-import { useScrollEngine, type ScrollState } from '@/context/ScrollEngine';
-import { SEGMENTS, type Transition } from '@/config/segments';
+import { useSceneSnap, type SceneState } from '@/context/SceneSnap';
+import { SEGMENTS, type Transition, type Station } from '@/config/segments';
 import { FrameLoader } from '@/lib/frameLoader';
 import styles from './Canvas.module.css';
 
@@ -23,21 +23,25 @@ function ss(e0: number, e1: number, v: number): number {
   return x * x * (3 - 2 * x);
 }
 
-export default function Canvas() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const isMobile  = useIsMobile();
-  const { register } = useScrollEngine();
+// Pre-typed segment arrays (static, computed once)
+const TRANSITIONS = SEGMENTS.filter((s): s is Transition => s.type === 'transition');
+const STATIONS    = SEGMENTS.filter((s): s is Station    => s.type === 'station');
 
-  const W = isMobile ? MOBILE_W  : DESKTOP_W;
-  const H = isMobile ? MOBILE_H  : DESKTOP_H;
+export default function Canvas() {
+  const canvasRef  = useRef<HTMLCanvasElement>(null);
+  const isMobile   = useIsMobile();
+  const { register, getState } = useSceneSnap();
+
+  const W          = isMobile ? MOBILE_W  : DESKTOP_W;
+  const H          = isMobile ? MOBILE_H  : DESKTOP_H;
   const releaseLag = isMobile ? RELEASE_LAG_MOBILE : RELEASE_LAG_DESKTOP;
 
   // Preloaded stills — HTMLImageElement (sync drawImage once .complete)
-  const imgsRef = useRef<Map<string, HTMLImageElement>>(new Map());
+  const imgsRef    = useRef<Map<string, HTMLImageElement>>(new Map());
 
   // FrameLoader per transition id (lazy, only for mode:'frames')
-  const loadersRef    = useRef<Map<string, FrameLoader>>(new Map());
-  const lastFrameRef  = useRef<Map<string, number>>(new Map()); // guard against redundant draws
+  const loadersRef   = useRef<Map<string, FrameLoader>>(new Map());
+  const lastFrameRef = useRef<Map<string, number>>(new Map()); // guard redundant draws
 
   // ── Backing store ────────────────────────────────────────
   useEffect(() => {
@@ -46,21 +50,6 @@ export default function Canvas() {
     c.width  = W;
     c.height = H;
   }, [W, H]);
-
-  // ── Preload all stills ───────────────────────────────────
-  useEffect(() => {
-    const srcs = new Set<string>();
-    for (const seg of SEGMENTS) {
-      if (seg.type === 'station') srcs.add(seg.frameImg);
-      else { srcs.add(seg.startImg); srcs.add(seg.endImg); }
-    }
-    srcs.forEach(src => {
-      if (imgsRef.current.has(src)) return;
-      const img = new Image();
-      img.src = src;
-      imgsRef.current.set(src, img);
-    });
-  }, []);
 
   // ── Draw helpers ─────────────────────────────────────────
 
@@ -74,13 +63,10 @@ export default function Canvas() {
 
       if (isMobile) {
         // Letterbox: 16:9 image centered in 9:16 canvas with black bars.
-        // TODO: replace with native 9:16 assets from /frames/mobile/<id>/ when available.
-        const drawH = Math.round(W / (16 / 9));
+        const drawH   = Math.round(W / (16 / 9));
         const offsetY = Math.round((H - drawH) / 2);
         ctx.drawImage(img, 0, offsetY, W, drawH);
         ctx.restore();
-
-        // Black bars
         ctx.fillStyle = '#050302';
         if (offsetY > 0) {
           ctx.fillRect(0, 0, W, offsetY);
@@ -94,11 +80,41 @@ export default function Canvas() {
     [W, H, isMobile],
   );
 
+  // ── Preload all stills ───────────────────────────────────
+  useEffect(() => {
+    const srcs = new Set<string>();
+    for (const seg of SEGMENTS) {
+      if (seg.type === 'station') srcs.add(seg.frameImg);
+      else { srcs.add(seg.startImg); srcs.add(seg.endImg); }
+    }
+    const firstFrameSrc = TRANSITIONS[0]?.startImg;
+    srcs.forEach(src => {
+      if (imgsRef.current.has(src)) return;
+      const img = new Image();
+      img.src = src;
+      imgsRef.current.set(src, img);
+      // Draw frame_0001 as soon as it loads if still at station 0 idle
+      if (src === firstFrameSrc) {
+        const drawFirst = () => {
+          const s = getState();
+          if (s.playState !== 'idle' || s.station !== 0) return;
+          const c = canvasRef.current;
+          if (!c) return;
+          const ctx = c.getContext('2d');
+          if (!ctx) return;
+          ctx.clearRect(0, 0, W, H);
+          ctx.drawImage(img, 0, 0, W, H); // raw — matches FrameLoader bitmap render
+        };
+        if (img.complete) drawFirst();
+        else img.addEventListener('load', drawFirst, { once: true });
+      }
+    });
+  }, [W, H, getState]);
+
   const drawStation = useCallback(
     (ctx: CanvasRenderingContext2D, frameImg: string, lp: number) => {
       const img = imgsRef.current.get(frameImg);
       if (!img?.complete || img.naturalWidth === 0) return;
-
       const scale      = 1.045 - lp * 0.035;
       const brightness = 0.82  + lp * 0.10;
       const saturate   = 1.04  + lp * 0.04;
@@ -113,22 +129,17 @@ export default function Canvas() {
       const imgB = imgsRef.current.get(endImg);
       if (!imgA?.complete) return;
 
-      // Frame A — end state (scale 1.010, brightness 0.92)
       drawImg(ctx, imgA, 1.010, 'brightness(0.92) contrast(1.06) saturate(1.08)');
 
-      // Frame B fading in with smoothStep
       if (imgB?.complete && imgB.naturalWidth > 0) {
         const t          = ss(0.1, 0.9, lp);
         const brightness = 0.82 + t * 0.10;
         const saturate   = 1.04 + t * 0.04;
         const scaleB     = 1.045 - t * 0.010;
-
-        // Set globalAlpha BEFORE calling drawImg — drawImg's internal save/restore
-        // inherits the current globalAlpha and cleans up correctly.
         ctx.save();
         ctx.globalAlpha = t;
         drawImg(ctx, imgB, scaleB, `brightness(${brightness}) contrast(1.06) saturate(${saturate})`);
-        ctx.restore(); // restores globalAlpha to 1
+        ctx.restore();
       }
     },
     [drawImg],
@@ -160,7 +171,7 @@ export default function Canvas() {
         loader.setLastDrawn(targetIdx);
         lastFrameRef.current.set(transition.id, targetIdx);
       } else if (!lastFrameRef.current.has(transition.id)) {
-        // No frame drawn yet — show startImg so canvas isn't black on first load
+        // No frame drawn yet — show startImg so canvas isn't black
         const still = imgsRef.current.get(transition.startImg);
         if (still?.complete && still.naturalWidth > 0) {
           ctx.drawImage(still, 0, 0, W, H);
@@ -193,35 +204,46 @@ export default function Canvas() {
     [drawTransitionStills, isMobile, W, H, releaseLag],
   );
 
-  // ── Register with scroll engine ──────────────────────────
+  // ── Register with SceneSnap (direct RAF progress — no scroll-event chain) ──
   useEffect(() => {
     const c = canvasRef.current;
     if (!c) return;
 
-    return register((state: ScrollState) => {
+    return register((state: SceneState) => {
       const ctx = c.getContext('2d');
       if (!ctx) return;
 
-      const seg = SEGMENTS.find(s => s.id === state.segmentId);
-      if (!seg) return;
+      if (state.playState === 'playing') {
+        const trans = TRANSITIONS[state.transitionIdx];
+        if (!trans) return;
 
-      if (seg.type === 'station') {
-        ctx.clearRect(0, 0, W, H);
-        drawStation(ctx, seg.frameImg, state.localProgress);
-      } else {
-        const segIdx = SEGMENTS.indexOf(seg);
-        if (seg.mode === 'stills' || seg.frameCount === 0) {
-          // Stills: always have images, safe to clear first
+        // Forward: progress 0→1 = lp 0→1. Reverse: lp 1→0.
+        const lp     = state.direction === 1 ? state.progress : 1 - state.progress;
+        const segIdx = SEGMENTS.indexOf(trans);
+
+        if (trans.mode === 'stills' || trans.frameCount === 0) {
           ctx.clearRect(0, 0, W, H);
-          drawTransitionStills(ctx, seg.startImg, seg.endImg, state.localProgress);
+          drawTransitionStills(ctx, trans.startImg, trans.endImg, lp);
         } else {
-          // Frames: do NOT pre-clear — drawTransitionFrames keeps last valid
-          // frame on canvas when the target index isn't loaded yet
-          drawTransitionFrames(ctx, seg, state.localProgress, segIdx);
+          // Frames: do NOT pre-clear — keep last valid frame while loading
+          drawTransitionFrames(ctx, trans, lp, segIdx);
         }
+      } else {
+        // idle — only station 0 needs an explicit draw (initial mount).
+        // Stations 1-4: keep whatever the transition left on canvas —
+        // the last painted frame IS the correct still, no visual jump.
+        if (state.station === 0) {
+          const startSrc = TRANSITIONS[0]?.startImg;
+          const img      = startSrc ? imgsRef.current.get(startSrc) : undefined;
+          if (img?.complete && img.naturalWidth > 0) {
+            ctx.clearRect(0, 0, W, H);
+            ctx.drawImage(img, 0, 0, W, H); // raw — matches FrameLoader bitmap render
+          }
+        }
+        // else: no-op — last transition frame stays on canvas
       }
     });
-  }, [register, drawStation, drawTransitionStills, drawTransitionFrames, W, H]);
+  }, [register, drawImg, drawStation, drawTransitionStills, drawTransitionFrames, W, H]);
 
   return (
     <canvas
