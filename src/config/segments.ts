@@ -79,7 +79,7 @@ export const SEGMENTS: Segment[] = [
     endImg: '/frames/escena-3-desktop/frame_0130.webp',
     framesDir: '/frames/escena-3-desktop',
     frameCount: 130,
-    durationMs: 5500,
+    durationMs: 8000,
     easing: 'linear',
     scrollVh: 300,
   },
