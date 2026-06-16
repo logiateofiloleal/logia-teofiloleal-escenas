@@ -40,7 +40,7 @@ export default function Preloader() {
 
   const skip = useCallback(() => {
     if (preRef.current)   preRef.current.classList.add(styles.oculto);
-    if (panelRef.current) panelRef.current.remove();
+    if (panelRef.current) panelRef.current.classList.add(styles.oculto);
     document.body.style.overflow = '';
   }, []);
 
@@ -53,10 +53,10 @@ export default function Preloader() {
       if (preRef.current) preRef.current.classList.add(styles.oculto);
       document.body.style.overflow = '';
       setTimeout(() => {
-        if (!panel.parentNode) return;
+        if (!panel.isConnected) return;
         panel.classList.remove(styles.cubriendo);
         panel.classList.add(styles.retirando);
-        setTimeout(() => panel.remove(), PRE.durRetiro + 100);
+        setTimeout(() => panel.classList.add(styles.oculto), PRE.durRetiro + 100);
       }, PRE.pausaPanel);
     }, PRE.durPanel);
   }, []);
