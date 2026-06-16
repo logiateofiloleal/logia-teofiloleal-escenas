@@ -73,7 +73,7 @@ function transitionDuration(fromStation: number): number {
   const seg = ts[idx];
   if (seg?.type !== 'transition') return DURATION_STILLS;
   if (seg.mode === 'frames' && seg.frameCount > 0) return seg.durationMs ?? DURATION_FRAMES;
-  return DURATION_STILLS;
+  return seg.durationMs ?? DURATION_STILLS;
 }
 
 // ── Provider ──────────────────────────────────────────────────────────
@@ -157,7 +157,9 @@ export function SceneSnapProvider({ children }: { children: ReactNode }) {
       if (cur.station >= STATION_COUNT - 1 && deltaY > 0) return false; // release to Cierre
       if (cur.station <= 0 && deltaY < 0)                 return false; // release at top
       if (cur.playState === 'playing')                     return true;  // absorb, block
-      if (performance.now() - lastEndRef.current < COOLDOWN_MS) return true;
+      const stationSegs = SEGMENTS.filter(s => s.type === 'station');
+      const minGap = stationSegs[cur.station - 1]?.dwellMs ?? COOLDOWN_MS;
+      if (performance.now() - lastEndRef.current < minGap) return true;
       if (Math.abs(deltaY) < 1)                           return false;
 
       const next = cur.station + (deltaY > 0 ? 1 : -1);

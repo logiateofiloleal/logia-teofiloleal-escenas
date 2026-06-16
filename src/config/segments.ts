@@ -13,6 +13,7 @@ export interface Station {
   frameImg: string;
   align: 'center' | 'right';
   scrollVh: number;
+  dwellMs?: number;
 }
 
 export interface Transition {
@@ -79,16 +80,17 @@ export const SEGMENTS: Segment[] = [
     endImg: '/frames/escena-3-desktop/frame_0130.webp',
     framesDir: '/frames/escena-3-desktop',
     frameCount: 130,
-    durationMs: 8000,
+    durationMs: 9500,
     easing: 'linear',
     scrollVh: 300,
   },
   {
     type: 'station',
     id: 's4',
-    frameImg: '/frames/escena-3-desktop/frame_0001.webp',
+    frameImg: '/frames/escena-3-desktop/frame_0130.webp',
     align: 'center',
-    scrollVh: 80,
+    scrollVh: 160,
+    dwellMs: 1800,
   },
   {
     type: 'transition',
@@ -97,15 +99,16 @@ export const SEGMENTS: Segment[] = [
     startImg: `${D}/frame-4.webp`,
     endImg: `${D}/frame-5.webp`,
     frameCount: 0,
+    durationMs: 7000,
     easing: 'smoothstep',
-    scrollVh: 50,
+    scrollVh: 120,
   },
   {
     type: 'station',
     id: 's5',
     frameImg: `${D}/frame-5.webp`,
     align: 'center',
-    scrollVh: 80,
+    scrollVh: 130,
   },
 ];
 
