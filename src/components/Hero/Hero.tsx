@@ -52,7 +52,7 @@ function S2Copy() {
   ];
 
   return (
-    <StationCopyWrapper stationIndex={1} align="center" wide>
+    <StationCopyWrapper stationIndex={1} align="center" wide fadeOutStart={0.70} fadeOutEnd={0.84}>
       <span>Tres principios, una misma búsqueda</span>
       <h2>Libertad · Igualdad · Fraternidad</h2>
       <Sep />
@@ -72,43 +72,41 @@ function S2Copy() {
   );
 }
 
-// ── Station 3: La Memoria ─────────────────────────────────────
-function S3Copy() {
+// ── Station 3: La Memoria — Homenaje a Teófilo Leal ──────────
+// stationIndex=2: entra al final de t2 (fadeInStart=0.95, rápido y nítido),
+// visible en s3 idle, sale con crossfade estándar durante t3.
+function TeofiloCopy() {
   return (
-    <StationCopyWrapper stationIndex={2} align="right">
-      <span>La memoria que ilumina el presente</span>
-      {/* Floating portrait — visible while station is at rest */}
-      <a
-        href="/teofilo-leal"
-        className={styles.retrato}
-        aria-label="Conocer la biografía de Teófilo Leal"
-      >
+    <StationCopyWrapper stationIndex={2} align="center" fadeInStart={0.95} fadeOutStart={0.25} fadeOutEnd={0.50}>
+      <p className={styles.homenajeInMemoriam}>In Memoriam</p>
+      <div className={styles.homenajeMarco}>
         <Image
           src="/assets/img/acto3-cuadro-teofilo-leal-memoria.png"
           alt="Retrato de Teófilo Leal Berra"
-          width={180} height={225}
+          width={260}
+          height={325}
+          quality={100}
+          sizes="(max-width: 768px) 200px, 260px"
+          className={styles.homenajeRetrato}
           draggable={false}
         />
-        <span className={styles.retratoLegado}>Conocer su legado</span>
-      </a>
-      <p className={styles.overline}>In Memoriam</p>
-      <h2 className={styles.nombre}>Teófilo Leal<br />Berra</h2>
-      <p className={styles.fechas}>1866 — 1940</p>
-      <Sep />
-      <blockquote className={styles.cita}>
-        Actor, poeta, músico y pintor. Ejemplo luminoso de que la Masonería
-        no separa al hombre de la cultura, sino que lo eleva por ella.
-        Su memoria vive en cada trabajo de esta institución.
-      </blockquote>
+      </div>
+      <h2 className={styles.homenajeNombre}>Teófilo Leal<br />Berra</h2>
+      <div className={styles.homenajeFechas}>
+        <span>1866 — 1940</span>
+      </div>
+      <p className={styles.homenajeRoles}>Actor · Poeta · Músico · Pintor</p>
+      <p className={styles.homenajeEpitafio}>
+        Su memoria ilumina cada trabajo de esta Logia.
+      </p>
     </StationCopyWrapper>
   );
 }
 
-// ── Station 4: La Puerta ──────────────────────────────────────
+// ── Station 4: La Puerta — ¿Sientes el llamado? ───────────────
 function S4Copy() {
   return (
     <StationCopyWrapper stationIndex={3} align="center">
-      {/* Masonic arch SVG — inline, gold stroke, no fill */}
       <svg
         className={styles.arco}
         viewBox="0 0 100 130"
@@ -159,7 +157,7 @@ function S5Copy() {
 
 const COPY: Record<string, React.ReactNode> = {
   s2: <S2Copy />,
-  s3: <S3Copy />,
+  s3: <TeofiloCopy />,
   s4: <S4Copy />,
   s5: <S5Copy />,
 };

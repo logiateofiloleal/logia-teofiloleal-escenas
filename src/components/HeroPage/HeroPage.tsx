@@ -9,6 +9,7 @@ import NavDots from '@/components/NavDots/NavDots';
 import Hero from '@/components/Hero/Hero';
 import Cierre from '@/components/Cierre/Cierre';
 import UmbralOverlay from '@/components/UmbralOverlay/UmbralOverlay';
+import S4AtmosOverlay from '@/components/S4AtmosOverlay/S4AtmosOverlay';
 
 export default function HeroPage() {
   return (
@@ -19,6 +20,8 @@ export default function HeroPage() {
         <Canvas />
         {/* Fixed copy for Escena 1 — spans s1 station + t1 transition */}
         <UmbralOverlay />
+        {/* Atmospheric treatment for s4 — blurs and dims canvas during La Puerta */}
+        <S4AtmosOverlay />
         {/* Fixed UI chrome — always on top */}
         <Header />
         <NavDots />
