@@ -14,6 +14,14 @@ interface Props {
   align: 'center' | 'right';
   wide?: boolean;
   minimal?: boolean;
+  /** lp point where the fade-in starts (default 0.85). Higher = snappier entry. */
+  fadeInStart?: number;
+  /** lp point where the fade-in completes (default 1.0). */
+  fadeInEnd?: number;
+  /** lp point where the fade-out starts (default 0.85). Lower = exits earlier. */
+  fadeOutStart?: number;
+  /** lp point where the fade-out completes (default 1.0). */
+  fadeOutEnd?: number;
   children: ReactNode;
 }
 
@@ -22,6 +30,10 @@ export default function StationCopyWrapper({
   align,
   wide = false,
   minimal = false,
+  fadeInStart = 0.85,
+  fadeInEnd = 1.0,
+  fadeOutStart = 0.85,
+  fadeOutEnd = 1.0,
   children,
 }: Props) {
   const elRef = useRef<HTMLDivElement>(null);
@@ -42,19 +54,16 @@ export default function StationCopyWrapper({
         opacity = 1;
       } else if (state.playState === 'playing') {
         if (state.transitionIdx === prevTransIdx) {
-          // Fade IN at the end of the preceding transition — synced with s1 exit
-          opacity = ss(0.85, 1.0, lp);
+          opacity = ss(fadeInStart, fadeInEnd, lp);
         } else if (state.transitionIdx === nextTransIdx) {
-          // Stay opaque through the following transition, fade OUT at the end
-          // (0.85→1.0). Crossfades with the next station copy fading in.
-          opacity = 1 - ss(0.85, 1.0, lp);
+          opacity = 1 - ss(fadeOutStart, fadeOutEnd, lp);
         }
       }
 
       el.style.opacity       = String(opacity);
       el.style.pointerEvents = opacity > 0.75 ? 'auto' : 'none';
     });
-  }, [register, stationIndex]);
+  }, [register, stationIndex, fadeInStart, fadeInEnd, fadeOutStart, fadeOutEnd]);
 
   const cls = [
     styles.copy,

@@ -1,6 +1,9 @@
 .hero {
   position: relative;
-  z-index: 1; /* above canvas (z-index:0) */
+  /* No z-index here: creating a stacking context would cap all fixed descendants
+     (CinematicOverlay, .copy) at z:1 in the root context, below S4AtmosOverlay (z:4).
+     Without z-index, fixed elements participate in the root stacking context at their
+     own z-index values — .copy at z:10 is correctly above the overlay at z:4. */
 }
 
 /* ── Sections ────────────────────────────────────────────────── */
@@ -43,10 +46,14 @@
   text-align: center;
 }
 
-/* Force right:auto with higher specificity — prevents .copy's right:clamp() from
-   constraining the element width and breaking the 3-column medallion layout. */
+/* Centered panels: symmetric radial background gives clearer contrast under
+   centered content than the directional left-to-right gradient. */
 .copy.centered {
   right: auto;
+  background: radial-gradient(ellipse 92% 100% at 50% 48%,
+    rgba(0,0,0,.60) 0%,
+    rgba(0,0,0,.42) 48%,
+    rgba(0,0,0,.10) 100%);
 }
 
 .wide { max-width: 960px; }
@@ -293,6 +300,103 @@
   display: block;
 }
 
+/* ── Station 4 — Homenaje a Teófilo Leal ────────────────────────── */
+.homenajeInMemoriam {
+  font-family: var(--sans) !important;
+  font-size: clamp(.6rem, .76vw, .72rem) !important;
+  letter-spacing: .38em;
+  text-transform: uppercase;
+  color: rgba(184,149,58,.72) !important;
+  text-shadow: none !important;
+  margin-bottom: 16px;
+  font-weight: 400;
+}
+
+.homenajeMarco {
+  width: clamp(140px, 26vw, 260px);
+  margin: 0 auto 18px;
+  padding: 6px;
+  background: rgba(4,3,2,.80);
+  border: 1px solid rgba(184,149,58,.48);
+  box-shadow:
+    inset 0 0 0 1px rgba(184,149,58,.14),
+    0 10px 48px rgba(0,0,0,.85);
+  line-height: 0;
+}
+
+.homenajeRetrato {
+  width: 100% !important;
+  height: auto !important;
+  object-fit: cover;
+  display: block;
+}
+
+.homenajeNombre {
+  color: var(--oro-brillo) !important;
+  font-size: clamp(1.6rem, 3.2vw, 3.0rem) !important;
+  font-weight: 400;
+  line-height: 1.06;
+  letter-spacing: .02em;
+  margin-bottom: 10px !important;
+  text-shadow: 0 2px 22px rgba(0,0,0,.75), var(--sombra-titulo);
+}
+
+.homenajeFechas {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.homenajeFechas::before,
+.homenajeFechas::after {
+  content: '';
+  display: block;
+  width: 36px;
+  height: 1px;
+  flex-shrink: 0;
+}
+
+.homenajeFechas::before {
+  background: linear-gradient(to right, transparent, rgba(184,149,58,.64));
+}
+
+.homenajeFechas::after {
+  background: linear-gradient(to left, transparent, rgba(184,149,58,.64));
+}
+
+.homenajeFechas > span {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: clamp(.84rem, 1.06vw, .98rem);
+  color: rgba(201,168,76,.92);
+  letter-spacing: .10em;
+  white-space: nowrap;
+  text-shadow: 0 1px 6px rgba(0,0,0,.5);
+}
+
+.homenajeRoles {
+  font-family: var(--sans) !important;
+  font-size: clamp(.60rem, .74vw, .70rem) !important;
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.55) !important;
+  text-shadow: 0 1px 4px rgba(0,0,0,.6) !important;
+  margin-bottom: 14px;
+  font-weight: 300;
+}
+
+.homenajeEpitafio {
+  font-size: clamp(.82rem, .98vw, .92rem) !important;
+  font-style: italic;
+  color: rgba(255,255,255,.70) !important;
+  line-height: 1.62;
+  text-shadow: 0 1px 8px rgba(0,0,0,.65);
+  max-width: 300px !important;
+  margin: 0 auto !important;
+}
+
 /* ── Station 5 ───────────────────────────────────────────────── */
 .emblema {
   font-size: 2rem !important;
@@ -392,6 +496,8 @@
   .principios { gap: 22px; }
   .principio  { flex: 0 0 140px; }
   .arco { width: 72px; height: 96px; }
+  .homenajeEpitafio { display: none; }
+  .homenajeRoles    { margin-bottom: 0; }
 }
 
 @media (max-width: 480px) {
@@ -399,4 +505,5 @@
   .principio  { flex: none; width: 100%; max-width: 200px; }
   .copy h1 { font-size: clamp(2.2rem, 9vw, 3.6rem); }
   .copy h2 { font-size: clamp(1.8rem, 7.5vw, 3rem); }
+  .homenajeInMemoriam { margin-bottom: 10px; }
 }

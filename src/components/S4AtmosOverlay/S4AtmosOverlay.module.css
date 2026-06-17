@@ -1,0 +1,11 @@
+/* Fixed atmospheric overlay for s4 — above canvas (z:0), below CinematicOverlay (z:5).
+   backdrop-filter + background are applied via inline style from S4AtmosOverlay.tsx
+   so the tunable constants (SCRIM_OPACITY, BG_BLUR_PX, BG_BRIGHTNESS) live in one place. */
+.atmos {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0;
+  will-change: opacity;
+}
