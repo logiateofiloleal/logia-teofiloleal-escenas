@@ -102,11 +102,31 @@
 
 @media (max-width: 768px) {
   .overlay {
-    top: 10%;
-    left: 18px;
-    right: 18px;
-    transform: none;
+    top: 8%;
+    left: 50%;        /* JS sets translateX(-50%) — centering preserved */
+    right: auto;
+    width: calc(100% - 40px);
     max-width: none;
-    width: auto;
+    box-sizing: border-box;
+    padding: 18px 20px;
+  }
+  .logo {
+    width: 72px !important;
+    height: 72px !important;
+    margin-bottom: 14px;
+  }
+  .h1 {
+    font-size: clamp(1.9rem, 7.5vw, 2.8rem);
+  }
+  .kicker {
+    font-size: clamp(.64rem, 3.2vw, .78rem);
+    letter-spacing: .10em;
+    max-width: none;
+    overflow-wrap: break-word;
+  }
+  .lema {
+    font-size: clamp(.6rem, 3vw, .72rem);
+    letter-spacing: .08em;
+    overflow-wrap: break-word;
   }
 }

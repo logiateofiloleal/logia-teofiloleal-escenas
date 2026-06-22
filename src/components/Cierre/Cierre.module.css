@@ -2,6 +2,7 @@
   position: relative;
   background: var(--bg-deep);
   min-height: 100vh;
+  min-height: 100svh; /* iOS Safari: excludes URL bar — no jump on toolbar show/hide */
   display: flex;
   align-items: center;
   justify-content: center;

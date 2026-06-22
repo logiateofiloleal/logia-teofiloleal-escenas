@@ -27,6 +27,16 @@ function ss(e0: number, e1: number, v: number): number {
 const TRANSITIONS = SEGMENTS.filter((s): s is Transition => s.type === 'transition');
 const STATIONS    = SEGMENTS.filter((s): s is Station    => s.type === 'station');
 
+function effectiveFrameCount(t: Transition, isMobile: boolean): number {
+  if (isMobile && t.frameCountMobile != null) return t.frameCountMobile;
+  return t.frameCount;
+}
+
+function effectiveStartImg(t: Transition, isMobile: boolean): string {
+  if (isMobile && t.startImgMobile) return t.startImgMobile;
+  return t.startImg;
+}
+
 export default function Canvas() {
   const canvasRef  = useRef<HTMLCanvasElement>(null);
   const isMobile   = useIsMobile();
@@ -87,13 +97,17 @@ export default function Canvas() {
       if (seg.type === 'station') srcs.add(seg.frameImg);
       else { srcs.add(seg.startImg); srcs.add(seg.endImg); }
     }
-    const firstFrameSrc = TRANSITIONS[0]?.startImg;
+    const t0 = TRANSITIONS[0];
+    const firstFrameSrc = t0 ? effectiveStartImg(t0, isMobile) : undefined;
+    // Also preload mobile first-frame fallbacks
+    for (const seg of SEGMENTS) {
+      if (seg.type !== 'station' && isMobile && seg.startImgMobile) srcs.add(seg.startImgMobile);
+    }
     srcs.forEach(src => {
       if (imgsRef.current.has(src)) return;
       const img = new Image();
       img.src = src;
       imgsRef.current.set(src, img);
-      // Draw frame_0001 as soon as it loads if still at station 0 idle
       if (src === firstFrameSrc) {
         const drawFirst = () => {
           const s = getState();
@@ -103,13 +117,13 @@ export default function Canvas() {
           const ctx = c.getContext('2d');
           if (!ctx) return;
           ctx.clearRect(0, 0, W, H);
-          ctx.drawImage(img, 0, 0, W, H); // raw — matches FrameLoader bitmap render
+          ctx.drawImage(img, 0, 0, W, H);
         };
         if (img.complete) drawFirst();
         else img.addEventListener('load', drawFirst, { once: true });
       }
     });
-  }, [W, H, getState]);
+  }, [W, H, isMobile, getState]);
 
   const drawStation = useCallback(
     (ctx: CanvasRenderingContext2D, frameImg: string, lp: number) => {
@@ -147,7 +161,8 @@ export default function Canvas() {
 
   const drawTransitionFrames = useCallback(
     (ctx: CanvasRenderingContext2D, transition: Transition, lp: number, segIdx: number) => {
-      if (transition.frameCount === 0) {
+      const fc = effectiveFrameCount(transition, isMobile);
+      if (fc === 0) {
         drawTransitionStills(ctx, transition.startImg, transition.endImg, lp);
         return;
       }
@@ -160,19 +175,20 @@ export default function Canvas() {
         loader.load();
       }
 
-      const targetIdx = Math.floor(lp * (transition.frameCount - 1));
+      const targetIdx = Math.floor(lp * (fc - 1));
       const lastDrawn = lastFrameRef.current.get(transition.id) ?? -2;
 
       if (targetIdx === lastDrawn) return; // no-op guard
 
-      const bitmap = loader.getFrame(targetIdx);
-      if (bitmap) {
-        ctx.drawImage(bitmap, 0, 0, W, H);
+      const frame = loader.getFrame(targetIdx);
+      if (frame) {
+        ctx.drawImage(frame, 0, 0, W, H);
         loader.setLastDrawn(targetIdx);
         lastFrameRef.current.set(transition.id, targetIdx);
       } else if (!lastFrameRef.current.has(transition.id)) {
         // No frame drawn yet — show startImg so canvas isn't black
-        const still = imgsRef.current.get(transition.startImg);
+        const startSrc = effectiveStartImg(transition, isMobile);
+        const still = imgsRef.current.get(startSrc);
         if (still?.complete && still.naturalWidth > 0) {
           ctx.drawImage(still, 0, 0, W, H);
         }
@@ -182,7 +198,7 @@ export default function Canvas() {
       // Preload next transition at 60%
       if (lp > 0.6 && segIdx + 1 < SEGMENTS.length) {
         const next = SEGMENTS[segIdx + 1];
-        if (next.type === 'transition' && next.mode === 'frames' && next.frameCount > 0) {
+        if (next.type === 'transition' && next.mode === 'frames' && effectiveFrameCount(next, isMobile) > 0) {
           if (!loadersRef.current.has(next.id)) {
             const nl = new FrameLoader(next, isMobile);
             loadersRef.current.set(next.id, nl);
@@ -233,7 +249,8 @@ export default function Canvas() {
         // Stations 1-4: keep whatever the transition left on canvas —
         // the last painted frame IS the correct still, no visual jump.
         if (state.station === 0) {
-          const startSrc = TRANSITIONS[0]?.startImg;
+          const t0       = TRANSITIONS[0];
+          const startSrc = t0 ? effectiveStartImg(t0, isMobile) : undefined;
           const img      = startSrc ? imgsRef.current.get(startSrc) : undefined;
           if (img?.complete && img.naturalWidth > 0) {
             ctx.clearRect(0, 0, W, H);

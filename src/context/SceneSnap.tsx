@@ -186,12 +186,15 @@ export function SceneSnapProvider({ children }: { children: ReactNode }) {
     window.addEventListener('touchstart',  onTouchStart, { passive: true });
     window.addEventListener('touchend',    onTouchEnd,   { passive: true });
     window.addEventListener('resize',      onResize);
+    // iOS Safari: toolbar show/hide fires visualViewport resize, not window resize
+    window.visualViewport?.addEventListener('resize', onResize);
 
     return () => {
       window.removeEventListener('wheel',      onWheel);
       window.removeEventListener('touchstart', onTouchStart);
       window.removeEventListener('touchend',   onTouchEnd);
       window.removeEventListener('resize',     onResize);
+      window.visualViewport?.removeEventListener('resize', onResize);
       cancelAnimationFrame(rafRef.current);
     };
   }, [goTo]);

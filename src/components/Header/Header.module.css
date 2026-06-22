@@ -216,6 +216,16 @@
   cursor: pointer;
 }
 
+@media (max-width: 768px) {
+  .menu { width: min(360px, 92vw); }
+  .name b    { font-size: 14px; }
+  .name span { font-size: 9.5px; letter-spacing: .18em; }
+}
+
+@media (max-width: 380px) {
+  .name span { display: none; }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .menu, .bar, .toggle, .link, .linkSym, .overlay { transition: none; }
 }

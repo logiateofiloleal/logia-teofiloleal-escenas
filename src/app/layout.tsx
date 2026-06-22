@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Cormorant_Garamond, Jost, Playfair_Display } from 'next/font/google';
 import './globals.css';
 
@@ -29,6 +29,12 @@ export const metadata: Metadata = {
   title: 'Logia Teófilo Leal N° 115 — Recorrido Institucional',
   description:
     'Respetable Logia Simbólica Teófilo Leal N° 115, Oriente de Barquisimeto. Sabiduría, Fuerza y Belleza.',
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

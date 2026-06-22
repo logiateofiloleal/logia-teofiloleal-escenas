@@ -15,6 +15,7 @@
   position: sticky;
   top: 0;
   height: 100vh;
+  height: 100svh; /* iOS Safari: excludes toolbar from vh — prevents bottom-crop jump */
   overflow: hidden;
 }
 
@@ -475,35 +476,55 @@
 }
 
 @media (max-width: 768px) {
-  /* Mobile: all text bottom-anchored (never at mid-height — character occupies center) */
+  /* Prevent horizontal bleed from any overlay child */
+  .hero { overflow-x: hidden; }
+
+  /* ── Copy base — top-anchored, full-width, no overflow ── */
   .copy {
     left: 18px;
     right: 18px;
-    top: auto;
-    bottom: 10%;
+    top: 8%;
+    bottom: auto;
     max-width: none;
-    padding: 18px;
-    transform: translateY(22px) !important;
+    width: auto;
+    box-sizing: border-box;
+    padding: 18px 20px;
+    transform: none !important;
     border-radius: 18px;
-    background: linear-gradient(0deg, rgba(0,0,0,.58), rgba(0,0,0,.32), rgba(0,0,0,.06));
+    overflow-wrap: break-word;
+    background: linear-gradient(180deg, rgba(0,0,0,.58), rgba(0,0,0,.32), rgba(0,0,0,.06));
   }
   .centered {
     left: 18px;
     right: 18px;
-    transform: translateY(22px) !important;
+    transform: none !important;
+    text-align: center;
   }
   .wide { max-width: none; }
-  .principios { gap: 22px; }
-  .principio  { flex: 0 0 140px; }
-  .arco { width: 72px; height: 96px; }
-  .homenajeEpitafio { display: none; }
-  .homenajeRoles    { margin-bottom: 0; }
+
+  /* ── Typography — fluid clamp so titles fit at ~390px ── */
+  .copy h1 { font-size: clamp(1.9rem, 7.5vw, 2.8rem); }
+  .copy h2 { font-size: clamp(1.5rem, 6.5vw, 2.4rem); }
+  .copy p  { font-size: clamp(.88rem, 3.8vw, 1rem); }
+
+  /* ── S2 Principios — single column, centered ── */
+  .principios { flex-direction: column; align-items: center; gap: 18px; }
+  .principio  { flex: none; width: 100%; max-width: 260px; }
+
+  /* ── S3 Teófilo Leal — compact portrait block at top ── */
+  .homenajeMarco      { width: clamp(90px, 28vw, 160px); margin: 0 auto 10px; display: block; }
+  .homenajeNombre     { font-size: clamp(1.4rem, 6vw, 2rem) !important; margin-bottom: 6px !important; text-align: center; }
+  .homenajeInMemoriam { margin-bottom: 10px; text-align: center; }
+  .homenajeFechas     { justify-content: center; }
+  .homenajeRoles      { margin-bottom: 0; text-align: center; }
+  .homenajeEpitafio   { display: none; }
+
+  /* ── S4 La Puerta ── */
+  .arco { width: 60px; height: 80px; }
 }
 
 @media (max-width: 480px) {
-  .principios { flex-direction: column; align-items: center; gap: 18px; }
-  .principio  { flex: none; width: 100%; max-width: 200px; }
-  .copy h1 { font-size: clamp(2.2rem, 9vw, 3.6rem); }
-  .copy h2 { font-size: clamp(1.8rem, 7.5vw, 3rem); }
-  .homenajeInMemoriam { margin-bottom: 10px; }
+  /* Fine-tune type scale at narrowest widths */
+  .copy h1 { font-size: clamp(1.8rem, 8vw, 2.6rem); }
+  .copy h2 { font-size: clamp(1.4rem, 7vw, 2.2rem); }
 }

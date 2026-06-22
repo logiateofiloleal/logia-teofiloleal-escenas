@@ -22,9 +22,12 @@ export interface Transition {
   mode: 'stills' | 'frames';
   startImg: string;
   endImg: string;
-  framesDir?: string;    // e.g. '/frames/desktop/t1' — set when mode:'frames'
-  frameCount: number;    // 0 = placeholder; set actual count when frames are ready
-  durationMs?: number;   // override DURATION_FRAMES for this transition
+  framesDir?: string;        // desktop frames dir
+  frameCount: number;        // 0 = placeholder; set actual count when frames are ready
+  framesDirMobile?: string;  // mobile frames dir (480×854)
+  frameCountMobile?: number; // actual mobile frame count
+  startImgMobile?: string;   // mobile first-frame fallback shown before loader starts
+  durationMs?: number;       // override DURATION_FRAMES for this transition
   easing: Easing;
   scrollVh: number;
 }
@@ -42,6 +45,9 @@ export const SEGMENTS: Segment[] = [
     endImg: `${D}/frame-2.webp`,
     framesDir: '/frames/escena-1-desktop',
     frameCount: 130,
+    framesDirMobile: '/frames/mobile/escena-1',
+    frameCountMobile: 130,
+    startImgMobile: '/frames/mobile/escena-1/frame_0001.webp',
     easing: 'linear',
     scrollVh: 300,
   },
@@ -61,6 +67,9 @@ export const SEGMENTS: Segment[] = [
     endImg: `${D}/frame-3.webp`,
     framesDir: '/frames/escena-2-desktop',
     frameCount: 130,
+    framesDirMobile: '/frames/mobile/escena-2',
+    frameCountMobile: 130,
+    startImgMobile: '/frames/mobile/escena-2/frame_0001.webp',
     durationMs: 6500,
     easing: 'linear',
     scrollVh: 300,
@@ -80,6 +89,9 @@ export const SEGMENTS: Segment[] = [
     endImg: '/frames/escena-3-desktop/frame_0130.webp',
     framesDir: '/frames/escena-3-desktop',
     frameCount: 130,
+    framesDirMobile: '/frames/mobile/escena-3',
+    frameCountMobile: 130,
+    startImgMobile: '/frames/mobile/escena-3/frame_0001.webp',
     durationMs: 9500,
     easing: 'linear',
     scrollVh: 300,

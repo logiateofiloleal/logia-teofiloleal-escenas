@@ -36,7 +36,13 @@ export default function UmbralOverlay() {
 
       el.style.opacity       = String(opacity);
       el.style.pointerEvents = opacity > 0.5 ? 'auto' : 'none';
-      el.style.transform     = `translate(-50%, ${yOffset}%)`;
+      // On mobile (≤768px), CSS positions the overlay with left:50% and top:8%;
+      // JS only needs translateX(-50%) to center horizontally.
+      // On desktop, keep the original vertical-center offset.
+      const isMobileView = typeof window !== 'undefined' && window.innerWidth <= 768;
+      el.style.transform = isMobileView
+        ? `translateX(-50%)`
+        : `translate(-50%, ${yOffset}%)`;
     });
   }, [register]);
 
