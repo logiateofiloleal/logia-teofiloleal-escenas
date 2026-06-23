@@ -23,7 +23,7 @@
   color: var(--oro-tenue);
   text-transform: uppercase;
   letter-spacing: .22em;
-  font-size: clamp(.68rem, .82vw, .84rem);
+  font-size: var(--fs-label);
   font-family: var(--sans);
   font-weight: 400;
 }
@@ -44,7 +44,7 @@
   text-shadow: var(--sombra-titulo);
   margin-bottom: 14px;
   font-weight: 400;
-  font-size: clamp(2.2rem, 4.2vw, 5rem);
+  font-size: var(--fs-display);
   font-family: var(--serif);
 }
 
@@ -53,7 +53,7 @@
 
 .kicker {
   font-family: var(--sans);
-  font-size: clamp(.66rem, .88vw, .8rem);
+  font-size: var(--fs-label);
   font-weight: 300;
   letter-spacing: .28em;
   text-transform: uppercase;
@@ -67,11 +67,13 @@
 
 .lema {
   font-family: var(--sans);
-  font-size: clamp(.64rem, .82vw, .74rem);
+  font-size: var(--fs-micro);
   letter-spacing: .16em;
-  color: rgba(255,255,255,.38);
+  color: rgba(255, 255, 255, 0.38);
   text-shadow: none;
   margin-top: 4px;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 @media (max-width: 768px) {
@@ -83,6 +85,7 @@
     max-width: none;
     box-sizing: border-box;
     padding: 18px 20px;
+    overflow-x: hidden;
   }
   .logo {
     width: 72px !important;
@@ -92,15 +95,17 @@
   .h1 {
     font-size: clamp(1.9rem, 7.5vw, 2.8rem);
   }
+  /* kicker: reduce letter-spacing at 360px to prevent bleed */
   .kicker {
-    font-size: clamp(.64rem, 3.2vw, .78rem);
-    letter-spacing: .10em;
+    font-size: clamp(.62rem, 3vw, .78rem);
+    letter-spacing: .08em;
     max-width: none;
     overflow-wrap: break-word;
   }
+  /* lema "A∴L∴G∴D∴G∴A∴D∴U∴": tighter tracking prevents overflow at 360px */
   .lema {
-    font-size: clamp(.6rem, 3vw, .72rem);
-    letter-spacing: .08em;
+    font-size: clamp(.58rem, 2.8vw, .72rem);
+    letter-spacing: .06em;
     overflow-wrap: break-word;
   }
 }
