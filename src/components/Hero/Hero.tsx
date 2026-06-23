@@ -8,6 +8,7 @@ import CinematicOverlay from '@/components/CinematicOverlay/CinematicOverlay';
 import Sep from '@/components/stations/Sep/Sep';
 import S5Acceso from '@/components/stations/S5Acceso/S5Acceso';
 import S4Puerta from '@/components/stations/S4Puerta/S4Puerta';
+import S2Principios from '@/components/stations/S2Principios/S2Principios';
 import styles from './Hero.module.css';
 
 // ── Section wrapper ──────────────────────────────────────────
@@ -27,41 +28,9 @@ function HeroSection({ seg, children }: { seg: Segment; children?: React.ReactNo
 
 // ── Station 2: Los Principios ─────────────────────────────────
 function S2Copy() {
-  const principios = [
-    {
-      num: 'I', titulo: 'Libertad',
-      img: '/assets/img/acto2-icon-libertad-antorcha.png',
-      texto: 'El pensamiento libre es la primera piedra del hombre que trabaja en sí mismo.',
-    },
-    {
-      num: 'II', titulo: 'Igualdad',
-      img: '/assets/img/acto2-icon-igualdad-balanza.png',
-      texto: 'Ante la verdad, todos los hombres son iguales sin distinción de origen ni nombre.',
-    },
-    {
-      num: 'III', titulo: 'Fraternidad',
-      img: '/assets/img/acto2-icon-fraternidad-manos.png',
-      texto: 'El trabajo compartido une lo que la diferencia separa y edifica lo perdurable.',
-    },
-  ];
-
   return (
     <StationCopyWrapper stationIndex={1} align="center" wide fadeOutStart={0.70} fadeOutEnd={0.84}>
-      <span>Tres principios, una misma búsqueda</span>
-      <h2>Libertad · Igualdad · Fraternidad</h2>
-      <Sep />
-      <div className={styles.principios}>
-        {principios.map(p => (
-          <article key={p.titulo} className={styles.principio}>
-            <div className={styles.medallion} aria-hidden="true">
-              <Image src={p.img} alt="" width={34} height={34} />
-            </div>
-            <p className={styles.num}>{p.num}</p>
-            <h3 className={styles.principioTitulo}>{p.titulo}</h3>
-            <p className={styles.principioTexto}>{p.texto}</p>
-          </article>
-        ))}
-      </div>
+      <S2Principios />
     </StationCopyWrapper>
   );
 }

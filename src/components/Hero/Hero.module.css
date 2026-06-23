@@ -140,64 +140,6 @@
   margin-top: 4px;
 }
 
-/* ── Station 2 ───────────────────────────────────────────────── */
-.principios {
-  display: flex;
-  gap: 36px;
-  justify-content: center;
-  align-items: flex-start;
-  flex-wrap: wrap;
-  margin-top: 22px;
-}
-
-.principio {
-  flex: 0 0 180px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-}
-
-.medallion {
-  width: 64px; height: 64px;
-  border-radius: 50%;
-  border: 1px solid rgba(154,116,50,.4);
-  background: rgba(154,116,50,.05);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 12px;
-}
-
-.medallion img { width: 34px !important; height: 34px !important; object-fit: contain; }
-
-.num {
-  font-family: var(--sans);
-  font-size: .62rem;
-  letter-spacing: .2em;
-  color: rgba(154,116,50,.65);
-  margin-bottom: 6px;
-}
-
-.principioTitulo {
-  font-size: clamp(.98rem, 1.44vw, 1.16rem);
-  font-weight: 500;
-  letter-spacing: .06em;
-  color: var(--oro-brillo);
-  margin-bottom: 8px;
-  font-family: var(--serif);
-  text-shadow: var(--sombra-titulo);
-}
-
-.principioTexto {
-  font-size: clamp(.8rem, .96vw, .92rem) !important;
-  line-height: 1.62;
-  color: var(--txt-atenuado) !important;
-  font-style: italic;
-  text-shadow: var(--sombra-texto) !important;
-  font-family: var(--serif) !important;
-  max-width: none;
-}
 
 /* ── Station 3 ───────────────────────────────────────────────── */
 .retrato {
@@ -405,11 +347,7 @@
   .copy h2 { font-size: clamp(1.5rem, 6.5vw, 2.4rem); }
   .copy p  { font-size: clamp(.88rem, 3.8vw, 1rem); }
 
-  /* ── S2 Principios — single column, centered ── */
-  .principios { flex-direction: column; align-items: center; gap: 18px; }
-  .principio  { flex: none; width: 100%; max-width: 260px; }
-
-  /* ── S3 Teófilo Leal — compact portrait block at top ── */
+/* ── S3 Teófilo Leal — compact portrait block at top ── */
   .homenajeMarco      { width: clamp(90px, 28vw, 160px); margin: 0 auto 10px; display: block; }
   .homenajeNombre     { font-size: clamp(1.4rem, 6vw, 2rem) !important; margin-bottom: 6px !important; text-align: center; }
   .homenajeInMemoriam { margin-bottom: 10px; text-align: center; }
