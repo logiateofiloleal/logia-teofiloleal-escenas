@@ -111,37 +111,6 @@
 .centered p { margin: 0 auto; }
 
 
-/* ── Station 1 ───────────────────────────────────────────────── */
-.scLogo {
-  width: 96px !important; height: 96px !important;
-  object-fit: contain;
-  margin: 0 auto 20px;
-  filter: invert(1) sepia(.18) saturate(1.6) brightness(1.05)
-          drop-shadow(0 0 28px rgba(184,149,58,.55));
-}
-
-.kicker {
-  font-family: var(--sans) !important;
-  font-size: clamp(.66rem, .88vw, .8rem) !important;
-  font-weight: 300;
-  letter-spacing: .28em;
-  text-transform: uppercase;
-  color: var(--oro-claro) !important;
-  text-shadow: none !important;
-  margin-top: 8px;
-}
-
-.lema {
-  font-family: var(--sans) !important;
-  font-size: clamp(.64rem, .82vw, .74rem) !important;
-  letter-spacing: .16em;
-  color: rgba(255,255,255,.38) !important;
-  text-shadow: none !important;
-  margin-top: 4px;
-}
-
-
-
 
 
 /* ── Responsive ──────────────────────────────────────────────── */
@@ -188,4 +157,10 @@
   /* Fine-tune type scale at narrowest widths */
   .copy h1 { font-size: clamp(1.8rem, 8vw, 2.6rem); }
   .copy h2 { font-size: clamp(1.4rem, 7vw, 2.2rem); }
+}
+
+@media (max-width: 360px) {
+  /* Prevent h2 overflow at smallest phones (e.g., Galaxy A series) */
+  .copy h2 { font-size: clamp(1.3rem, 7vw, 1.9rem); }
+  .copy p  { font-size: clamp(.84rem, 4vw, .96rem); }
 }
