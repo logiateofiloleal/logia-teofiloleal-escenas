@@ -21,12 +21,13 @@
 
 /* ── Scene copy base ─────────────────────────────────────────── */
 .copy {
+  --_reveal-y: 0px; /* set by JS via setProperty */
   position: fixed;
   z-index: 10;
   right: clamp(18px, 4.5vw, 70px);
   left: auto;
   top: 50%;
-  transform: translateY(-50%);
+  transform: translateY(calc(-50% + var(--_reveal-y)));
   max-width: 540px;
   padding: 22px 26px;
   border-radius: 22px;
@@ -43,7 +44,7 @@
 .centered {
   right: auto;
   left: 50%;
-  transform: translateX(-50%) translateY(-50%);
+  transform: translateX(-50%) translateY(calc(-50% + var(--_reveal-y)));
   text-align: center;
 }
 

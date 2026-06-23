@@ -61,7 +61,7 @@ export default function StationCopyWrapper({
       }
 
       el.style.opacity       = String(opacity);
-      el.style.transform     = `translateY(${(1 - opacity) * 14}px)`;
+      el.style.setProperty('--_reveal-y', `${(1 - opacity) * 14}px`);
       el.style.pointerEvents = opacity > 0.75 ? 'auto' : 'none';
     });
   }, [register, stationIndex, fadeInStart, fadeInEnd, fadeOutStart, fadeOutEnd]);
