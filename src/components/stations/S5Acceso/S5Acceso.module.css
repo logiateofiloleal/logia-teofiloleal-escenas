@@ -54,3 +54,15 @@
   color: var(--btn-discreet-color-h);
   box-shadow: none;
 }
+
+@media (max-width: 768px) {
+  .emblema { font-size: 1.6rem; }
+  .subtitulo {
+    font-size: clamp(.64rem, 2.8vw, .72rem);
+    letter-spacing: .12em;
+  }
+  .btn {
+    font-size: clamp(.7rem, 3vw, .8rem);
+    padding: 10px 22px;
+  }
+}

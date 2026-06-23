@@ -81,3 +81,9 @@
     max-width: 260px;
   }
 }
+
+@media (max-width: 480px) {
+  .principio { max-width: 220px; }
+  .titulo { font-size: clamp(.9rem, 3.8vw, 1.08rem); }
+  .texto { font-size: clamp(.74rem, 3.2vw, .88rem) !important; }
+}

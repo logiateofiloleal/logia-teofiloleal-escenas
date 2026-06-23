@@ -3,6 +3,7 @@
   max-width: 100%;
   overflow-x: hidden;
   word-break: break-word;
+  text-align: center;
 }
 
 .inMemoriam {
@@ -131,4 +132,15 @@
   .epitafio {
     display: none;
   }
+}
+
+@media (max-width: 480px) {
+  .nombre { font-size: clamp(1.3rem, 6vw, 1.8rem) !important; }
+  .marco { width: clamp(80px, 26vw, 130px); }
+  .fechas > span { font-size: clamp(.76rem, 3.4vw, .9rem); }
+  .roles { font-size: clamp(.56rem, 2.6vw, .66rem) !important; }
+}
+
+@media (max-width: 360px) {
+  .nombre { font-size: clamp(1.2rem, 7vw, 1.6rem) !important; }
 }

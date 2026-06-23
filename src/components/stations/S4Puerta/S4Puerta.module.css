@@ -45,4 +45,8 @@
 
 @media (max-width: 768px) {
   .arco { width: 60px; height: 80px; }
+  .btn {
+    font-size: clamp(.72rem, 3vw, .82rem);
+    padding: 11px 28px;
+  }
 }

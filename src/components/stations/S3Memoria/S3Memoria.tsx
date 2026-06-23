@@ -3,7 +3,7 @@ import styles from './S3Memoria.module.css';
 
 export default function S3Memoria() {
   return (
-    <>
+    <div className={styles.root}>
       <p className={styles.inMemoriam}>In Memoriam</p>
       <div className={styles.marco}>
         <Image
@@ -25,6 +25,6 @@ export default function S3Memoria() {
       <p className={styles.epitafio}>
         Su memoria ilumina cada trabajo de esta Logia.
       </p>
-    </>
+    </div>
   );
 }

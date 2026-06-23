@@ -24,3 +24,12 @@
   background: var(--oro-claro);
   box-shadow: 0 0 5px rgba(201, 168, 76, 0.4);
 }
+
+@media (max-width: 768px) {
+  .sep {
+    gap: 8px;
+    margin: 12px 0;
+  }
+  .sep::before,
+  .sep::after { width: 40px; }
+}

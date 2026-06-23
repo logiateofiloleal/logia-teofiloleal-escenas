@@ -134,15 +134,16 @@
     width: auto;
     box-sizing: border-box;
     padding: 18px 20px;
-    transform: none !important;
+    transform: none;
     border-radius: 18px;
     overflow-wrap: break-word;
     background: linear-gradient(180deg, rgba(0,0,0,.58), rgba(0,0,0,.32), rgba(0,0,0,.06));
   }
-  .centered {
+  .copy.centered {
     left: 18px;
     right: 18px;
-    transform: none !important;
+    top: 50%;
+    transform: translateY(calc(-50% + var(--_reveal-y)));
     text-align: center;
   }
   .wide { max-width: none; }
