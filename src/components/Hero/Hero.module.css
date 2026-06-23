@@ -266,13 +266,6 @@
   max-width: 440px;
 }
 
-/* ── Station 4 ───────────────────────────────────────────────── */
-.arco {
-  width: 88px; height: 116px;
-  margin: 0 auto 20px;
-  filter: drop-shadow(0 0 12px rgba(154,116,50,.35));
-  display: block;
-}
 
 /* ── Station 4 — Homenaje a Teófilo Leal ────────────────────────── */
 .homenajeInMemoriam {
@@ -372,42 +365,6 @@
 }
 
 
-/* ── CTAs ────────────────────────────────────────────────────── */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 20px;
-  padding: 12px 26px;
-  border: 1px solid rgba(248,217,130,.65);
-  color: var(--oro-brillo);
-  background: rgba(8,6,4,.52);
-  backdrop-filter: blur(8px);
-  font-family: var(--sans);
-  font-size: .8rem;
-  font-weight: 400;
-  letter-spacing: .18em;
-  text-transform: uppercase;
-  border-radius: 999px;
-  cursor: pointer;
-  box-shadow: 0 0 24px rgba(214,168,79,.12);
-  transition: transform .25s ease, background .25s ease, box-shadow .25s ease, border-color .25s ease;
-  pointer-events: auto;
-}
-
-.btn:hover {
-  transform: translateY(-3px);
-  background: rgba(214,168,79,.16);
-  border-color: var(--oro-brillo);
-  box-shadow: 0 0 42px rgba(214,168,79,.3);
-}
-
-.btnPrimary {
-  padding: 14px 38px;
-  font-size: .84rem;
-  background: rgba(154,116,50,.14);
-}
-.btnPrimary:hover { background: rgba(154,116,50,.28); }
 
 
 /* ── Responsive ──────────────────────────────────────────────── */
@@ -460,8 +417,6 @@
   .homenajeRoles      { margin-bottom: 0; text-align: center; }
   .homenajeEpitafio   { display: none; }
 
-  /* ── S4 La Puerta ── */
-  .arco { width: 60px; height: 80px; }
 }
 
 @media (max-width: 480px) {

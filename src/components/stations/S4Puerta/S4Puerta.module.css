@@ -1,0 +1,48 @@
+.root {
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow-x: hidden;
+  word-break: break-word;
+}
+
+.arco {
+  width: 88px;
+  height: 116px;
+  margin: 0 auto 20px;
+  filter: drop-shadow(0 0 12px rgba(154, 116, 50, 0.35));
+  display: block;
+}
+
+/* ── Button — primary variant ───────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding: var(--btn-primary-pad);
+  border: 1px solid var(--btn-border);
+  color: var(--btn-color);
+  background: var(--btn-primary-bg);
+  backdrop-filter: blur(8px);
+  font-family: var(--sans);
+  font-size: var(--btn-fs);
+  font-weight: 400;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  border-radius: var(--btn-radius);
+  cursor: pointer;
+  box-shadow: 0 0 24px rgba(214, 168, 79, 0.12);
+  transition: transform .25s ease, background .25s ease, box-shadow .25s ease, border-color .25s ease;
+  pointer-events: auto;
+}
+
+.btn:hover {
+  transform: translateY(-3px);
+  background: var(--btn-primary-bg-h);
+  border-color: var(--btn-color);
+  box-shadow: 0 0 42px rgba(214, 168, 79, 0.3);
+}
+
+@media (max-width: 768px) {
+  .arco { width: 60px; height: 80px; }
+}
