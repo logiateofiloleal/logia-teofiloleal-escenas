@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { useSceneSnap, type SceneState } from '@/context/SceneSnap';
+import Sep from '@/components/stations/Sep/Sep';
 import styles from './UmbralOverlay.module.css';
 
 function ss(e0: number, e1: number, v: number): number {
@@ -61,9 +62,7 @@ export default function UmbralOverlay() {
       <h1 className={styles.h1}>
         Sabiduría, Fuerza<br />y <em>Belleza</em>
       </h1>
-      <div className={styles.sep} aria-hidden="true">
-        <span className={styles.sepDot} />
-      </div>
+      <Sep />
       <p className={styles.kicker}>
         Respetable Logia Simbólica · Oriente de Barquisimeto
       </p>

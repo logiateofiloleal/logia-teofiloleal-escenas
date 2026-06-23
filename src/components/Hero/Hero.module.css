@@ -110,33 +110,6 @@
 
 .centered p { margin: 0 auto; }
 
-/* ── Separator ───────────────────────────────────────────────── */
-.sep {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  margin: 16px 0;
-}
-
-.sep::before,
-.sep::after {
-  content: '';
-  display: block;
-  width: 56px;
-  height: 1px;
-}
-
-.sep::before { background: linear-gradient(to right, transparent, var(--oro)); }
-.sep::after  { background: linear-gradient(to left,  transparent, var(--oro)); }
-
-.sepDot {
-  width: 4px; height: 4px;
-  border-radius: 50%;
-  background: var(--oro-claro);
-  box-shadow: 0 0 5px rgba(201,168,76,.4);
-}
-
-.centered .sep { display: flex; justify-content: center; }
 
 /* ── Station 1 ───────────────────────────────────────────────── */
 .scLogo {

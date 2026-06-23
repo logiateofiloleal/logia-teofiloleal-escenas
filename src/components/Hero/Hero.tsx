@@ -5,6 +5,7 @@ import { SEGMENTS, type Segment } from '@/config/segments';
 import StationCopyWrapper from './StationCopyWrapper';
 import ScrollHint from '@/components/ScrollHint/ScrollHint';
 import CinematicOverlay from '@/components/CinematicOverlay/CinematicOverlay';
+import Sep from '@/components/stations/Sep/Sep';
 import styles from './Hero.module.css';
 
 // ── Section wrapper ──────────────────────────────────────────
@@ -19,15 +20,6 @@ function HeroSection({ seg, children }: { seg: Segment; children?: React.ReactNo
         {children}
       </div>
     </section>
-  );
-}
-
-// ── Separator ─────────────────────────────────────────────────
-function Sep() {
-  return (
-    <div className={styles.sep} aria-hidden="true">
-      <span className={styles.sepDot} />
-    </div>
   );
 }
 
