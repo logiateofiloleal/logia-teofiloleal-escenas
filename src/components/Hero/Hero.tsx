@@ -9,6 +9,7 @@ import Sep from '@/components/stations/Sep/Sep';
 import S5Acceso from '@/components/stations/S5Acceso/S5Acceso';
 import S4Puerta from '@/components/stations/S4Puerta/S4Puerta';
 import S2Principios from '@/components/stations/S2Principios/S2Principios';
+import S3Memoria from '@/components/stations/S3Memoria/S3Memoria';
 import styles from './Hero.module.css';
 
 // ── Section wrapper ──────────────────────────────────────────
@@ -41,27 +42,7 @@ function S2Copy() {
 function TeofiloCopy() {
   return (
     <StationCopyWrapper stationIndex={2} align="center" fadeInStart={0.95} fadeOutStart={0.25} fadeOutEnd={0.50}>
-      <p className={styles.homenajeInMemoriam}>In Memoriam</p>
-      <div className={styles.homenajeMarco}>
-        <Image
-          src="/assets/img/acto3-cuadro-teofilo-leal-memoria.png"
-          alt="Retrato de Teófilo Leal Berra"
-          width={260}
-          height={325}
-          quality={100}
-          sizes="(max-width: 768px) 200px, 260px"
-          className={styles.homenajeRetrato}
-          draggable={false}
-        />
-      </div>
-      <h2 className={styles.homenajeNombre}>Teófilo Leal<br />Berra</h2>
-      <div className={styles.homenajeFechas}>
-        <span>1866 — 1940</span>
-      </div>
-      <p className={styles.homenajeRoles}>Actor · Poeta · Músico · Pintor</p>
-      <p className={styles.homenajeEpitafio}>
-        Su memoria ilumina cada trabajo de esta Logia.
-      </p>
+      <S3Memoria />
     </StationCopyWrapper>
   );
 }
