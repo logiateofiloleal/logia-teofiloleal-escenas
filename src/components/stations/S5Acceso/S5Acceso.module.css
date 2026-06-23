@@ -1,0 +1,56 @@
+.root {
+  box-sizing: border-box;
+  max-width: 100%;
+  overflow-x: hidden;
+  word-break: break-word;
+}
+
+.emblema {
+  font-size: 2rem;
+  color: rgba(154, 116, 50, 0.6);
+  letter-spacing: .08em;
+  text-shadow: none;
+  margin-bottom: 2px;
+}
+
+.subtitulo {
+  font-family: var(--sans);
+  font-size: .74rem;
+  font-weight: 300;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+  text-shadow: none;
+  margin-top: 8px;
+}
+
+/* ── Button — discreet variant ─────────────────────────── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 20px;
+  padding: var(--btn-pad);
+  border: 1px solid var(--btn-discreet-border);
+  color: var(--btn-discreet-color);
+  background: transparent;
+  backdrop-filter: blur(8px);
+  font-family: var(--sans);
+  font-size: .74rem;
+  font-weight: 400;
+  letter-spacing: .18em;
+  text-transform: uppercase;
+  border-radius: var(--btn-radius);
+  cursor: pointer;
+  box-shadow: none;
+  transition: transform .25s ease, background .25s ease, box-shadow .25s ease, border-color .25s ease, color .25s ease;
+  pointer-events: auto;
+}
+
+.btn:hover {
+  transform: translateY(-3px);
+  background: var(--btn-discreet-bg-h);
+  border-color: var(--btn-discreet-border-h);
+  color: var(--btn-discreet-color-h);
+  box-shadow: none;
+}

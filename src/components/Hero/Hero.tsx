@@ -6,6 +6,7 @@ import StationCopyWrapper from './StationCopyWrapper';
 import ScrollHint from '@/components/ScrollHint/ScrollHint';
 import CinematicOverlay from '@/components/CinematicOverlay/CinematicOverlay';
 import Sep from '@/components/stations/Sep/Sep';
+import S5Acceso from '@/components/stations/S5Acceso/S5Acceso';
 import styles from './Hero.module.css';
 
 // ── Section wrapper ──────────────────────────────────────────
@@ -136,13 +137,7 @@ function S4Copy() {
 function S5Copy() {
   return (
     <StationCopyWrapper stationIndex={4} align="center" minimal>
-      <p className={styles.emblema}>✦</p>
-      <Sep />
-      <h2>Acceso<br />Administrativo</h2>
-      <p className={styles.subtitulo}>Exclusivo para miembros de la Logia</p>
-      <a href="/login" className={`${styles.btn} ${styles.btnDiscreto}`}>
-        Ingresar →
-      </a>
+      <S5Acceso />
     </StationCopyWrapper>
   );
 }
