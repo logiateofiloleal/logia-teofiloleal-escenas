@@ -1,11 +1,9 @@
 'use client';
 
-import Image from 'next/image';
 import { SEGMENTS, type Segment } from '@/config/segments';
 import StationCopyWrapper from './StationCopyWrapper';
 import ScrollHint from '@/components/ScrollHint/ScrollHint';
 import CinematicOverlay from '@/components/CinematicOverlay/CinematicOverlay';
-import Sep from '@/components/stations/Sep/Sep';
 import S5Acceso from '@/components/stations/S5Acceso/S5Acceso';
 import S4Puerta from '@/components/stations/S4Puerta/S4Puerta';
 import S2Principios from '@/components/stations/S2Principios/S2Principios';
