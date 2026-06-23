@@ -13,6 +13,33 @@
   --serif: var(--font-cormorant), 'Playfair Display', Georgia, serif;
   --sans:  var(--font-jost), system-ui, sans-serif;
   --playfair: var(--font-playfair), Georgia, serif;
+
+  /* ── TYPOGRAPHY SCALE — fluid ─────────────────────────── */
+  --fs-display: clamp(2.2rem, 4.2vw, 5rem);       /* h1 El Umbral */
+  --fs-heading: clamp(1.8rem, 3.3vw, 3.8rem);     /* h2 estaciones */
+  --fs-subhead: clamp(1.6rem, 2.8vw, 3rem);       /* nombre Teófilo */
+  --fs-body:    clamp(0.94rem, 1.2vw, 1.1rem);    /* párrafos */
+  --fs-label:   clamp(0.68rem, 0.9vw, 0.84rem);   /* labels / kickers */
+  --fs-micro:   clamp(0.64rem, 0.8vw, 0.74rem);   /* lema / pie */
+
+  /* ── COPY LAYOUT ─────────────────────────────────────── */
+  --copy-px: clamp(16px, 4vw, 36px); /* padding lateral estándar */
+
+  /* ── BUTTON TOKENS ───────────────────────────────────── */
+  --btn-color:          var(--oro-brillo);
+  --btn-border:         rgba(201, 168, 76, 0.45);
+  --btn-bg:             rgba(0, 0, 0, 0.18);
+  --btn-radius:         999px;
+  --btn-pad:            12px 26px;
+  --btn-fs:             0.84rem;
+  --btn-primary-bg:     rgba(154, 116, 50, 0.14);
+  --btn-primary-bg-h:   rgba(154, 116, 50, 0.28);
+  --btn-primary-pad:    14px 38px;
+  --btn-discreet-color: rgba(255, 255, 255, 0.45);
+  --btn-discreet-color-h: rgba(255, 255, 255, 0.70);
+  --btn-discreet-border:  rgba(255, 255, 255, 0.30);
+  --btn-discreet-border-h: rgba(255, 255, 255, 0.60);
+  --btn-discreet-bg-h:  rgba(255, 255, 255, 0.06);
 }
 
 /* ── RESET ──────────────────────────────────────────────── */
