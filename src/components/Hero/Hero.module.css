@@ -38,7 +38,6 @@
     rgba(0,0,0,.24),
     rgba(0,0,0,.03));
   backdrop-filter: blur(1.2px);
-  will-change: opacity, transform;
 }
 
 .centered {

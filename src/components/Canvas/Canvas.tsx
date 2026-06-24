@@ -180,13 +180,13 @@ export default function Canvas() {
 
       if (targetIdx === lastDrawn) return; // no-op guard
 
-      const frame = loader.getFrame(targetIdx);
+      const frame = loader.getFrame(targetIdx) ?? loader.nearestFrame(targetIdx);
       if (frame) {
         ctx.drawImage(frame, 0, 0, W, H);
         loader.setLastDrawn(targetIdx);
         lastFrameRef.current.set(transition.id, targetIdx);
       } else if (!lastFrameRef.current.has(transition.id)) {
-        // No frame drawn yet — show startImg so canvas isn't black
+        // No frames decoded yet — show startImg so canvas isn't black
         const startSrc = effectiveStartImg(transition, isMobile);
         const still = imgsRef.current.get(startSrc);
         if (still?.complete && still.naturalWidth > 0) {

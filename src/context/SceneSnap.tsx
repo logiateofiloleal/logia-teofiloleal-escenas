@@ -46,16 +46,15 @@ const Ctx = createContext<SceneSnapCtx | null>(null);
  * Station 0 (s1) = 0. Station N = end_of_transition_N + DWELL_RATIO * station_N_height.
  */
 function buildDwells(): number[] {
-  const vh          = window.innerHeight;
-  const transitions = SEGMENTS.filter(s => s.type === 'transition');
-  const stations    = SEGMENTS.filter(s => s.type === 'station');
-  const dwells: number[] = [0];
+  const vh = window.innerHeight;
+  const dwells: number[] = [0]; // s1 implícito
   let cumPx = 0;
-  for (let i = 0; i < transitions.length; i++) {
-    cumPx += (transitions[i].scrollVh / 100) * vh;
-    const stPx = ((stations[i]?.scrollVh ?? 80) / 100) * vh;
-    dwells.push(cumPx + stPx * DWELL_RATIO);
-    cumPx += stPx;
+  for (const seg of SEGMENTS) {
+    const segPx = (seg.scrollVh / 100) * vh;
+    if (seg.type === 'station') {
+      dwells.push(cumPx + segPx * DWELL_RATIO);
+    }
+    cumPx += segPx;
   }
   return dwells;
 }
