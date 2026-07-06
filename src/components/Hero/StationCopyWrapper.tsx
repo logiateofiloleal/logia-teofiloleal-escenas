@@ -22,6 +22,10 @@ interface Props {
   fadeOutStart?: number;
   /** lp point where the fade-out completes (default 1.0). */
   fadeOutEnd?: number;
+  /** Opacity above which the panel becomes clickable (default 0.75).
+   *  Lower it for stations with a fast fade-out where visibility outlasts
+   *  the default "mostly faded in" threshold (e.g. TeofiloCopy). */
+  interactiveThreshold?: number;
   children: ReactNode;
 }
 
@@ -34,6 +38,7 @@ export default function StationCopyWrapper({
   fadeInEnd = 1.0,
   fadeOutStart = 0.85,
   fadeOutEnd = 1.0,
+  interactiveThreshold = 0.75,
   children,
 }: Props) {
   const elRef = useRef<HTMLDivElement>(null);
@@ -62,9 +67,9 @@ export default function StationCopyWrapper({
 
       el.style.opacity       = String(opacity);
       el.style.setProperty('--_reveal-y', `${(1 - opacity) * 14}px`);
-      el.style.pointerEvents = opacity > 0.75 ? 'auto' : 'none';
+      el.style.pointerEvents = opacity > interactiveThreshold ? 'auto' : 'none';
     });
-  }, [register, stationIndex, fadeInStart, fadeInEnd, fadeOutStart, fadeOutEnd]);
+  }, [register, stationIndex, fadeInStart, fadeInEnd, fadeOutStart, fadeOutEnd, interactiveThreshold]);
 
   const cls = [
     styles.copy,

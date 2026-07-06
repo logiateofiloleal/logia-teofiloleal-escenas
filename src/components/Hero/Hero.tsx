@@ -38,7 +38,14 @@ function S2Copy() {
 // visible en s3 idle, sale con crossfade estándar durante t3.
 function TeofiloCopy() {
   return (
-    <StationCopyWrapper stationIndex={2} align="center" fadeInStart={0.95} fadeOutStart={0.25} fadeOutEnd={0.50}>
+    <StationCopyWrapper
+      stationIndex={2}
+      align="center"
+      fadeInStart={0.95}
+      fadeOutStart={0.25}
+      fadeOutEnd={0.50}
+      interactiveThreshold={0}
+    >
       <S3Memoria />
     </StationCopyWrapper>
   );
