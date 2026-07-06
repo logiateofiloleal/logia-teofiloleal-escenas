@@ -1,9 +1,14 @@
 import Image from 'next/image';
+import Link from 'next/link';
 import styles from './S3Memoria.module.css';
 
 export default function S3Memoria() {
   return (
-    <div className={styles.root}>
+    <Link
+      href="/teofilo-leal"
+      className={styles.root}
+      aria-label="Ver la reseña histórica de Teófilo Leal Berra"
+    >
       <p className={styles.inMemoriam}>In Memoriam</p>
       <div className={styles.marco}>
         <Image
@@ -25,6 +30,6 @@ export default function S3Memoria() {
       <p className={styles.epitafio}>
         Su memoria ilumina cada trabajo de esta Logia.
       </p>
-    </div>
+    </Link>
   );
 }

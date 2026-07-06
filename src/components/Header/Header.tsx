@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import styles from './Header.module.css';
 
 // Scroll to top of hero (station 1)
@@ -84,10 +85,21 @@ export default function Header() {
             { label: 'Acceso interno',         href: '/login',              onClick: close },
           ].map(item => (
             <li key={item.label}>
-              <a href={item.href} className={styles.link} onClick={item.onClick}>
-                <span className={styles.linkSym} aria-hidden="true">✦</span>
-                {item.label}
-              </a>
+              {item.href.startsWith('/') ? (
+                // Real route — use next/link so navigation is driven by the
+                // router itself, not by the browser's native anchor default
+                // action (which can be dropped when the same click also
+                // flips pointer-events/transform on the menu ancestor).
+                <Link href={item.href} className={styles.link} onClick={item.onClick}>
+                  <span className={styles.linkSym} aria-hidden="true">✦</span>
+                  {item.label}
+                </Link>
+              ) : (
+                <a href={item.href} className={styles.link} onClick={item.onClick}>
+                  <span className={styles.linkSym} aria-hidden="true">✦</span>
+                  {item.label}
+                </a>
+              )}
             </li>
           ))}
         </ul>

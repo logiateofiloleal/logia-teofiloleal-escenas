@@ -4,6 +4,13 @@
   overflow-x: hidden;
   word-break: break-word;
   text-align: center;
+  display: block; /* was a <div>, now a <Link>/<a> — keep the same block layout */
+}
+
+.root:focus-visible {
+  outline: 2px solid var(--oro-claro);
+  outline-offset: 6px;
+  border-radius: 4px;
 }
 
 .inMemoriam {
@@ -27,6 +34,12 @@
     inset 0 0 0 1px rgba(184, 149, 58, 0.14),
     0 10px 48px rgba(0, 0, 0, 0.85);
   line-height: 0;
+  transition: border-color .25s ease;
+}
+
+/* Subtle affordance — card feels clickable without changing its resting look */
+.root:hover .marco {
+  border-color: rgba(184, 149, 58, 0.8);
 }
 
 .retrato {
