@@ -104,18 +104,11 @@ export const SEGMENTS: Segment[] = [
     scrollVh: 160,
     dwellMs: 1800,
   },
-  {
-    type: 'station',
-    id: 's5',
-    frameImg: '/frames/escena-3-desktop/frame_0130.webp',
-    align: 'center',
-    scrollVh: 130,
-  },
 ];
 
 // Ordered station IDs (for nav dots) — s1 listed explicitly because it has
 // no station segment; its dot stays active during the t1 frame transition.
-export const STATION_IDS = ['s1', 's2', 's3', 's4', 's5'] as const;
+export const STATION_IDS = ['s1', 's2', 's3', 's4'] as const;
 
 // Total hero height in vh units (5×80 + 4×50 = 600)
 export const HERO_VH = SEGMENTS.reduce((acc, s) => acc + s.scrollVh, 0);
@@ -125,5 +118,4 @@ export const STATION_NAMES: Record<string, string> = {
   s2: 'Los Principios',
   s3: 'La Memoria',
   s4: 'La Puerta',
-  s5: 'Acceso Interno',
 };

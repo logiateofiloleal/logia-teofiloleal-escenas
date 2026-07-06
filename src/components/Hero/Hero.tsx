@@ -4,7 +4,6 @@ import { SEGMENTS, type Segment } from '@/config/segments';
 import StationCopyWrapper from './StationCopyWrapper';
 import ScrollHint from '@/components/ScrollHint/ScrollHint';
 import CinematicOverlay from '@/components/CinematicOverlay/CinematicOverlay';
-import S5Acceso from '@/components/stations/S5Acceso/S5Acceso';
 import S4Puerta from '@/components/stations/S4Puerta/S4Puerta';
 import S2Principios from '@/components/stations/S2Principios/S2Principios';
 import S3Memoria from '@/components/stations/S3Memoria/S3Memoria';
@@ -54,20 +53,10 @@ function S4Copy() {
   );
 }
 
-// ── Station 5: Acceso Interno ─────────────────────────────────
-function S5Copy() {
-  return (
-    <StationCopyWrapper stationIndex={4} align="center" minimal>
-      <S5Acceso />
-    </StationCopyWrapper>
-  );
-}
-
 const COPY: Record<string, React.ReactNode> = {
   s2: <S2Copy />,
   s3: <TeofiloCopy />,
   s4: <S4Copy />,
-  s5: <S5Copy />,
 };
 
 // ── Hero ──────────────────────────────────────────────────────
