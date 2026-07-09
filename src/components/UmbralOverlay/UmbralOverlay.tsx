@@ -39,17 +39,22 @@ export default function UmbralOverlay() {
       el.style.pointerEvents = opacity > 0.5 ? 'auto' : 'none';
       // On mobile (≤768px), CSS positions the overlay with left:50% and top:8%;
       // JS only needs translateX(-50%) to center horizontally.
-      // On desktop, keep the original vertical-center offset.
+      // On desktop, the overlay is anchored right (medio-derecha) via CSS
+      // `right:`, so JS only applies the vertical offset — no horizontal
+      // translate needed there.
       const isMobileView = typeof window !== 'undefined' && window.innerWidth <= 768;
       el.style.transform = isMobileView
         ? `translateX(-50%)`
-        : `translate(-50%, ${yOffset}%)`;
+        : `translateY(${yOffset}%)`;
     });
   }, [register]);
 
   return (
     <div ref={elRef} className={styles.overlay} style={{ opacity: 0 }}>
       <span className={styles.label}>El umbral del camino</span>
+      {/* Desktop uses the persistent <BrandSeal> instead — this stays only
+          for mobile, where BrandSeal is hidden to avoid crowding the
+          top-anchored, full-width copy panel. */}
       <Image
         src="/assets/img/logo.png"
         alt="Logia Teófilo Leal N° 115"

@@ -7,6 +7,7 @@ import { SceneSnapProvider } from '@/context/SceneSnap';
 import { FinalGateProvider, useFinalGate } from '@/context/FinalGate';
 import Canvas from '@/components/Canvas/Canvas';
 import Preloader from '@/components/Preloader/Preloader';
+import BrandSeal from '@/components/BrandSeal/BrandSeal';
 import Header from '@/components/Header/Header';
 import NavDots from '@/components/NavDots/NavDots';
 import Hero from '@/components/Hero/Hero';
@@ -56,6 +57,8 @@ export default function HeroPage() {
           <UmbralOverlay />
           {/* Atmospheric treatment for s4 — blurs and dims canvas during La Puerta */}
           <S4AtmosOverlay />
+          {/* Persistent institutional seal — fixed medio-izquierda, same spot in every scene */}
+          <BrandSeal />
           {/* Fixed UI chrome — always on top */}
           <Header />
           <NavDots />

@@ -5,6 +5,7 @@ import { useIsMobile } from '@/hooks/useIsMobile';
 import { useSceneSnap, type SceneState } from '@/context/SceneSnap';
 import { SEGMENTS, type Transition, type Station } from '@/config/segments';
 import { FrameLoader } from '@/lib/frameLoader';
+import { resetPreloadGate, reportPreloadItemDone } from '@/lib/preloadGate';
 import styles from './Canvas.module.css';
 
 // Backing store dimensions MUST match frame dimensions exactly.
@@ -90,7 +91,11 @@ export default function Canvas() {
     [W, H, isMobile],
   );
 
-  // ── Preload all stills ───────────────────────────────────
+  // ── Preload all stills + first transition's frames ───────
+  // The Preloader stays visible until this gate reports ready — no fixed
+  // timers. window.innerWidth is read directly (not the isMobile prop)
+  // because useIsMobile settles one tick after mount; using the prop here
+  // could eager-load the wrong (desktop) frame directory for mobile users.
   useEffect(() => {
     const srcs = new Set<string>();
     for (const seg of SEGMENTS) {
@@ -103,9 +108,24 @@ export default function Canvas() {
     for (const seg of SEGMENTS) {
       if (seg.type !== 'station' && isMobile && seg.startImgMobile) srcs.add(seg.startImgMobile);
     }
+
+    const mobileNow = typeof window !== 'undefined' && window.innerWidth < 768;
+    const t0FrameCount = t0 ? effectiveFrameCount(t0, mobileNow) : 0;
+    resetPreloadGate(srcs.size + t0FrameCount);
+
     srcs.forEach(src => {
-      if (imgsRef.current.has(src)) return;
+      const existing = imgsRef.current.get(src);
+      if (existing) {
+        if (existing.complete) reportPreloadItemDone();
+        else {
+          existing.addEventListener('load', reportPreloadItemDone, { once: true });
+          existing.addEventListener('error', reportPreloadItemDone, { once: true });
+        }
+        return;
+      }
       const img = new Image();
+      img.addEventListener('load', reportPreloadItemDone, { once: true });
+      img.addEventListener('error', reportPreloadItemDone, { once: true });
       img.src = src;
       imgsRef.current.set(src, img);
       if (src === firstFrameSrc) {
@@ -123,6 +143,12 @@ export default function Canvas() {
         else img.addEventListener('load', drawFirst, { once: true });
       }
     });
+
+    if (t0 && t0.mode === 'frames' && t0FrameCount > 0 && !loadersRef.current.has(t0.id)) {
+      const loader = new FrameLoader(t0, mobileNow);
+      loadersRef.current.set(t0.id, loader);
+      loader.load(reportPreloadItemDone);
+    }
   }, [W, H, isMobile, getState]);
 
   const drawStation = useCallback(

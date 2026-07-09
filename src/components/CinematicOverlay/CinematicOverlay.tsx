@@ -25,12 +25,20 @@ export default function CinematicOverlay() {
         : state.station / 4;
 
       if (overlay) {
-        if (state.transitionIdx === 0 && state.direction === 1) {
-          const lp   = state.progress;
+        if (state.transitionIdx === 0) {
+          // El Umbral (t1) — vignette fades out as the doorway opens, in
+          // either scroll direction.
+          const lp   = state.direction === 1 ? state.progress : 1 - state.progress;
           const exit = ss(0.85, 1.0, lp);
           overlay.style.opacity = String(1 - exit);
-        } else {
+        } else if (state.station === 0) {
+          // Resting at El Umbral, before the visitor starts scrolling.
           overlay.style.opacity = '1';
+        } else {
+          // s2 onward — this vignette is scoped to El Umbral (it's only
+          // mounted inside t1's section); keep it out so it doesn't stack
+          // an extra dimming layer on later scenes.
+          overlay.style.opacity = '0';
         }
       }
 

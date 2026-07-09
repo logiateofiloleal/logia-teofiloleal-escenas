@@ -33,11 +33,14 @@ export default function S2Principios() {
         {PRINCIPIOS.map(p => (
           <article key={p.titulo} className={styles.principio}>
             <div className={styles.medallion} aria-hidden="true">
-              <Image src={p.img} alt="" width={34} height={34} />
+              <Image src={p.img} alt="" width={20} height={20} />
             </div>
-            <p className={styles.num}>{p.num}</p>
-            <h3 className={styles.titulo}>{p.titulo}</h3>
-            <p className={styles.texto}>{p.texto}</p>
+            <div className={styles.principioBody}>
+              <h3 className={styles.titulo}>
+                <span className={styles.num}>{p.num}</span> {p.titulo}
+              </h3>
+              <p className={styles.texto}>{p.texto}</p>
+            </div>
           </article>
         ))}
       </div>

@@ -20,24 +20,22 @@
 }
 
 /* ── Scene copy base ─────────────────────────────────────────── */
+/* No panel/card background — the copy sits directly on the scene.
+   Legibility comes from each element's own text-shadow instead. */
 .copy {
   --_reveal-y: 0px; /* set by JS via setProperty */
   position: fixed;
   z-index: 10;
-  right: clamp(18px, 4.5vw, 70px);
+  /* Centro de la mitad derecha — con aire respecto al borde, no pegado,
+     y sin invadir la puerta (columna central). */
+  right: clamp(56px, 9vw, 130px);
   left: auto;
   top: 50%;
   transform: translateY(calc(-50% + var(--_reveal-y)));
   max-width: 540px;
   padding: 22px 26px;
-  border-radius: 22px;
   opacity: 0;
   pointer-events: none;
-  background: linear-gradient(270deg,
-    rgba(0,0,0,.42),
-    rgba(0,0,0,.24),
-    rgba(0,0,0,.03));
-  backdrop-filter: blur(1.2px);
 }
 
 .centered {
@@ -47,23 +45,35 @@
   text-align: center;
 }
 
-/* Centered panels: symmetric radial background gives clearer contrast under
-   centered content than the directional left-to-right gradient. */
 .copy.centered {
   right: auto;
-  background: radial-gradient(ellipse 92% 100% at 50% 48%,
-    rgba(0,0,0,.60) 0%,
-    rgba(0,0,0,.42) 48%,
-    rgba(0,0,0,.10) 100%);
 }
 
 .wide { max-width: 960px; }
 
 .minimal {
   max-width: 400px;
-  background: rgba(0,0,0,.28);
-  backdrop-filter: blur(2px);
 }
+
+/* Anchors near the top instead of vertical-center — for stacked content
+   tall enough to risk clipping against .sticky's overflow:hidden. Offset
+   scales down on short viewports (laptop windows are often <900px tall).
+   top+bottom (with height:auto) stretches the box to span that range, and
+   the flex column lets a child push itself down via margin-top:auto — see
+   .principios below — so the title stays up top and the list uses the
+   free space lower in the frame instead of bunching under the title. */
+.top {
+  top: clamp(20px, 5vh, 56px);
+  bottom: clamp(20px, 5vh, 56px);
+  transform: translateY(var(--_reveal-y));
+  display: flex;
+  flex-direction: column;
+}
+
+/* Tighter heading spacing for the .top panel (Los Principios) — keeps the
+   title/kicker snug so the gap below is free for the principios list. */
+.top > span:first-child { margin-bottom: 8px; }
+.top h2 { margin-bottom: 8px; }
 
 /* ── Label (span first-child) ────────────────────────────────── */
 .copy > span:first-child {
@@ -75,6 +85,7 @@
   font-size: clamp(.68rem, .82vw, .84rem);
   font-family: var(--sans);
   font-weight: 400;
+  text-shadow: 0 1px 6px rgba(0,0,0,.7);
 }
 
 /* ── Headings ────────────────────────────────────────────────── */
@@ -100,7 +111,7 @@
 
 /* ── Body text ───────────────────────────────────────────────── */
 .copy p {
-  max-width: 500px;
+  max-width: 380px;
   font-size: clamp(.94rem, 1.05vw, 1.1rem);
   line-height: 1.68;
   color: var(--txt);
@@ -134,9 +145,7 @@
     box-sizing: border-box;
     padding: 18px 20px;
     transform: none;
-    border-radius: 18px;
     overflow-wrap: break-word;
-    background: linear-gradient(180deg, rgba(0,0,0,.58), rgba(0,0,0,.32), rgba(0,0,0,.06));
   }
   .copy.centered {
     left: 18px;

@@ -19,7 +19,7 @@
   letter-spacing: .38em;
   text-transform: uppercase;
   color: rgba(184, 149, 58, 0.72) !important;
-  text-shadow: none !important;
+  text-shadow: 0 1px 6px rgba(0,0,0,.7) !important;
   margin-bottom: 16px;
   font-weight: 400;
 }
@@ -35,6 +35,10 @@
     0 10px 48px rgba(0, 0, 0, 0.85);
   line-height: 0;
   transition: border-color .25s ease;
+  /* Slight turn instead of dead-frontal — the left edge recedes, following
+     the vanishing point of the columns behind it. */
+  transform: perspective(1000px) rotateY(-14deg);
+  transform-origin: right center;
 }
 
 /* Subtle affordance — card feels clickable without changing its resting look */
@@ -120,6 +124,7 @@
     width: clamp(90px, 28vw, 160px);
     margin: 0 auto 10px;
     display: block;
+    transform: none; /* keep the tilt desktop-only — flat/simple on small screens */
   }
 
   .nombre {

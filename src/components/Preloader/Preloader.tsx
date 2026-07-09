@@ -2,16 +2,16 @@
 
 import { useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
+import { getPreloadProgress, waitForPreloadReady } from '@/lib/preloadGate';
 import styles from './Preloader.module.css';
 
 const PRE = {
   minSkipMs:  2200,
-  durBarra:   2600,
   pausaF1:    550,
   durFade:    750,
   durF2:      2400,
   durPanel:   820,
-  pausaPanel: 380,
+  pausaPanel: 60,
   durRetiro:  980,
 };
 
@@ -74,10 +74,14 @@ export default function Preloader() {
       if (puedeSkip && !saltado) {
         saltado = true;
         clearInterval(timer);
-        const b = barraRef.current;
-        if (b) { b.style.transition = 'width 0.25s ease-out'; b.style.width = '100%'; }
-        setTimeout(() => { if (!panelActivo) { panelActivo = true; cubrirConPanel(); } }, 340);
         limpiarSkip();
+        // Skip only fast-forwards the decorative choreography — the loader
+        // still can't disappear before the real assets are ready.
+        waitForPreloadReady().then(() => {
+          const b = barraRef.current;
+          if (b) { b.style.transition = 'width 0.25s ease-out'; b.style.width = '100%'; }
+          setTimeout(() => { if (!panelActivo) { panelActivo = true; cubrirConPanel(); } }, 340);
+        });
       }
     };
 
@@ -92,12 +96,11 @@ export default function Preloader() {
     document.addEventListener('keydown',    intentarSaltar);
     document.addEventListener('touchstart', intentarSaltar, { passive: true });
 
-    let progBarra = 0;
-    const stepVal = 100 / (PRE.durBarra / 16);
-
+    // Bar width tracks real asset-loading progress — no fixed duration.
+    // It only reaches 100% once the required images/frames are actually loaded.
     const timer = setInterval(() => {
       if (saltado) { clearInterval(timer); return; }
-      progBarra = Math.min(100, progBarra + stepVal);
+      const progBarra = getPreloadProgress() * 100;
       if (barraRef.current) barraRef.current.style.width = progBarra + '%';
       if (progBarra >= 100) {
         clearInterval(timer);

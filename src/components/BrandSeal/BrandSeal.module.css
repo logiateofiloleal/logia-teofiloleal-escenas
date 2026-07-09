@@ -1,0 +1,26 @@
+/* Persistent institutional seal — fixed medio-izquierda from the second
+   scene onward (opacity driven by JS, see BrandSeal.tsx). The profano
+   never crosses into the left margin during his walk (confirmed across
+   t1/t2/s2/s3/s4), so this stays clear of him. */
+.seal {
+  position: fixed;
+  left: clamp(48px, 7vw, 120px);
+  top: 40%;
+  transform: translateY(-50%);
+  z-index: 10;
+  pointer-events: none;
+}
+
+.img {
+  width: 190px !important;
+  height: 190px !important;
+  object-fit: contain;
+  filter: invert(1) sepia(.18) saturate(1.6) brightness(1.05)
+          drop-shadow(0 0 24px rgba(184,149,58,.5));
+}
+
+/* Desktop-only — on narrow phone screens the Header's brand mark already
+   carries the logo; a second floating seal would crowd the tight layout. */
+@media (max-width: 1024px) {
+  .seal { display: none; }
+}

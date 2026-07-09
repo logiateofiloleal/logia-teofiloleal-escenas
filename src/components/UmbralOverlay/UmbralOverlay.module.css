@@ -1,20 +1,22 @@
+/* No panel/card background — the copy sits directly on the scene.
+   Legibility comes from each element's own text-shadow instead.
+   Anchored medio-derecha (right side, vertically centered): the profano
+   walks up the center aisle toward the door during t1, so the right-hand
+   wall/column area is the safe zone that never overlaps him. */
 .overlay {
   position: fixed;
   top: 50%;
-  left: 50%;
-  transform: translate(-50%, -44%);
+  left: auto;
+  /* Centro de la mitad derecha — con aire respecto al borde, no pegado,
+     y sin invadir la puerta (columna central). */
+  right: clamp(56px, 9vw, 130px);
+  transform: translateY(-44%);
   z-index: 10;
-  max-width: 540px;
+  max-width: 460px;
   width: calc(100% - 36px);
   padding: 22px 26px;
-  border-radius: 22px;
   pointer-events: none;
   text-align: center;
-  background: linear-gradient(270deg,
-    rgba(0,0,0,.42),
-    rgba(0,0,0,.24),
-    rgba(0,0,0,.03));
-  backdrop-filter: blur(1.2px);
 }
 
 .label {
@@ -28,12 +30,14 @@
   font-weight: 400;
 }
 
+/* Mobile-only — desktop shows the persistent <BrandSeal> instead (see
+   @media max-width:1024px below, matching BrandSeal's own breakpoint). */
 .logo {
   width: 96px !important;
   height: 96px !important;
   object-fit: contain;
   margin: 0 auto 20px;
-  display: block;
+  display: none;
   filter: invert(1) sepia(.18) saturate(1.6) brightness(1.05)
           drop-shadow(0 0 28px rgba(184,149,58,.55));
 }
@@ -58,7 +62,7 @@
   letter-spacing: .28em;
   text-transform: uppercase;
   color: var(--oro-claro);
-  text-shadow: none;
+  text-shadow: 0 1px 6px rgba(0,0,0,.7);
   margin-top: 8px;
   max-width: 500px;
   margin-left: auto;
@@ -70,10 +74,16 @@
   font-size: var(--fs-micro);
   letter-spacing: .16em;
   color: rgba(255, 255, 255, 0.38);
-  text-shadow: none;
+  text-shadow: 0 1px 5px rgba(0,0,0,.65);
   margin-top: 4px;
   overflow-wrap: break-word;
   word-break: break-word;
+}
+
+/* Shows this logo whenever <BrandSeal> is hidden (same 1024px breakpoint),
+   so exactly one of the two is always visible. */
+@media (max-width: 1024px) {
+  .logo { display: block; }
 }
 
 @media (max-width: 768px) {

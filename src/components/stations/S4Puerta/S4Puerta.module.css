@@ -5,14 +5,6 @@
   word-break: break-word;
 }
 
-.arco {
-  width: 88px;
-  height: 116px;
-  margin: 0 auto 20px;
-  filter: drop-shadow(0 0 12px rgba(154, 116, 50, 0.35));
-  display: block;
-}
-
 /* ── Button — primary variant ───────────────────────────── */
 .btn {
   display: inline-flex;
@@ -71,7 +63,6 @@
 }
 
 @media (max-width: 768px) {
-  .arco { width: 60px; height: 80px; }
   .btn {
     font-size: clamp(.72rem, 3vw, .82rem);
     padding: 11px 28px;

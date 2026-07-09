@@ -11,9 +11,13 @@ function ss(e0: number, e1: number, v: number): number {
 
 interface Props {
   stationIndex: number;  // 1-4, matches SceneSnap station number
-  align: 'center' | 'right';
+  align?: 'center' | 'right';
   wide?: boolean;
   minimal?: boolean;
+  /** Anchors the panel near the top instead of vertically centered — for
+   *  stacked content tall enough to risk clipping against the sticky
+   *  section's overflow:hidden when centered. */
+  top?: boolean;
   /** lp point where the fade-in starts (default 0.85). Higher = snappier entry. */
   fadeInStart?: number;
   /** lp point where the fade-in completes (default 1.0). */
@@ -34,6 +38,7 @@ export default function StationCopyWrapper({
   align,
   wide = false,
   minimal = false,
+  top = false,
   fadeInStart = 0.85,
   fadeInEnd = 1.0,
   fadeOutStart = 0.85,
@@ -76,6 +81,7 @@ export default function StationCopyWrapper({
     align === 'center' ? styles.centered : '',
     wide    ? styles.wide    : '',
     minimal ? styles.minimal : '',
+    top     ? styles.top     : '',
   ].filter(Boolean).join(' ');
 
   return (

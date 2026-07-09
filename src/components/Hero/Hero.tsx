@@ -25,9 +25,12 @@ function HeroSection({ seg, children }: { seg: Segment; children?: React.ReactNo
 }
 
 // ── Station 2: Los Principios ─────────────────────────────────
+// Medio-derecha, apilado y angosto — el profano camina por el eje central
+// del pasillo durante t1/t2, así que el bloque ancho/centrado anterior
+// terminaba tapándolo. La columna derecha permanece libre en toda la escena.
 function S2Copy() {
   return (
-    <StationCopyWrapper stationIndex={1} align="center" wide fadeOutStart={0.70} fadeOutEnd={0.84}>
+    <StationCopyWrapper stationIndex={1} top fadeOutStart={0.70} fadeOutEnd={0.84}>
       <S2Principios />
     </StationCopyWrapper>
   );
@@ -36,11 +39,13 @@ function S2Copy() {
 // ── Station 3: La Memoria — Homenaje a Teófilo Leal ──────────
 // stationIndex=2: entra al final de t2 (fadeInStart=0.95, rápido y nítido),
 // visible en s3 idle, sale con crossfade estándar durante t3.
+// Medio-derecha, como el resto de las escenas — el contenido interno
+// (retrato, nombre, fechas) sigue centrado dentro de su propia columna
+// (S3Memoria.module.css .root ya fija text-align:center por su cuenta).
 function TeofiloCopy() {
   return (
     <StationCopyWrapper
       stationIndex={2}
-      align="center"
       fadeInStart={0.95}
       fadeOutStart={0.25}
       fadeOutEnd={0.50}
@@ -52,9 +57,11 @@ function TeofiloCopy() {
 }
 
 // ── Station 4: La Puerta — ¿Sientes el llamado? ───────────────
+// Medio-derecha — el profano queda de pie, centrado y en primer plano
+// justo frente a la puerta; el texto/CTA centrados antes caían sobre él.
 function S4Copy() {
   return (
-    <StationCopyWrapper stationIndex={3} align="center">
+    <StationCopyWrapper stationIndex={3}>
       <S4Puerta />
     </StationCopyWrapper>
   );

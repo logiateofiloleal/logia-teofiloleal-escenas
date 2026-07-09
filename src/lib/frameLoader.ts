@@ -87,7 +87,7 @@ export class FrameLoader {
     return null;
   }
 
-  async load(): Promise<void> {
+  async load(onFrameDone?: () => void): Promise<void> {
     if (this.loading || this.frameCount === 0 || !this.framesDir) return;
     this.loading = true;
 
@@ -117,6 +117,7 @@ export class FrameLoader {
         } catch {
           this.frames[i] = null;
         }
+        onFrameDone?.();
       }
     };
 
