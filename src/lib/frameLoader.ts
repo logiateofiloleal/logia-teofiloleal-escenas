@@ -32,6 +32,21 @@ function closeFrame(frame: FrameSource): void {
   // HTMLImageElement has no explicit close; GC handles it.
 }
 
+// ── Module-level memory accounting ──────────────────────────────────────
+// Every decoded frame (ImageBitmap or HTMLImageElement) held by any live
+// FrameLoader counts here, so Canvas.tsx can enforce a hard memory budget
+// across all loaders instead of guessing. Cleared on close/release.
+let liveBytes = 0;
+let liveBitmaps = 0;
+
+export function getLiveBytes(): number {
+  return liveBytes;
+}
+
+export function getLiveBitmaps(): number {
+  return liveBitmaps;
+}
+
 export class FrameLoader {
   private frames: (FrameSource | null)[] = [];
   private lastDrawnIndex = -1;
@@ -41,8 +56,10 @@ export class FrameLoader {
 
   private readonly framesDir: string;
   private readonly frameCount: number;
+  // Bytes per decoded frame (W*H*4), used for the global memory accounting above.
+  private readonly frameBytes: number;
 
-  constructor(transition: Transition, isMobile: boolean) {
+  constructor(transition: Transition, isMobile: boolean, frameBytes: number) {
     if (isMobile && transition.framesDirMobile) {
       this.framesDir  = transition.framesDirMobile;
       this.frameCount = transition.frameCountMobile ?? transition.frameCount;
@@ -50,6 +67,14 @@ export class FrameLoader {
       this.framesDir  = transition.framesDir ?? '';
       this.frameCount = transition.frameCount;
     }
+    this.frameBytes = frameBytes;
+  }
+
+  /** Closes a decoded frame and keeps the global memory counters in sync. */
+  private closeAndAccount(frame: FrameSource): void {
+    closeFrame(frame);
+    liveBytes -= this.frameBytes;
+    liveBitmaps--;
   }
 
   getFrame(index: number): FrameSource | null {
@@ -110,6 +135,8 @@ export class FrameLoader {
           const frame = await decodeFrame(blob);
           if (!this.cancelled) {
             this.frames[i] = frame;
+            liveBytes += this.frameBytes;
+            liveBitmaps++;
           } else {
             closeFrame(frame);
             return;
@@ -132,7 +159,7 @@ export class FrameLoader {
     this.cancelled = true;
     this.loading = false;
     for (const frame of this.frames) {
-      if (frame) closeFrame(frame);
+      if (frame) this.closeAndAccount(frame);
     }
     this.frames = [];
     this.lastDrawnIndex = -1;

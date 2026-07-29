@@ -7,4 +7,6 @@
   /* mix-blend-mode:screen fuses blacks of frames with #050302 background */
   mix-blend-mode: screen;
   pointer-events: none;
+  /* GPU hint — this element repaints on every scrubbed frame */
+  will-change: transform;
 }

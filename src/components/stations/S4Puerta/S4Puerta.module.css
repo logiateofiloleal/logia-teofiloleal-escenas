@@ -15,7 +15,6 @@
   border: 1px solid var(--btn-border);
   color: var(--btn-color);
   background: var(--btn-primary-bg);
-  backdrop-filter: blur(8px);
   font-family: var(--sans);
   font-size: var(--btn-fs);
   font-weight: 400;
@@ -60,6 +59,11 @@
   color: rgba(255, 255, 255, .4);
   text-shadow: var(--sombra-texto);
   opacity: 0; /* driven by JS — see S4Puerta.tsx */
+}
+
+/* backdrop-filter only for real-mouse devices — see Header.module.css */
+@media (hover: hover) and (pointer: fine) {
+  .btn { backdrop-filter: blur(8px); }
 }
 
 @media (max-width: 768px) {

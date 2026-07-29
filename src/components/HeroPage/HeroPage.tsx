@@ -14,6 +14,7 @@ import Hero from '@/components/Hero/Hero';
 import Cierre from '@/components/Cierre/Cierre';
 import UmbralOverlay from '@/components/UmbralOverlay/UmbralOverlay';
 import S4AtmosOverlay from '@/components/S4AtmosOverlay/S4AtmosOverlay';
+import MemDebugOverlay from '@/components/MemDebugOverlay/MemDebugOverlay';
 
 const FINAL_HOLD_MS = 4000;
 
@@ -68,6 +69,8 @@ export default function HeroPage() {
             <Hero />
           </main>
           <FinalGateOverlay />
+          {/* ?memdebug=1 — live decoded-frame memory readout, no-op otherwise */}
+          <MemDebugOverlay />
         </FinalGateProvider>
       </SceneSnapProvider>
     </ScrollEngineProvider>

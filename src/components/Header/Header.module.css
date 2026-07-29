@@ -123,7 +123,6 @@
   width: clamp(260px, 32vw, 360px);
   z-index: 510;
   background: rgba(10,9,7,.94);
-  backdrop-filter: blur(20px);
   border-left: 1px solid rgba(184,149,58,.1);
   display: flex;
   align-items: center;
@@ -214,6 +213,15 @@
   z-index: 505;
   background: rgba(0,0,0,.48);
   cursor: pointer;
+}
+
+/* Frosted-glass panel only for devices with a real mouse — backdrop-filter
+   is one of the most expensive compositing operations on mobile/tablet
+   GPUs, and this panel covers a third of the viewport. Touch devices get
+   the near-opaque background above instead, which reads almost identically
+   without the blur cost. */
+@media (hover: hover) and (pointer: fine) {
+  .menu { backdrop-filter: blur(20px); }
 }
 
 @media (max-width: 768px) {

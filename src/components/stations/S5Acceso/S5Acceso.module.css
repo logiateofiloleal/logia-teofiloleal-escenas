@@ -34,7 +34,6 @@
   border: 1px solid var(--btn-discreet-border);
   color: var(--btn-discreet-color);
   background: transparent;
-  backdrop-filter: blur(8px);
   font-family: var(--sans);
   font-size: .74rem;
   font-weight: 400;
@@ -53,6 +52,11 @@
   border-color: var(--btn-discreet-border-h);
   color: var(--btn-discreet-color-h);
   box-shadow: none;
+}
+
+/* backdrop-filter only for real-mouse devices — see Header.module.css */
+@media (hover: hover) and (pointer: fine) {
+  .btn { backdrop-filter: blur(8px); }
 }
 
 @media (max-width: 768px) {
