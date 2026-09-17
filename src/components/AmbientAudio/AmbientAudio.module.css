@@ -1,0 +1,46 @@
+.toggle {
+  position: fixed;
+  right: 28px;
+  bottom: 28px;
+  z-index: 460;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--btn-radius);
+  background: var(--btn-bg);
+  border: 1px solid var(--btn-discreet-border);
+  color: var(--btn-discreet-color);
+  cursor: pointer;
+  transition: background .3s ease, border-color .3s ease, color .3s ease;
+}
+
+.toggle:hover,
+.toggle:focus-visible {
+  background: var(--btn-discreet-bg-h);
+  border-color: var(--btn-discreet-border-h);
+  color: var(--btn-discreet-color-h);
+}
+
+.toggle:focus-visible {
+  outline: 2px solid var(--oro-claro);
+  outline-offset: 2px;
+}
+
+.toggle[data-muted="true"] {
+  animation: pulso 2.4s ease-in-out infinite;
+}
+
+@keyframes pulso {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(201, 168, 76, .35); }
+  50%      { box-shadow: 0 0 0 8px rgba(201, 168, 76, 0); }
+}
+
+@media (max-width: 768px) {
+  .toggle { right: 14px; bottom: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .toggle { animation: none; transition: none; }
+}

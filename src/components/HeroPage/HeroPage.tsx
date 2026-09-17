@@ -7,6 +7,7 @@ import { SceneSnapProvider } from '@/context/SceneSnap';
 import { FinalGateProvider, useFinalGate } from '@/context/FinalGate';
 import Canvas from '@/components/Canvas/Canvas';
 import Preloader from '@/components/Preloader/Preloader';
+import AmbientAudio from '@/components/AmbientAudio/AmbientAudio';
 import BrandSeal from '@/components/BrandSeal/BrandSeal';
 import Header from '@/components/Header/Header';
 import NavDots from '@/components/NavDots/NavDots';
@@ -52,6 +53,9 @@ export default function HeroPage() {
       <SceneSnapProvider>
         <FinalGateProvider>
           <Preloader />
+          {/* Loops suspense/piano ambient track while on the landing —
+              starts once the real preload gate resolves */}
+          <AmbientAudio />
           {/* Fixed canvas — z-index:0, behind all DOM overlays */}
           <Canvas />
           {/* Fixed copy for Escena 1 — spans s1 station + t1 transition */}
