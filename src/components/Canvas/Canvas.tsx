@@ -92,7 +92,7 @@ function transitionOrdinal(id: string): number {
 export default function Canvas() {
   const canvasRef  = useRef<HTMLCanvasElement>(null);
   const isMobile   = useIsMobile();
-  const { register, getState } = useSceneSnap();
+  const { register } = useSceneSnap();
 
   const W          = isMobile ? MOBILE_W  : DESKTOP_W;
   const H          = isMobile ? MOBILE_H  : DESKTOP_H;
@@ -175,7 +175,6 @@ export default function Canvas() {
       else { srcs.add(seg.startImg); srcs.add(seg.endImg); }
     }
     const t0 = TRANSITIONS[0];
-    const firstFrameSrc = t0 ? effectiveStartImg(t0, isMobile) : undefined;
     // Also preload mobile first/last-frame fallbacks (last frames are what
     // the canvas draws when resting at a station — see drawArrival)
     for (const seg of SEGMENTS) {
@@ -219,27 +218,19 @@ export default function Canvas() {
       img.addEventListener('error', report, { once: true });
       img.src = src;
       imgsRef.current.set(src, img);
-      if (src === firstFrameSrc) {
-        const drawFirst = () => {
-          const s = getState();
-          if (s.playState !== 'idle' || s.station !== 0) return;
-          const c = canvasRef.current;
-          if (!c) return;
-          const ctx = c.getContext('2d');
-          if (!ctx) return;
-          ctx.clearRect(0, 0, W, H);
-          ctx.drawImage(img, 0, 0, W, H);
-        };
-        if (img.complete) drawFirst();
-        else img.addEventListener('load', drawFirst, { once: true });
-      }
     });
+    // No first-paint drawing here: a load callback registered now would
+    // capture this render's backing size and tier, and could fire after
+    // useIsMobile settles and the backing store is resized — painting a
+    // desktop-sized frame into the mobile canvas. The draw loop paints
+    // El Umbral itself (current size and tier) and retries until the still
+    // has loaded.
 
     if (t0 && t0Loader && !loadersRef.current.has(t0.id)) {
       loadersRef.current.set(t0.id, t0Loader);
       t0Loader.load(reportPreloadItemDone);
     }
-  }, [W, H, isMobile, getState]);
+  }, []);
 
   const drawStation = useCallback(
     (ctx: CanvasRenderingContext2D, frameImg: string, lp: number) => {
@@ -559,9 +550,13 @@ export default function Canvas() {
           const t0       = TRANSITIONS[0];
           const startSrc = t0 ? effectiveStartImg(t0, isMobile) : undefined;
           const img      = startSrc ? imgsRef.current.get(startSrc) : undefined;
-          if (img?.complete && img.naturalWidth > 0) {
-            ctx.clearRect(0, 0, W, H);
-            ctx.drawImage(img, 0, 0, W, H); // raw — matches FrameLoader bitmap render
+          if (img?.complete) {
+            if (img.naturalWidth > 0) {
+              ctx.clearRect(0, 0, W, H);
+              ctx.drawImage(img, 0, 0, W, H); // raw — matches FrameLoader bitmap render
+            }
+          } else if (img) {
+            keepGoing = true; // still loading — retry next frame (bounded by load/error)
           }
         } else if (arrivalDrawnRef.current !== state.station) {
           if (drawArrival(ctx, state.station)) arrivalDrawnRef.current = state.station;
