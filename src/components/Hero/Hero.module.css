@@ -142,6 +142,46 @@
   .puerta h2 { font-size: clamp(1.8rem, 3.2vw, 3rem); }
 }
 
+/* ── Los Principios and La Puerta on portrait tablets ────────────
+   769–1100px wide and taller than wide gets the desktop layout (block
+   centred at the right), which lands on the figure in the 9:16 frames:
+   s2's list falls on the walking figure, s4's copy on the head and hand.
+   Anchor both at the top, as on phones. s3 (Teófilo) keeps its layout. */
+@media (min-width: 769px) and (max-width: 1100px) and (orientation: portrait) {
+  .copy.top,
+  .copy.puerta {
+    left: 64px;
+    right: 64px;
+    top: 7%;
+    bottom: auto;
+    max-width: none;
+    transform: translateY(var(--_reveal-y));
+  }
+}
+
+/* ── La Puerta over the light shaft ──────────────────────────────
+   Where the copy sits at the top (phones, iPad mini, portrait tablets)
+   the paragraph crosses the door's light shaft (~1.4:1). A soft radial
+   veil behind the block plus a denser text shadow keep it >= 4.5:1.
+   closest-side makes the gradient fully transparent exactly at the
+   veil's box edges, so it never reads as a box. */
+@media (max-width: 768px), (min-width: 769px) and (max-width: 1100px) and (orientation: portrait) {
+  .puerta::before {
+    content: "";
+    position: absolute;
+    inset: -32px -40px;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(closest-side, rgba(5, 3, 2, .66) 0%, rgba(5, 3, 2, .42) 55%, rgba(5, 3, 2, 0) 100%);
+  }
+  .puerta p {
+    text-shadow: 0 0 2px rgba(0, 0, 0, .85), 0 0 14px rgba(0, 0, 0, .9), 0 0 30px rgba(0, 0, 0, .75);
+  }
+}
+@media (max-width: 768px) {
+  .puerta::before { inset: -28px -18px; } /* stay inside the 18px side margins */
+}
+
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 1024px) {
   .copy  { max-width: 500px; padding: 22px; }
