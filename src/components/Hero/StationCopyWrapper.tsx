@@ -30,6 +30,8 @@ interface Props {
    *  Lower it for stations with a fast fade-out where visibility outlasts
    *  the default "mostly faded in" threshold (e.g. TeofiloCopy). */
   interactiveThreshold?: number;
+  /** Extra class for station-specific placement (e.g. La Puerta on tablets). */
+  className?: string;
   children: ReactNode;
 }
 
@@ -44,6 +46,7 @@ export default function StationCopyWrapper({
   fadeOutStart = 0.85,
   fadeOutEnd = 1.0,
   interactiveThreshold = 0.75,
+  className,
   children,
 }: Props) {
   const elRef = useRef<HTMLDivElement>(null);
@@ -82,6 +85,7 @@ export default function StationCopyWrapper({
     wide    ? styles.wide    : '',
     minimal ? styles.minimal : '',
     top     ? styles.top     : '',
+    className ?? '',
   ].filter(Boolean).join(' ');
 
   return (

@@ -59,9 +59,12 @@ function TeofiloCopy() {
 // ── Station 4: La Puerta — ¿Sientes el llamado? ───────────────
 // Medio-derecha — el profano queda de pie, centrado y en primer plano
 // justo frente a la puerta; el texto/CTA centrados antes caían sobre él.
+// En tablets horizontales (4:3–3:2) el cover recorta los lados y la cabeza y
+// la mano quedan más a la derecha: .puerta sube el bloque a la esquina
+// superior derecha, por encima de la mano (Hero.module.css).
 function S4Copy() {
   return (
-    <StationCopyWrapper stationIndex={3}>
+    <StationCopyWrapper stationIndex={3} className={styles.puerta}>
       <S4Puerta />
     </StationCopyWrapper>
   );

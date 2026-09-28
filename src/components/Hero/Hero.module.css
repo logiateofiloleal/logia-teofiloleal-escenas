@@ -124,6 +124,24 @@
 
 
 
+/* ── La Puerta on landscape tablets ─────────────────────────────
+   Between 1:1 and 3:2 the 16:9 frame is cover-cropped at the sides, so
+   the figure's head and knocking hand sit further right than on a 16:9 or
+   16:10 screen and the vertically-centered block lands on them. Anchor it
+   to the top-right corner, below the header and above the hand, narrow
+   enough to clear the head. Wider screens (16:10, 16:9) and portrait
+   (≤768px / taller than wide) never match, so they keep their layout. */
+@media (min-width: 769px) and (min-aspect-ratio: 1/1) and (max-aspect-ratio: 3/2) {
+  .puerta {
+    top: clamp(84px, 11vh, 120px);
+    right: max(56px, 5vw);
+    max-width: min(40vw, 460px);
+    padding-top: 0;
+    transform: translateY(var(--_reveal-y));
+  }
+  .puerta h2 { font-size: clamp(1.8rem, 3.2vw, 3rem); }
+}
+
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 1024px) {
   .copy  { max-width: 500px; padding: 22px; }
