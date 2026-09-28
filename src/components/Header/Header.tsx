@@ -3,6 +3,8 @@
 import { useState, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { STATION_IDS } from '@/config/segments';
+import { stationScrollY } from '@/lib/stationScroll';
 import styles from './Header.module.css';
 
 // Scroll to top of hero (station 1)
@@ -11,15 +13,14 @@ function scrollAlInicio(e: React.MouseEvent) {
   window.scrollTo({ top: 0, behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' });
 }
 
-// Scroll to center of station 4 (La Puerta — index 6 in SEGMENTS, station index 3)
+// Scroll to La Puerta — same resting position as its NavDot (derived from
+// SEGMENTS via stationScroll, so it follows any layout change).
+const LA_PUERTA = STATION_IDS.indexOf('s4');
+
 function scrollALaPuerta(e: React.MouseEvent) {
   e.preventDefault();
-  const vh = window.innerHeight;
-  // T4 starts at S1+T1+S2+T2+S3+T3+S4 = 80+50+80+50+80+50+80 = 470vh
-  // Station 4 center ≈ at 80+50+80+50+80+50 + 40 = 430+40 = 470 → center of S4 = 470+40=510vh
-  const targetVh = 80 + 50 + 80 + 50 + 80 + 50 + 40; // 430vh = center of S4
   window.scrollTo({
-    top: targetVh * vh / 100,
+    top: stationScrollY(LA_PUERTA, window.innerHeight),
     behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth',
   });
 }
