@@ -34,9 +34,10 @@
   box-shadow: 0 0 42px rgba(214, 168, 79, 0.3);
 }
 
-/* ── Reserved closing line — independent of the panel, revealed via
-   scroll progress inside S4. Portaled to <body> in S4Puerta.tsx because
-   .copy's transform would otherwise trap a fixed child inside its box. */
+/* ── Reserved closing line — independent of the panel, revealed after a
+   dwell at La Puerta (.visible, toggled in S4Puerta.tsx). Portaled to
+   <body> because .copy's transform would otherwise trap a fixed child
+   inside its box. */
 .espera {
   position: fixed;
   left: 50%;
@@ -56,9 +57,15 @@
   font-style: italic;
   font-size: clamp(.76rem, .94vw, .9rem);
   letter-spacing: .14em;
-  color: rgba(255, 255, 255, .4);
+  color: rgba(255, 255, 255, .6);
   text-shadow: var(--sombra-texto);
-  opacity: 0; /* driven by JS — see S4Puerta.tsx */
+  opacity: 0;
+  transition: opacity .45s ease; /* hiding: quick */
+}
+
+.espera.visible {
+  opacity: 1;
+  transition: opacity 1.6s ease; /* revealing: slow, unhurried */
 }
 
 /* backdrop-filter only for real-mouse devices — see Header.module.css */
@@ -71,11 +78,17 @@
     font-size: clamp(.72rem, 3vw, .82rem);
     padding: 11px 28px;
   }
+
+  /* Clear the audio toggle (bottom 14px + 40px + 8px pulse, see
+     AmbientAudio.module.css) with room to spare, plus any home-indicator
+     inset, instead of a vh offset that sat ~5px above the toggle. */
+  .espera {
+    bottom: calc(80px + env(safe-area-inset-bottom, 0px));
+  }
 }
 
 @media (max-width: 480px) {
   .espera {
-    bottom: clamp(5vh, 7vh, 9vh);
     font-size: clamp(.68rem, 3.5vw, .8rem);
     letter-spacing: .06em;
   }
