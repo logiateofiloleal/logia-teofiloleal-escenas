@@ -1,20 +1,24 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
-import { useIsMobile, MOBILE_BREAKPOINT } from '@/hooks/useIsMobile';
+import { useFrameTier, readFrameTier } from '@/hooks/useFrameTier';
 import { useSceneSnap, type SceneState } from '@/context/SceneSnap';
-import { SEGMENTS, type Transition, type Station } from '@/config/segments';
+import { SEGMENTS, tierAssets, type Transition, type Station, type FrameTier } from '@/config/segments';
 import { FrameLoader, getLiveBytes } from '@/lib/frameLoader';
 import { expectPreloadItems, reportPreloadItemDone } from '@/lib/preloadGate';
 import { scheduleIdle } from '@/lib/scheduleIdle';
 import styles from './Canvas.module.css';
 
 // Backing store dimensions MUST match frame dimensions exactly.
-// Mismatch forces per-paint GPU rescaling.
-const DESKTOP_W = 1280;
-const DESKTOP_H = 720;
-const MOBILE_W  = 480;
-const MOBILE_H  = 854;
+// Mismatch forces per-paint GPU rescaling. The CSS box is always the full
+// viewport with object-fit: cover (Canvas.module.css), so the backing's
+// aspect ratio is preserved and any mismatch with the viewport is cropped.
+const DIMS: Record<FrameTier, readonly [number, number]> = {
+  desktop: [1280, 720],
+  tablet:  [960, 540],
+  mobile:  [480, 854],
+};
+const frameBytesFor = (tier: FrameTier) => DIMS[tier][0] * DIMS[tier][1] * 4;
 
 // ── Memory window ─────────────────────────────────────────────────────
 // Only 3 transitions exist total, so a naive "keep everything until far
@@ -47,8 +51,12 @@ const MOBILE_H  = 854;
 //    furthest first.
 const LOOKAHEAD          = 1;
 const LOOKBEHIND         = 0;
-const MEM_BUDGET_MOBILE  = 480 * 1024 * 1024;  // fits 2 mobile transitions (~407MB), not 3 (~610MB)
-const MEM_BUDGET_DESKTOP = 1100 * 1024 * 1024; // fits 2 desktop transitions (~914MB), not 3 (~1371MB)
+const MB = 1024 * 1024;
+const MEM_BUDGET: Record<FrameTier, number> = {
+  mobile:  480 * MB,  // fits 2 mobile transitions (~407MB), not 3 (~610MB)
+  tablet:  560 * MB,  // fits 2 tablet transitions (~514MB), not 3 (~771MB)
+  desktop: 1100 * MB, // fits 2 desktop transitions (~914MB), not 3 (~1371MB)
+};
 
 // Smooths the mapping from scroll-derived progress to displayed frame index
 // so irregular scroll-event timing doesn't read as jank. Runs in its own
@@ -69,20 +77,9 @@ function ss(e0: number, e1: number, v: number): number {
 const TRANSITIONS = SEGMENTS.filter((s): s is Transition => s.type === 'transition');
 const STATIONS    = SEGMENTS.filter((s): s is Station    => s.type === 'station');
 
-function effectiveFrameCount(t: Transition, isMobile: boolean): number {
-  if (isMobile && t.frameCountMobile != null) return t.frameCountMobile;
-  return t.frameCount;
-}
-
-function effectiveStartImg(t: Transition, isMobile: boolean): string {
-  if (isMobile && t.startImgMobile) return t.startImgMobile;
-  return t.startImg;
-}
-
-function effectiveEndImg(t: Transition, isMobile: boolean): string {
-  if (isMobile && t.endImgMobile) return t.endImgMobile;
-  return t.endImg;
-}
+const effectiveFrameCount = (t: Transition, tier: FrameTier) => tierAssets(t, tier).frameCount;
+const effectiveStartImg   = (t: Transition, tier: FrameTier) => tierAssets(t, tier).startImg;
+const effectiveEndImg     = (t: Transition, tier: FrameTier) => tierAssets(t, tier).endImg;
 
 /** Ordinal position of a transition id among TRANSITIONS (t1=0, t2=1, …). */
 function transitionOrdinal(id: string): number {
@@ -91,12 +88,12 @@ function transitionOrdinal(id: string): number {
 
 export default function Canvas() {
   const canvasRef  = useRef<HTMLCanvasElement>(null);
-  const isMobile   = useIsMobile();
+  const tier       = useFrameTier();
+  const isMobile   = tier === 'mobile';
   const { register } = useSceneSnap();
 
-  const W          = isMobile ? MOBILE_W  : DESKTOP_W;
-  const H          = isMobile ? MOBILE_H  : DESKTOP_H;
-  const frameBytes = W * H * 4; // decoded RGBA size of one frame — memory accounting unit
+  const [W, H]     = DIMS[tier];
+  const frameBytes = frameBytesFor(tier); // decoded RGBA size of one frame — memory accounting unit
 
   // Preloaded stills — HTMLImageElement (sync drawImage once .complete)
   const imgsRef    = useRef<Map<string, HTMLImageElement>>(new Map());
@@ -111,7 +108,7 @@ export default function Canvas() {
   // "active" at the time it actually lands, not when it was scheduled.
   const activeSegIdxRef = useRef(0);
 
-  // Read once at mount, same pattern as useIsMobile — avoids reloading
+  // Read once at mount, same pattern as useFrameTier — avoids reloading
   // assets mid-session if the OS setting changes.
   const prefersReducedMotionRef = useRef(false);
 
@@ -160,14 +157,11 @@ export default function Canvas() {
 
   // ── Preload all stills + first transition's frames ───────
   // The Preloader stays visible until this gate reports ready — no fixed
-  // timers. window.innerWidth is read directly (not the isMobile prop)
-  // because useIsMobile settles one tick after mount; using the prop here
-  // could eager-load the wrong (desktop) frame directory for mobile users.
+  // timers. The tier is read straight from the viewport (readFrameTier), not
+  // the tier prop: useFrameTier settles one render after mount, and using
+  // the prop here could eager-load the desktop frames on a phone or tablet.
   useEffect(() => {
-    // Tier is read straight from the viewport, not the isMobile prop, so the
-    // expected asset set is identical on the first run (isMobile still false)
-    // and on the re-run once it settles.
-    const mobileNow = typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT;
+    const tierNow = readFrameTier();
 
     const srcs = new Set<string>();
     for (const seg of SEGMENTS) {
@@ -175,19 +169,18 @@ export default function Canvas() {
       else { srcs.add(seg.startImg); srcs.add(seg.endImg); }
     }
     const t0 = TRANSITIONS[0];
-    // Also preload mobile first/last-frame fallbacks (last frames are what
+    // Also preload this tier's first/last-frame stills (last frames are what
     // the canvas draws when resting at a station — see drawArrival)
     for (const seg of SEGMENTS) {
-      if (seg.type === 'station' || !mobileNow) continue;
-      if (seg.startImgMobile) srcs.add(seg.startImgMobile);
-      if (seg.endImgMobile)   srcs.add(seg.endImgMobile);
+      if (seg.type === 'station' || tierNow === 'desktop') continue;
+      srcs.add(effectiveStartImg(seg, tierNow));
+      srcs.add(effectiveEndImg(seg, tierNow));
     }
 
     const reducedMotion = prefersReducedMotionRef.current;
     const t0Loader =
-      !reducedMotion && t0 && t0.mode === 'frames' && effectiveFrameCount(t0, mobileNow) > 0
-        ? (loadersRef.current.get(t0.id) ??
-           new FrameLoader(t0, mobileNow, mobileNow ? MOBILE_W * MOBILE_H * 4 : DESKTOP_W * DESKTOP_H * 4))
+      !reducedMotion && t0 && t0.mode === 'frames' && effectiveFrameCount(t0, tierNow) > 0
+        ? (loadersRef.current.get(t0.id) ?? new FrameLoader(t0, tierNow, frameBytesFor(tierNow)))
         : null;
 
     // Gate waits for every still PLUS all of t0's frames — intentional:
@@ -221,7 +214,7 @@ export default function Canvas() {
     });
     // No first-paint drawing here: a load callback registered now would
     // capture this render's backing size and tier, and could fire after
-    // useIsMobile settles and the backing store is resized — painting a
+    // useFrameTier settles and the backing store is resized — painting a
     // desktop-sized frame into the mobile canvas. The draw loop paints
     // El Umbral itself (current size and tier) and retries until the still
     // has loaded.
@@ -302,7 +295,7 @@ export default function Canvas() {
    */
   const enforceBudget = useCallback(
     (activeSegIdx: number) => {
-      const budget         = isMobile ? MEM_BUDGET_MOBILE : MEM_BUDGET_DESKTOP;
+      const budget         = MEM_BUDGET[tier];
       const activeId       = SEGMENTS[activeSegIdx]?.id;
       const activeOrdinal  = activeId ? transitionOrdinal(activeId) : -1;
 
@@ -318,7 +311,7 @@ export default function Canvas() {
         releaseLoader(furthestId);
       }
     },
-    [isMobile, releaseLoader],
+    [tier, releaseLoader],
   );
 
   /**
@@ -331,12 +324,12 @@ export default function Canvas() {
   const startLoader = useCallback(
     (seg: Transition) => {
       if (loadersRef.current.has(seg.id)) return;
-      if (seg.mode !== 'frames' || effectiveFrameCount(seg, isMobile) === 0) return;
-      const loader = new FrameLoader(seg, isMobile, frameBytes);
+      if (seg.mode !== 'frames' || effectiveFrameCount(seg, tier) === 0) return;
+      const loader = new FrameLoader(seg, tier, frameBytes);
       loadersRef.current.set(seg.id, loader);
       loader.load();
     },
-    [isMobile, frameBytes],
+    [tier, frameBytes],
   );
 
   /**
@@ -354,7 +347,7 @@ export default function Canvas() {
         return true;
       }
 
-      const fc = effectiveFrameCount(transition, isMobile);
+      const fc = effectiveFrameCount(transition, tier);
       if (fc === 0) {
         drawTransitionStills(ctx, transition.startImg, transition.endImg, lp);
         return true;
@@ -382,7 +375,7 @@ export default function Canvas() {
         }
       } else if (!lastFrameRef.current.has(transition.id)) {
         // No frames decoded yet — show startImg so canvas isn't black
-        const startSrc = effectiveStartImg(transition, isMobile);
+        const startSrc = effectiveStartImg(transition, tier);
         const still = imgsRef.current.get(startSrc);
         if (still?.complete && still.naturalWidth > 0) {
           ctx.drawImage(still, 0, 0, W, H);
@@ -410,7 +403,7 @@ export default function Canvas() {
 
       return exact != null || !loader.isLoading;
     },
-    [drawTransitionStills, isMobile, W, H, startLoader],
+    [drawTransitionStills, tier, W, H, startLoader],
   );
 
   /**
@@ -427,7 +420,7 @@ export default function Canvas() {
     (ctx: CanvasRenderingContext2D, station: number): boolean => {
       const prev = TRANSITIONS[station - 1];
       if (!prev) return true;
-      const fc = effectiveFrameCount(prev, isMobile);
+      const fc = effectiveFrameCount(prev, tier);
 
       if (prefersReducedMotionRef.current || prev.mode === 'stills' || fc === 0) {
         const a = imgsRef.current.get(prev.startImg);
@@ -449,7 +442,7 @@ export default function Canvas() {
       }
 
       // Same image file as the last frame, preloaded as a still.
-      const still = imgsRef.current.get(effectiveEndImg(prev, isMobile));
+      const still = imgsRef.current.get(effectiveEndImg(prev, tier));
       if (!still) return true;
       if (!still.complete) return false;
       if (still.naturalWidth > 0) {
@@ -458,7 +451,7 @@ export default function Canvas() {
       }
       return true;
     },
-    [drawTransitionStills, isMobile, W, H],
+    [drawTransitionStills, tier, W, H],
   );
 
   // ── Target state (written by SceneSnap, read by the rAF loop below) ──
@@ -490,7 +483,7 @@ export default function Canvas() {
   const arrivalDrawnRef   = useRef(-1);
 
   useEffect(() => {
-    // Re-created when the backing store changes size (e.g. isMobile settles),
+    // Re-created when the backing store changes size (e.g. the tier settles),
     // which clears the canvas — the current station must be painted again.
     arrivalDrawnRef.current = -1;
 
@@ -548,7 +541,7 @@ export default function Canvas() {
         enforceBudget(activeSegIdxRef.current);
         if (state.station === 0) {
           const t0       = TRANSITIONS[0];
-          const startSrc = t0 ? effectiveStartImg(t0, isMobile) : undefined;
+          const startSrc = t0 ? effectiveStartImg(t0, tier) : undefined;
           const img      = startSrc ? imgsRef.current.get(startSrc) : undefined;
           if (img?.complete) {
             if (img.naturalWidth > 0) {
@@ -586,7 +579,7 @@ export default function Canvas() {
       if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current);
       loopRunningRef.current = false;
     };
-  }, [drawTransitionStills, drawTransitionFrames, drawArrival, releaseOutsideWindow, enforceBudget, isMobile, W, H]);
+  }, [drawTransitionStills, drawTransitionFrames, drawArrival, releaseOutsideWindow, enforceBudget, tier, W, H]);
 
   // ── Release everything on unmount (route change, etc.) ──────
   useEffect(() => {

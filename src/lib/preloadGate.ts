@@ -4,7 +4,7 @@
 //
 // Items are tracked by key (the asset URL), not by a bare counter:
 // - declaring the expected set again (e.g. Canvas's preload effect re-runs
-//   once useIsMobile settles) never forgets items already reported;
+//   once useFrameTier settles) never forgets items already reported;
 // - reporting the same item twice (duplicate load listeners) is a no-op.
 //
 // A watchdog guarantees the gate always resolves: if loading stalls (a

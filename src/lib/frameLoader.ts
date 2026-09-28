@@ -1,4 +1,4 @@
-import type { Transition } from '@/config/segments';
+import { tierAssets, type Transition, type FrameTier } from '@/config/segments';
 
 // Loads a transition's frame sequence as ImageBitmaps (decoded off-main-thread).
 // Memory management: call release() when the segment is far behind (RELEASE_LAG).
@@ -59,14 +59,10 @@ export class FrameLoader {
   // Bytes per decoded frame (W*H*4), used for the global memory accounting above.
   private readonly frameBytes: number;
 
-  constructor(transition: Transition, isMobile: boolean, frameBytes: number) {
-    if (isMobile && transition.framesDirMobile) {
-      this.framesDir  = transition.framesDirMobile;
-      this.frameCount = transition.frameCountMobile ?? transition.frameCount;
-    } else {
-      this.framesDir  = transition.framesDir ?? '';
-      this.frameCount = transition.frameCount;
-    }
+  constructor(transition: Transition, tier: FrameTier, frameBytes: number) {
+    const assets    = tierAssets(transition, tier);
+    this.framesDir  = assets.framesDir;
+    this.frameCount = assets.frameCount;
     this.frameBytes = frameBytes;
   }
 
