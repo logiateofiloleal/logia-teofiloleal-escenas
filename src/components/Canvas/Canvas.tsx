@@ -89,7 +89,6 @@ function transitionOrdinal(id: string): number {
 export default function Canvas() {
   const canvasRef  = useRef<HTMLCanvasElement>(null);
   const tier       = useFrameTier();
-  const isMobile   = tier === 'mobile';
   const { register } = useSceneSnap();
 
   const [W, H]     = DIMS[tier];
@@ -128,6 +127,10 @@ export default function Canvas() {
 
   // ── Draw helpers ─────────────────────────────────────────
 
+  // Used by 'stills'-mode transitions (crossfade between two images). The
+  // image is cover-fitted to the backing store — aspect ratio kept, overflow
+  // cropped — so a still of another aspect ratio never letterboxes or
+  // stretches (a no-op crop when it already matches the tier).
   const drawImg = useCallback(
     (ctx: CanvasRenderingContext2D, img: HTMLImageElement, scale: number, filter: string) => {
       ctx.save();
@@ -135,24 +138,13 @@ export default function Canvas() {
       ctx.translate(W / 2, H / 2);
       ctx.scale(scale, scale);
       ctx.translate(-W / 2, -H / 2);
-
-      if (isMobile) {
-        // Letterbox: 16:9 image centered in 9:16 canvas with black bars.
-        const drawH   = Math.round(W / (16 / 9));
-        const offsetY = Math.round((H - drawH) / 2);
-        ctx.drawImage(img, 0, offsetY, W, drawH);
-        ctx.restore();
-        ctx.fillStyle = '#050302';
-        if (offsetY > 0) {
-          ctx.fillRect(0, 0, W, offsetY);
-          ctx.fillRect(0, H - offsetY, W, offsetY);
-        }
-      } else {
-        ctx.drawImage(img, 0, 0, W, H);
-        ctx.restore();
-      }
+      const s  = Math.max(W / img.naturalWidth, H / img.naturalHeight);
+      const dw = img.naturalWidth * s;
+      const dh = img.naturalHeight * s;
+      ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+      ctx.restore();
     },
-    [W, H, isMobile],
+    [W, H],
   );
 
   // ── Preload all stills + first transition's frames ───────
@@ -341,9 +333,14 @@ export default function Canvas() {
   const drawTransitionFrames = useCallback(
     (ctx: CanvasRenderingContext2D, transition: Transition, lp: number, segIdx: number): boolean => {
       // Reduced motion: never fetch/decode the 130-frame sequence — show the
-      // transition's resting end state as a single static image instead.
+      // transition's resting end state as a single static image instead:
+      // this tier's own last-frame still, painted exactly as normal mode
+      // paints it at rest (same aspect ratio as the backing, no letterbox).
       if (prefersReducedMotionRef.current) {
-        drawTransitionStills(ctx, transition.startImg, transition.endImg, 1);
+        const still = imgsRef.current.get(effectiveEndImg(transition, tier));
+        if (!still) return true;
+        if (!still.complete) return false; // retry next tick (bounded by load/error)
+        if (still.naturalWidth > 0) ctx.drawImage(still, 0, 0, W, H);
         return true;
       }
 
@@ -422,7 +419,8 @@ export default function Canvas() {
       if (!prev) return true;
       const fc = effectiveFrameCount(prev, tier);
 
-      if (prefersReducedMotionRef.current || prev.mode === 'stills' || fc === 0) {
+      // Reduced motion falls through to the still below (no loaders exist).
+      if (prev.mode === 'stills' || fc === 0) {
         const a = imgsRef.current.get(prev.startImg);
         const b = imgsRef.current.get(prev.endImg);
         if (!a || !b) return true;

@@ -67,8 +67,14 @@ public/
 
 ## Canvas backing store
 
-El canvas se fija a **1280×720** (desktop) o **480×854** (mobile) via `canvas.width/height`.
-El CSS lo estira a `100vw × 100vh` — el GPU escala, no hay rescaling por paint.
+El canvas se fija al tamaño del tier (`src/hooks/useFrameTier.ts`), leído una vez al cargar:
 
-Mobile temporal: sin assets 9:16 nativos, la imagen 16:9 se dibuja con letterbox (barras #050302 arriba/abajo). El texto se posiciona sobre esas barras (top 8-15% / bottom 8-15%).
-Ver `frameLoader.ts` para el TODO de swap de rutas al conectar `/frames/mobile/`.
+| Tier | Backing | Cuándo |
+|---|---|---|
+| mobile | 480×854 | viewport vertical |
+| tablet | 960×540 | horizontal en dispositivo táctil, lado mayor ≤ 1440 px |
+| desktop | 1280×720 | horizontal con mouse/trackpad, o pantallas mayores |
+
+El CSS lo muestra a pantalla completa con `object-fit: cover`: conserva la proporción y recorta el sobrante (nunca estira ni pone barras). Con `prefers-reduced-motion` no se descargan las secuencias: cada estación y transición muestra la imagen fija del propio tier.
+
+Los frames tablet se extraen de los masters 4K (fuera del repo) con `node scripts/extract-frames-tablet.js --videos "<carpeta>"`.
