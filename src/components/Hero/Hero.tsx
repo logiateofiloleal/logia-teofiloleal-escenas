@@ -3,7 +3,6 @@
 import { SEGMENTS, type Segment } from '@/config/segments';
 import StationCopyWrapper from './StationCopyWrapper';
 import ScrollHint from '@/components/ScrollHint/ScrollHint';
-import CinematicOverlay from '@/components/CinematicOverlay/CinematicOverlay';
 import S4Puerta from '@/components/stations/S4Puerta/S4Puerta';
 import S2Principios from '@/components/stations/S2Principios/S2Principios';
 import S3Memoria from '@/components/stations/S3Memoria/S3Memoria';
@@ -83,13 +82,8 @@ export default function Hero() {
       {SEGMENTS.map(seg => (
         <HeroSection key={seg.id} seg={seg}>
           {seg.type === 'station' && COPY[seg.id]}
-          {/* First transition shows scroll hint and cinematic overlays */}
-          {seg.id === 't1' && (
-            <>
-              <CinematicOverlay />
-              <ScrollHint />
-            </>
-          )}
+          {/* First transition shows the scroll hint */}
+          {seg.id === 't1' && <ScrollHint />}
         </HeroSection>
       ))}
     </div>

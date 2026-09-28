@@ -1,9 +1,8 @@
 .hero {
   position: relative;
   /* No z-index here: creating a stacking context would cap all fixed descendants
-     (CinematicOverlay, .copy) at z:1 in the root context, below S4AtmosOverlay (z:4).
-     Without z-index, fixed elements participate in the root stacking context at their
-     own z-index values — .copy at z:10 is correctly above the overlay at z:4. */
+     (.copy) at z:1 in the root context. Without z-index, fixed elements take part
+     in the root stacking context at their own z-index values (.copy at z:10). */
 }
 
 /* ── Sections ────────────────────────────────────────────────── */
