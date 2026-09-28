@@ -5,7 +5,7 @@ import { useIsMobile, MOBILE_BREAKPOINT } from '@/hooks/useIsMobile';
 import { useSceneSnap, type SceneState } from '@/context/SceneSnap';
 import { SEGMENTS, type Transition, type Station } from '@/config/segments';
 import { FrameLoader, getLiveBytes } from '@/lib/frameLoader';
-import { resetPreloadGate, reportPreloadItemDone } from '@/lib/preloadGate';
+import { expectPreloadItems, reportPreloadItemDone } from '@/lib/preloadGate';
 import { scheduleIdle } from '@/lib/scheduleIdle';
 import styles from './Canvas.module.css';
 
@@ -159,6 +159,11 @@ export default function Canvas() {
   // because useIsMobile settles one tick after mount; using the prop here
   // could eager-load the wrong (desktop) frame directory for mobile users.
   useEffect(() => {
+    // Tier is read straight from the viewport, not the isMobile prop, so the
+    // expected asset set is identical on the first run (isMobile still false)
+    // and on the re-run once it settles.
+    const mobileNow = typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT;
+
     const srcs = new Set<string>();
     for (const seg of SEGMENTS) {
       if (seg.type === 'station') srcs.add(seg.frameImg);
@@ -168,33 +173,42 @@ export default function Canvas() {
     const firstFrameSrc = t0 ? effectiveStartImg(t0, isMobile) : undefined;
     // Also preload mobile first-frame fallbacks
     for (const seg of SEGMENTS) {
-      if (seg.type !== 'station' && isMobile && seg.startImgMobile) srcs.add(seg.startImgMobile);
+      if (seg.type !== 'station' && mobileNow && seg.startImgMobile) srcs.add(seg.startImgMobile);
     }
 
-    const mobileNow = typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT;
-    const t0FrameCount = t0 ? effectiveFrameCount(t0, mobileNow) : 0;
     const reducedMotion = prefersReducedMotionRef.current;
+    const t0Loader =
+      !reducedMotion && t0 && t0.mode === 'frames' && effectiveFrameCount(t0, mobileNow) > 0
+        ? (loadersRef.current.get(t0.id) ??
+           new FrameLoader(t0, mobileNow, mobileNow ? MOBILE_W * MOBILE_H * 4 : DESKTOP_W * DESKTOP_H * 4))
+        : null;
 
     // Gate waits for every still PLUS all of t0's frames — intentional:
     // the Preloader stays up until the first scene can scrub smoothly from
     // frame 1, not just until it can start loading. Reduced-motion visitors
     // never fetch the frame sequence at all (see drawTransitionFrames
-    // below), so there's no extra count to wait for.
-    resetPreloadGate(srcs.size + (reducedMotion ? 0 : t0FrameCount));
+    // below), so there's nothing extra to wait for. Keys are asset URLs, so
+    // re-declaring on a re-run keeps whatever was already reported.
+    const expected = Array.from(srcs);
+    if (t0Loader) {
+      for (let i = 0; i < t0Loader.count; i++) expected.push(t0Loader.frameSrc(i));
+    }
+    expectPreloadItems(expected);
 
     srcs.forEach(src => {
+      const report = () => reportPreloadItemDone(src);
       const existing = imgsRef.current.get(src);
       if (existing) {
-        if (existing.complete) reportPreloadItemDone();
+        if (existing.complete) report();
         else {
-          existing.addEventListener('load', reportPreloadItemDone, { once: true });
-          existing.addEventListener('error', reportPreloadItemDone, { once: true });
+          existing.addEventListener('load', report, { once: true });
+          existing.addEventListener('error', report, { once: true });
         }
         return;
       }
       const img = new Image();
-      img.addEventListener('load', reportPreloadItemDone, { once: true });
-      img.addEventListener('error', reportPreloadItemDone, { once: true });
+      img.addEventListener('load', report, { once: true });
+      img.addEventListener('error', report, { once: true });
       img.src = src;
       imgsRef.current.set(src, img);
       if (src === firstFrameSrc) {
@@ -213,11 +227,9 @@ export default function Canvas() {
       }
     });
 
-    if (!reducedMotion && t0 && t0.mode === 'frames' && t0FrameCount > 0 && !loadersRef.current.has(t0.id)) {
-      const t0FrameBytes = mobileNow ? MOBILE_W * MOBILE_H * 4 : DESKTOP_W * DESKTOP_H * 4;
-      const loader = new FrameLoader(t0, mobileNow, t0FrameBytes);
-      loadersRef.current.set(t0.id, loader);
-      loader.load(reportPreloadItemDone);
+    if (t0 && t0Loader && !loadersRef.current.has(t0.id)) {
+      loadersRef.current.set(t0.id, t0Loader);
+      t0Loader.load(reportPreloadItemDone);
     }
   }, [W, H, isMobile, getState]);
 

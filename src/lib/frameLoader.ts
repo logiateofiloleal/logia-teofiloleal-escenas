@@ -112,7 +112,12 @@ export class FrameLoader {
     return null;
   }
 
-  async load(onFrameDone?: () => void): Promise<void> {
+  /** URL of frame `index` (0-based) — also the key passed to onFrameDone. */
+  frameSrc(index: number): string {
+    return `${this.framesDir}/frame_${String(index + 1).padStart(4, '0')}.webp`;
+  }
+
+  async load(onFrameDone?: (src: string) => void): Promise<void> {
     if (this.loading || this.frameCount === 0 || !this.framesDir) return;
     this.loading = true;
 
@@ -125,8 +130,7 @@ export class FrameLoader {
       while (qi < queue.length) {
         if (this.cancelled) return;
         const i = queue[qi++];
-        const pad = String(i + 1).padStart(4, '0');
-        const src = `${this.framesDir}/frame_${pad}.webp`;
+        const src = this.frameSrc(i);
         try {
           const res = await fetch(src);
           if (this.cancelled) return;
@@ -144,7 +148,7 @@ export class FrameLoader {
         } catch {
           this.frames[i] = null;
         }
-        onFrameDone?.();
+        onFrameDone?.(src);
       }
     };
 
