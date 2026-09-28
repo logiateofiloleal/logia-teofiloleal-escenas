@@ -79,6 +79,11 @@ function effectiveStartImg(t: Transition, isMobile: boolean): string {
   return t.startImg;
 }
 
+function effectiveEndImg(t: Transition, isMobile: boolean): string {
+  if (isMobile && t.endImgMobile) return t.endImgMobile;
+  return t.endImg;
+}
+
 /** Ordinal position of a transition id among TRANSITIONS (t1=0, t2=1, …). */
 function transitionOrdinal(id: string): number {
   return TRANSITIONS.findIndex(t => t.id === id);
@@ -171,9 +176,12 @@ export default function Canvas() {
     }
     const t0 = TRANSITIONS[0];
     const firstFrameSrc = t0 ? effectiveStartImg(t0, isMobile) : undefined;
-    // Also preload mobile first-frame fallbacks
+    // Also preload mobile first/last-frame fallbacks (last frames are what
+    // the canvas draws when resting at a station — see drawArrival)
     for (const seg of SEGMENTS) {
-      if (seg.type !== 'station' && mobileNow && seg.startImgMobile) srcs.add(seg.startImgMobile);
+      if (seg.type === 'station' || !mobileNow) continue;
+      if (seg.startImgMobile) srcs.add(seg.startImgMobile);
+      if (seg.endImgMobile)   srcs.add(seg.endImgMobile);
     }
 
     const reducedMotion = prefersReducedMotionRef.current;
@@ -340,36 +348,47 @@ export default function Canvas() {
     [isMobile, frameBytes],
   );
 
+  /**
+   * Draws the frame for `lp`. Returns false while the canvas shows a
+   * stand-in (nearest decoded frame / start still) for a frame that is
+   * still loading — the draw loop keeps ticking so the exact frame is
+   * painted as soon as it decodes, instead of parking on the stand-in.
+   */
   const drawTransitionFrames = useCallback(
-    (ctx: CanvasRenderingContext2D, transition: Transition, lp: number, segIdx: number) => {
+    (ctx: CanvasRenderingContext2D, transition: Transition, lp: number, segIdx: number): boolean => {
       // Reduced motion: never fetch/decode the 130-frame sequence — show the
       // transition's resting end state as a single static image instead.
       if (prefersReducedMotionRef.current) {
         drawTransitionStills(ctx, transition.startImg, transition.endImg, 1);
-        return;
+        return true;
       }
 
       const fc = effectiveFrameCount(transition, isMobile);
       if (fc === 0) {
         drawTransitionStills(ctx, transition.startImg, transition.endImg, lp);
-        return;
+        return true;
       }
 
       // Lazy init loader (no-op if already loading/loaded)
       startLoader(transition);
       const loader = loadersRef.current.get(transition.id);
-      if (!loader) return; // startLoader declined (shouldn't happen — fc > 0 checked above)
+      if (!loader) return true; // startLoader declined (shouldn't happen — fc > 0 checked above)
 
       const targetIdx = Math.floor(lp * (fc - 1));
       const lastDrawn = lastFrameRef.current.get(transition.id) ?? -2;
 
-      if (targetIdx === lastDrawn) return; // no-op guard
+      if (targetIdx === lastDrawn) return true; // no-op guard
 
-      const frame = loader.getFrame(targetIdx) ?? loader.nearestFrame(targetIdx);
+      const exact = loader.getFrame(targetIdx);
+      const frame = exact ?? loader.nearestFrame(targetIdx);
       if (frame) {
         ctx.drawImage(frame, 0, 0, W, H);
-        loader.setLastDrawn(targetIdx);
-        lastFrameRef.current.set(transition.id, targetIdx);
+        // Only an exact hit is recorded — a stand-in is redrawn (and
+        // replaced) on the next tick once the real frame has decoded.
+        if (exact) {
+          loader.setLastDrawn(targetIdx);
+          lastFrameRef.current.set(transition.id, targetIdx);
+        }
       } else if (!lastFrameRef.current.has(transition.id)) {
         // No frames decoded yet — show startImg so canvas isn't black
         const startSrc = effectiveStartImg(transition, isMobile);
@@ -397,8 +416,58 @@ export default function Canvas() {
           scheduleIdle(() => startLoader(prev));
         }
       }
+
+      return exact != null || !loader.isLoading;
     },
     [drawTransitionStills, isMobile, W, H, startLoader],
+  );
+
+  /**
+   * Resting at station N (N ≥ 1): paints the real last frame of the
+   * transition that arrives there. The transition's own last paint can't be
+   * trusted to be that frame — the smoothing lerp is cut short when the
+   * station takes over, and a fast scroll / NavDot / menu jump can cross a
+   * transition before its frames have decoded (leaving its first frame or a
+   * stand-in on canvas). The videos are continuous (last frame of tN ≈
+   * first frame of tN+1), so this is also right when arriving backwards.
+   * Returns false if nothing could be painted yet (still image loading).
+   */
+  const drawArrival = useCallback(
+    (ctx: CanvasRenderingContext2D, station: number): boolean => {
+      const prev = TRANSITIONS[station - 1];
+      if (!prev) return true;
+      const fc = effectiveFrameCount(prev, isMobile);
+
+      if (prefersReducedMotionRef.current || prev.mode === 'stills' || fc === 0) {
+        const a = imgsRef.current.get(prev.startImg);
+        const b = imgsRef.current.get(prev.endImg);
+        if (!a || !b) return true;
+        if (!a.complete || !b.complete) return false;
+        drawTransitionStills(ctx, prev.startImg, prev.endImg, 1);
+        return true;
+      }
+
+      const last   = fc - 1;
+      const loader = loadersRef.current.get(prev.id);
+      const frame  = loader?.getFrame(last);
+      if (loader && frame) {
+        ctx.drawImage(frame, 0, 0, W, H);
+        loader.setLastDrawn(last);
+        lastFrameRef.current.set(prev.id, last);
+        return true;
+      }
+
+      // Same image file as the last frame, preloaded as a still.
+      const still = imgsRef.current.get(effectiveEndImg(prev, isMobile));
+      if (!still) return true;
+      if (!still.complete) return false;
+      if (still.naturalWidth > 0) {
+        ctx.drawImage(still, 0, 0, W, H);
+        lastFrameRef.current.set(prev.id, last);
+      }
+      return true;
+    },
+    [drawTransitionStills, isMobile, W, H],
   );
 
   // ── Target state (written by SceneSnap, read by the rAF loop below) ──
@@ -425,8 +494,15 @@ export default function Canvas() {
   const rafIdRef          = useRef<number | null>(null);
   const loopRunningRef    = useRef(false);
   const ensureLoopRunningRef = useRef<() => void>(() => {});
+  // Station whose arrival frame is already on canvas (-1 = none) — keeps
+  // idle scroll events inside a station from repainting the same frame.
+  const arrivalDrawnRef   = useRef(-1);
 
   useEffect(() => {
+    // Re-created when the backing store changes size (e.g. isMobile settles),
+    // which clears the canvas — the current station must be painted again.
+    arrivalDrawnRef.current = -1;
+
     const driver = () => {
       const c = canvasRef.current;
       const ctx = c?.getContext('2d');
@@ -436,6 +512,7 @@ export default function Canvas() {
       let keepGoing = false;
 
       if (state.playState === 'playing') {
+        arrivalDrawnRef.current = -1;
         const trans = TRANSITIONS[state.transitionIdx];
         if (trans) {
           const segIdx    = SEGMENTS.indexOf(trans);
@@ -443,23 +520,27 @@ export default function Canvas() {
 
           if (activeTransIdRef.current !== trans.id) {
             // Entering a new transition — snap (no cross-segment lerp) and
-            // release anything outside the new window.
+            // release anything outside the new window. Forget the last
+            // drawn index: the canvas has shown other content since, so the
+            // no-op guard must not skip the first paint.
             activeTransIdRef.current = trans.id;
             activeSegIdxRef.current  = segIdx;
             displayLpRef.current     = targetLp;
+            lastFrameRef.current.delete(trans.id);
             releaseOutsideWindow(segIdx);
           } else {
             displayLpRef.current += (targetLp - displayLpRef.current) * LERP_ALPHA;
           }
 
           const lp = displayLpRef.current;
+          let settled = true;
 
           if (trans.mode === 'stills' || trans.frameCount === 0) {
             ctx.clearRect(0, 0, W, H);
             drawTransitionStills(ctx, trans.startImg, trans.endImg, lp);
           } else {
             // Frames: do NOT pre-clear — keep last valid frame while loading
-            drawTransitionFrames(ctx, trans, lp, segIdx);
+            settled = drawTransitionFrames(ctx, trans, lp, segIdx);
           }
 
           // Checked every tick, not just on entry: decoded bytes trickle in
@@ -467,12 +548,11 @@ export default function Canvas() {
           // actually crosses the budget can land well after it was admitted.
           enforceBudget(segIdx);
 
-          keepGoing = Math.abs(targetLp - displayLpRef.current) > LERP_EPSILON;
+          keepGoing = !settled || Math.abs(targetLp - displayLpRef.current) > LERP_EPSILON;
         }
       } else {
-        // idle — only station 0 needs an explicit draw (initial mount).
-        // Stations 1-4: keep whatever the transition left on canvas —
-        // the last painted frame IS the correct still, no visual jump.
+        // idle — every station paints its own resting frame explicitly;
+        // never rely on whatever the previous transition left on canvas.
         activeTransIdRef.current = null;
         enforceBudget(activeSegIdxRef.current);
         if (state.station === 0) {
@@ -483,8 +563,10 @@ export default function Canvas() {
             ctx.clearRect(0, 0, W, H);
             ctx.drawImage(img, 0, 0, W, H); // raw — matches FrameLoader bitmap render
           }
+        } else if (arrivalDrawnRef.current !== state.station) {
+          if (drawArrival(ctx, state.station)) arrivalDrawnRef.current = state.station;
+          else keepGoing = true; // still image not loaded yet — retry next frame
         }
-        // else: no-op — last transition frame stays on canvas
       }
 
       if (keepGoing) {
@@ -509,7 +591,7 @@ export default function Canvas() {
       if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current);
       loopRunningRef.current = false;
     };
-  }, [drawTransitionStills, drawTransitionFrames, releaseOutsideWindow, enforceBudget, isMobile, W, H]);
+  }, [drawTransitionStills, drawTransitionFrames, drawArrival, releaseOutsideWindow, enforceBudget, isMobile, W, H]);
 
   // ── Release everything on unmount (route change, etc.) ──────
   useEffect(() => {

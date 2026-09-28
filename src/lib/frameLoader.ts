@@ -96,6 +96,11 @@ export class FrameLoader {
     return this.lastDrawnIndex;
   }
 
+  /** True while frames are still being fetched/decoded (more may arrive). */
+  get isLoading(): boolean {
+    return this.loading && !this.cancelled;
+  }
+
   /** Effective frame count (mobile or desktop, whichever this loader was built for). */
   get count(): number {
     return this.frameCount;

@@ -27,6 +27,7 @@ export interface Transition {
   framesDirMobile?: string;  // mobile frames dir (480×854)
   frameCountMobile?: number; // actual mobile frame count
   startImgMobile?: string;   // mobile first-frame fallback shown before loader starts
+  endImgMobile?: string;     // mobile last frame — drawn when resting at the next station
   durationMs?: number;       // override DURATION_FRAMES for this transition
   easing: Easing;
   scrollVh: number;
@@ -34,20 +35,22 @@ export interface Transition {
 
 export type Segment = Station | Transition;
 
-const D = '/frames/desktop'; // desktop frame base path
-
+// endImg / endImgMobile MUST be the transition's real last frame: the Canvas
+// draws it when resting at the following station, and the next transition's
+// first frame continues seamlessly from it.
 export const SEGMENTS: Segment[] = [
   {
     type: 'transition',
     id: 't1',
     mode: 'frames',
     startImg: '/frames/escena-1-desktop/frame_0001.webp',
-    endImg: `${D}/frame-2.webp`,
+    endImg: '/frames/escena-1-desktop/frame_0130.webp',
     framesDir: '/frames/escena-1-desktop',
     frameCount: 130,
     framesDirMobile: '/frames/mobile/escena-1',
     frameCountMobile: 130,
     startImgMobile: '/frames/mobile/escena-1/frame_0001.webp',
+    endImgMobile: '/frames/mobile/escena-1/frame_0130.webp',
     easing: 'linear',
     scrollVh: 300,
   },
@@ -64,12 +67,13 @@ export const SEGMENTS: Segment[] = [
     id: 't2',
     mode: 'frames',
     startImg: '/frames/escena-2-desktop/frame_0001.webp',
-    endImg: `${D}/frame-3.webp`,
+    endImg: '/frames/escena-2-desktop/frame_0130.webp',
     framesDir: '/frames/escena-2-desktop',
     frameCount: 130,
     framesDirMobile: '/frames/mobile/escena-2',
     frameCountMobile: 130,
     startImgMobile: '/frames/mobile/escena-2/frame_0001.webp',
+    endImgMobile: '/frames/mobile/escena-2/frame_0130.webp',
     durationMs: 6500,
     easing: 'linear',
     scrollVh: 300,
@@ -77,7 +81,8 @@ export const SEGMENTS: Segment[] = [
   {
     type: 'station',
     id: 's3',
-    frameImg: `${D}/frame-3.webp`,
+    // Last frame of t2.
+    frameImg: '/frames/escena-2-desktop/frame_0130.webp',
     align: 'right',
     scrollVh: 80,
   },
@@ -92,6 +97,7 @@ export const SEGMENTS: Segment[] = [
     framesDirMobile: '/frames/mobile/escena-3',
     frameCountMobile: 130,
     startImgMobile: '/frames/mobile/escena-3/frame_0001.webp',
+    endImgMobile: '/frames/mobile/escena-3/frame_0130.webp',
     durationMs: 9500,
     easing: 'linear',
     scrollVh: 300,
