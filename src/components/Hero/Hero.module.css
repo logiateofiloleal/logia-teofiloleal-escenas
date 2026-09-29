@@ -59,8 +59,7 @@
    scales down on short viewports (laptop windows are often <900px tall).
    top+bottom (with height:auto) stretches the box to span that range, and
    the flex column lets a child push itself down via margin-top:auto — see
-   .principios below — so the title stays up top and the list uses the
-   free space lower in the frame instead of bunching under the title. */
+   .principios below. Desktop compacts it (media query further down). */
 .top {
   top: clamp(20px, 5vh, 56px);
   bottom: clamp(20px, 5vh, 56px);
@@ -131,10 +130,25 @@
    a 16px gutter (42px to the text with the panel's padding). Where the
    block already fits (e.g. 1920 and up) the cap is above 540px: no change. */
 @media (min-width: 1025px) and (min-aspect-ratio: 1501/1000) {
-  .puerta {
+  .puerta,
+  .top {
     --frame-w: max(100vw, 177.78vh);
     --frame-x: calc((100vw - var(--frame-w)) / 2);
+  }
+  .puerta {
     max-width: min(540px, calc(100vw - var(--safe-right) - (var(--frame-x) + var(--frame-w) * 0.645) - 16px));
+  }
+  /* Los Principios on desktop: one compact block, vertically centred like
+     the other stations, with the list following the title
+     (S2Principios.module.css) instead of a full-height column with the
+     list pushed to the bottom. Its width is capped against the door's
+     light shaft (x 0.515), which the walking figure follows — that only
+     binds on narrow 16:10 laptops such as 1280x800. */
+  .top {
+    top: 50%;
+    bottom: auto;
+    transform: translateY(calc(-50% + var(--_reveal-y)));
+    max-width: min(540px, calc(100vw - var(--safe-right) - (var(--frame-x) + var(--frame-w) * 0.515) - 16px));
   }
 }
 

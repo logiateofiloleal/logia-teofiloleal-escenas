@@ -27,16 +27,19 @@ function HeroSection({ seg, children }: { seg: Segment; children?: React.ReactNo
 // Medio-derecha, apilado y angosto — el profano camina por el eje central
 // del pasillo durante t1/t2, así que el bloque ancho/centrado anterior
 // terminaba tapándolo. La columna derecha permanece libre en toda la escena.
+// Entra al 88–100 % de t1, después de que El Umbral terminó de salir
+// (72–86 %, UmbralOverlay.tsx): nunca hay dos textos a la vez.
 function S2Copy() {
   return (
-    <StationCopyWrapper stationIndex={1} top fadeOutStart={0.70} fadeOutEnd={0.84}>
+    <StationCopyWrapper stationIndex={1} top fadeInStart={0.88} fadeOutStart={0.70} fadeOutEnd={0.84}>
       <S2Principios />
     </StationCopyWrapper>
   );
 }
 
 // ── Station 3: La Memoria — Homenaje a Teófilo Leal ──────────
-// stationIndex=2: entra al final de t2 (fadeInStart=0.95, rápido y nítido),
+// stationIndex=2: entra al 90–100 % de t2, tras la pausa sin texto que deja
+// la salida de s2 (84 %); antes entraba de golpe en el último 5 %.
 // visible en s3 idle, sale con crossfade estándar durante t3.
 // Medio-derecha, como el resto de las escenas — el contenido interno
 // (retrato, nombre, fechas) sigue centrado dentro de su propia columna
@@ -45,7 +48,7 @@ function TeofiloCopy() {
   return (
     <StationCopyWrapper
       stationIndex={2}
-      fadeInStart={0.95}
+      fadeInStart={0.90}
       fadeOutStart={0.25}
       fadeOutEnd={0.50}
       interactiveThreshold={0}

@@ -30,7 +30,9 @@ export default function UmbralOverlay() {
       } else if (state.transitionIdx === 0) {
         // t1 is active (forward or reverse)
         const lp    = state.direction === 1 ? state.progress : 1 - state.progress;
-        const exit  = ss(0.85, 1.0, lp); // exits at end of t1, synced with s2 entry
+        // Fully gone by 86% of t1, before Los Principios starts entering
+        // at 88% (Hero.tsx) — the two blocks never show at the same time.
+        const exit  = ss(0.72, 0.86, lp);
         opacity     = 1 - exit;
         yOffset     = -44 - exit * 9; // rises to -53% on exit
       }
