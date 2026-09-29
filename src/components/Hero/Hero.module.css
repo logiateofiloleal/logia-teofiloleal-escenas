@@ -27,7 +27,7 @@
   z-index: 10;
   /* Centro de la mitad derecha — con aire respecto al borde, no pegado,
      y sin invadir la puerta (columna central). */
-  right: clamp(56px, 9vw, 130px);
+  right: var(--safe-right); /* globals.css */
   left: auto;
   top: 50%;
   transform: translateY(calc(-50% + var(--_reveal-y)));
@@ -122,6 +122,21 @@
 
 
 
+
+/* ── La Puerta: stay clear of the knocking hand (desktop) ─────────
+   The block grows toward the centre as --safe-right grows, and on 16:10
+   / 16:9 laptops the frame's cover crop puts the hand close to it. Cap the
+   width so the block's left edge never passes the hand's right edge
+   (x = 0.645 of the 16:9 frame, projected through object-fit: cover) plus
+   a 16px gutter (42px to the text with the panel's padding). Where the
+   block already fits (e.g. 1920 and up) the cap is above 540px: no change. */
+@media (min-width: 1025px) and (min-aspect-ratio: 1501/1000) {
+  .puerta {
+    --frame-w: max(100vw, 177.78vh);
+    --frame-x: calc((100vw - var(--frame-w)) / 2);
+    max-width: min(540px, calc(100vw - var(--safe-right) - (var(--frame-x) + var(--frame-w) * 0.645) - 16px));
+  }
+}
 
 /* ── La Puerta on landscape tablets ─────────────────────────────
    Between 1:1 and 3:2 the 16:9 frame is cover-cropped at the sides, so
