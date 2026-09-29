@@ -9,7 +9,7 @@
   left: auto;
   /* Centro de la mitad derecha — con aire respecto al borde, no pegado,
      y sin invadir la puerta (columna central). */
-  right: clamp(56px, 9vw, 130px);
+  right: var(--safe-right); /* globals.css */
   transform: translateY(-44%);
   z-index: 10;
   max-width: 460px;

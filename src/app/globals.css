@@ -24,6 +24,13 @@
 
   /* ── COPY LAYOUT ─────────────────────────────────────── */
   --copy-px: clamp(16px, 4vw, 36px); /* padding lateral estándar */
+  /* Margen seguro derecho de los bloques de texto anclados a la derecha
+     (El Umbral y las estaciones). Hasta ~1437px es exactamente el margen
+     de siempre, clamp(56px, 9vw, 130px); a partir de ahí crece con la
+     pantalla — ~194px en 1920, ~277px en 2560, tope 300px — para que los
+     textos no queden pegados al borde en monitores grandes. Tablets y
+     móvil nunca llegan a ese ancho, o lo sobrescriben en su media query. */
+  --safe-right: max(clamp(56px, 9vw, 130px), min(calc(13vw - 56px), 300px));
 
   /* ── BUTTON TOKENS ───────────────────────────────────── */
   --btn-color:          var(--oro-brillo);

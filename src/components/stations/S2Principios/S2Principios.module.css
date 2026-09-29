@@ -5,17 +5,24 @@
   word-break: break-word;
 }
 
-/* Compact rows (icon left, title+description right) — pushed down to the
-   lower part of the panel (margin-top:auto, panel is a flex column via
-   Hero.module.css .top) so the list uses the free space below the title
-   instead of bunching directly under it. Still a single narrow-ish column,
-   not a wide 3-across row, but with room to read comfortably. */
+/* Compact rows (icon left, title+description right) in a single
+   narrow-ish column, not a wide 3-across row. */
 .principios {
   display: flex;
   flex-direction: column;
   gap: clamp(16px, 3vh, 28px);
   margin-top: auto;
   width: 100%;
+}
+
+/* Desktop: the list follows the title as one block (Hero.module.css .top)
+   with a slightly tighter rhythm. Same media query as that rule; tablets
+   and phones keep their current layout. */
+@media (min-width: 1025px) and (min-aspect-ratio: 1501/1000) {
+  .principios {
+    margin-top: clamp(16px, 3vh, 30px);
+    gap: clamp(14px, 2.4vh, 22px);
+  }
 }
 
 .principio {

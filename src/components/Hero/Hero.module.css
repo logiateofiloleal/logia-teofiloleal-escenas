@@ -1,9 +1,8 @@
 .hero {
   position: relative;
   /* No z-index here: creating a stacking context would cap all fixed descendants
-     (CinematicOverlay, .copy) at z:1 in the root context, below S4AtmosOverlay (z:4).
-     Without z-index, fixed elements participate in the root stacking context at their
-     own z-index values — .copy at z:10 is correctly above the overlay at z:4. */
+     (.copy) at z:1 in the root context. Without z-index, fixed elements take part
+     in the root stacking context at their own z-index values (.copy at z:10). */
 }
 
 /* ── Sections ────────────────────────────────────────────────── */
@@ -28,7 +27,7 @@
   z-index: 10;
   /* Centro de la mitad derecha — con aire respecto al borde, no pegado,
      y sin invadir la puerta (columna central). */
-  right: clamp(56px, 9vw, 130px);
+  right: var(--safe-right); /* globals.css */
   left: auto;
   top: 50%;
   transform: translateY(calc(-50% + var(--_reveal-y)));
@@ -60,8 +59,7 @@
    scales down on short viewports (laptop windows are often <900px tall).
    top+bottom (with height:auto) stretches the box to span that range, and
    the flex column lets a child push itself down via margin-top:auto — see
-   .principios below — so the title stays up top and the list uses the
-   free space lower in the frame instead of bunching under the title. */
+   .principios below. Desktop compacts it (media query further down). */
 .top {
   top: clamp(20px, 5vh, 56px);
   bottom: clamp(20px, 5vh, 56px);
@@ -123,6 +121,94 @@
 
 
 
+
+/* ── La Puerta: stay clear of the knocking hand (desktop) ─────────
+   The block grows toward the centre as --safe-right grows, and on 16:10
+   / 16:9 laptops the frame's cover crop puts the hand close to it. Cap the
+   width so the block's left edge never passes the hand's right edge
+   (x = 0.645 of the 16:9 frame, projected through object-fit: cover) plus
+   a 16px gutter (42px to the text with the panel's padding). Where the
+   block already fits (e.g. 1920 and up) the cap is above 540px: no change. */
+@media (min-width: 1025px) and (min-aspect-ratio: 1501/1000) {
+  .puerta,
+  .top {
+    --frame-w: max(100vw, 177.78vh);
+    --frame-x: calc((100vw - var(--frame-w)) / 2);
+  }
+  .puerta {
+    max-width: min(540px, calc(100vw - var(--safe-right) - (var(--frame-x) + var(--frame-w) * 0.645) - 16px));
+  }
+  /* Los Principios on desktop: one compact block, vertically centred like
+     the other stations, with the list following the title
+     (S2Principios.module.css) instead of a full-height column with the
+     list pushed to the bottom. Its width is capped against the door's
+     light shaft (x 0.515), which the walking figure follows — that only
+     binds on narrow 16:10 laptops such as 1280x800. */
+  .top {
+    top: 50%;
+    bottom: auto;
+    transform: translateY(calc(-50% + var(--_reveal-y)));
+    max-width: min(540px, calc(100vw - var(--safe-right) - (var(--frame-x) + var(--frame-w) * 0.515) - 16px));
+  }
+}
+
+/* ── La Puerta on landscape tablets ─────────────────────────────
+   Between 1:1 and 3:2 the 16:9 frame is cover-cropped at the sides, so
+   the figure's head and knocking hand sit further right than on a 16:9 or
+   16:10 screen and the vertically-centered block lands on them. Anchor it
+   to the top-right corner, below the header and above the hand, narrow
+   enough to clear the head. Wider screens (16:10, 16:9) and portrait
+   (≤768px / taller than wide) never match, so they keep their layout. */
+@media (min-width: 769px) and (min-aspect-ratio: 1/1) and (max-aspect-ratio: 3/2) {
+  .puerta {
+    top: clamp(84px, 11vh, 120px);
+    right: max(56px, 5vw);
+    max-width: min(40vw, 460px);
+    padding-top: 0;
+    transform: translateY(var(--_reveal-y));
+  }
+  .puerta h2 { font-size: clamp(1.8rem, 3.2vw, 3rem); }
+}
+
+/* ── Los Principios and La Puerta on portrait tablets ────────────
+   769–1100px wide and taller than wide gets the desktop layout (block
+   centred at the right), which lands on the figure in the 9:16 frames:
+   s2's list falls on the walking figure, s4's copy on the head and hand.
+   Anchor both at the top, as on phones. s3 (Teófilo) keeps its layout. */
+@media (min-width: 769px) and (max-width: 1100px) and (orientation: portrait) {
+  .copy.top,
+  .copy.puerta {
+    left: 64px;
+    right: 64px;
+    top: 7%;
+    bottom: auto;
+    max-width: none;
+    transform: translateY(var(--_reveal-y));
+  }
+}
+
+/* ── La Puerta over the light shaft ──────────────────────────────
+   Where the copy sits at the top (phones, iPad mini, portrait tablets)
+   the paragraph crosses the door's light shaft (~1.4:1). A soft radial
+   veil behind the block plus a denser text shadow keep it >= 4.5:1.
+   closest-side makes the gradient fully transparent exactly at the
+   veil's box edges, so it never reads as a box. */
+@media (max-width: 768px), (min-width: 769px) and (max-width: 1100px) and (orientation: portrait) {
+  .puerta::before {
+    content: "";
+    position: absolute;
+    inset: -32px -40px;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(closest-side, rgba(5, 3, 2, .66) 0%, rgba(5, 3, 2, .42) 55%, rgba(5, 3, 2, 0) 100%);
+  }
+  .puerta p {
+    text-shadow: 0 0 2px rgba(0, 0, 0, .85), 0 0 14px rgba(0, 0, 0, .9), 0 0 30px rgba(0, 0, 0, .75);
+  }
+}
+@media (max-width: 768px) {
+  .puerta::before { inset: -28px -18px; } /* stay inside the 18px side margins */
+}
 
 /* ── Responsive ──────────────────────────────────────────────── */
 @media (max-width: 1024px) {

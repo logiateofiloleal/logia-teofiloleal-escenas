@@ -14,7 +14,6 @@ import NavDots from '@/components/NavDots/NavDots';
 import Hero from '@/components/Hero/Hero';
 import Cierre from '@/components/Cierre/Cierre';
 import UmbralOverlay from '@/components/UmbralOverlay/UmbralOverlay';
-import S4AtmosOverlay from '@/components/S4AtmosOverlay/S4AtmosOverlay';
 import MemDebugOverlay from '@/components/MemDebugOverlay/MemDebugOverlay';
 
 const FINAL_HOLD_MS = 4000;
@@ -56,12 +55,12 @@ export default function HeroPage() {
           {/* Loops suspense/piano ambient track while on the landing —
               starts once the real preload gate resolves */}
           <AmbientAudio />
-          {/* Fixed canvas — z-index:0, behind all DOM overlays */}
+          {/* Fixed canvas — z-index:0, behind all DOM overlays. Frames are shown
+              as-is: no global light/colour layers over the canvas (only the
+              header's own gradient and La Puerta's local contrast veil). */}
           <Canvas />
           {/* Fixed copy for Escena 1 — spans s1 station + t1 transition */}
           <UmbralOverlay />
-          {/* Atmospheric treatment for s4 — blurs and dims canvas during La Puerta */}
-          <S4AtmosOverlay />
           {/* Persistent institutional seal — fixed medio-izquierda, same spot in every scene */}
           <BrandSeal />
           {/* Fixed UI chrome — always on top */}

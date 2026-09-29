@@ -3,9 +3,12 @@
   inset: 0;
   width: 100%;
   height: 100%;
+  /* Keep the frame's aspect ratio and crop the overflow — the backing is
+     16:9 or 9:16 (see useFrameTier) while viewports vary; never stretch. */
+  object-fit: cover;
   z-index: 0;
-  /* mix-blend-mode:screen fuses blacks of frames with #050302 background */
-  mix-blend-mode: screen;
+  /* No blend mode: frames are opaque and are shown exactly as authored
+     (screen over the #050302 page background lifted every black). */
   pointer-events: none;
   /* GPU hint — this element repaints on every scrubbed frame */
   will-change: transform;

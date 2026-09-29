@@ -8,12 +8,11 @@ import {
   useCallback,
   type ReactNode,
 } from 'react';
-import { SEGMENTS } from '@/config/segments';
+import { stationDwells } from '@/lib/stationScroll';
 import { useScrollEngine, type ScrollState } from '@/context/ScrollEngine';
 
 // ── Config ────────────────────────────────────────────────────────────
 const STATION_COUNT = 5;   // s1..s5
-const DWELL_RATIO   = 0.35; // how far into station segment to target with goTo()
 
 // ── Types ─────────────────────────────────────────────────────────────
 export type PlayState = 'idle' | 'playing';
@@ -41,22 +40,9 @@ const Ctx = createContext<SceneSnapCtx | null>(null);
 
 // ── Helpers ───────────────────────────────────────────────────────────
 
-/**
- * Builds scrollY dwell positions for each station (used by goTo).
- * Station 0 (s1) = 0. Station N = end_of_transition_N + DWELL_RATIO * station_N_height.
- */
+/** scrollY dwell positions for each station (used by goTo) — see stationScroll.ts. */
 function buildDwells(): number[] {
-  const vh = window.innerHeight;
-  const dwells: number[] = [0]; // s1 implícito
-  let cumPx = 0;
-  for (const seg of SEGMENTS) {
-    const segPx = (seg.scrollVh / 100) * vh;
-    if (seg.type === 'station') {
-      dwells.push(cumPx + segPx * DWELL_RATIO);
-    }
-    cumPx += segPx;
-  }
-  return dwells;
+  return stationDwells(window.innerHeight);
 }
 
 /**

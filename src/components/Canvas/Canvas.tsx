@@ -1,20 +1,24 @@
 'use client';
 
 import { useEffect, useRef, useCallback } from 'react';
-import { useIsMobile, MOBILE_BREAKPOINT } from '@/hooks/useIsMobile';
+import { useFrameTier, readFrameTier } from '@/hooks/useFrameTier';
 import { useSceneSnap, type SceneState } from '@/context/SceneSnap';
-import { SEGMENTS, type Transition, type Station } from '@/config/segments';
+import { SEGMENTS, tierAssets, type Transition, type Station, type FrameTier } from '@/config/segments';
 import { FrameLoader, getLiveBytes } from '@/lib/frameLoader';
-import { resetPreloadGate, reportPreloadItemDone } from '@/lib/preloadGate';
+import { expectPreloadItems, reportPreloadItemDone } from '@/lib/preloadGate';
 import { scheduleIdle } from '@/lib/scheduleIdle';
 import styles from './Canvas.module.css';
 
 // Backing store dimensions MUST match frame dimensions exactly.
-// Mismatch forces per-paint GPU rescaling.
-const DESKTOP_W = 1280;
-const DESKTOP_H = 720;
-const MOBILE_W  = 480;
-const MOBILE_H  = 854;
+// Mismatch forces per-paint GPU rescaling. The CSS box is always the full
+// viewport with object-fit: cover (Canvas.module.css), so the backing's
+// aspect ratio is preserved and any mismatch with the viewport is cropped.
+const DIMS: Record<FrameTier, readonly [number, number]> = {
+  desktop: [1280, 720],
+  tablet:  [960, 540],
+  mobile:  [480, 854],
+};
+const frameBytesFor = (tier: FrameTier) => DIMS[tier][0] * DIMS[tier][1] * 4;
 
 // ── Memory window ─────────────────────────────────────────────────────
 // Only 3 transitions exist total, so a naive "keep everything until far
@@ -47,8 +51,12 @@ const MOBILE_H  = 854;
 //    furthest first.
 const LOOKAHEAD          = 1;
 const LOOKBEHIND         = 0;
-const MEM_BUDGET_MOBILE  = 480 * 1024 * 1024;  // fits 2 mobile transitions (~407MB), not 3 (~610MB)
-const MEM_BUDGET_DESKTOP = 1100 * 1024 * 1024; // fits 2 desktop transitions (~914MB), not 3 (~1371MB)
+const MB = 1024 * 1024;
+const MEM_BUDGET: Record<FrameTier, number> = {
+  mobile:  480 * MB,  // fits 2 mobile transitions (~407MB), not 3 (~610MB)
+  tablet:  560 * MB,  // fits 2 tablet transitions (~514MB), not 3 (~771MB)
+  desktop: 1100 * MB, // fits 2 desktop transitions (~914MB), not 3 (~1371MB)
+};
 
 // Smooths the mapping from scroll-derived progress to displayed frame index
 // so irregular scroll-event timing doesn't read as jank. Runs in its own
@@ -69,15 +77,9 @@ function ss(e0: number, e1: number, v: number): number {
 const TRANSITIONS = SEGMENTS.filter((s): s is Transition => s.type === 'transition');
 const STATIONS    = SEGMENTS.filter((s): s is Station    => s.type === 'station');
 
-function effectiveFrameCount(t: Transition, isMobile: boolean): number {
-  if (isMobile && t.frameCountMobile != null) return t.frameCountMobile;
-  return t.frameCount;
-}
-
-function effectiveStartImg(t: Transition, isMobile: boolean): string {
-  if (isMobile && t.startImgMobile) return t.startImgMobile;
-  return t.startImg;
-}
+const effectiveFrameCount = (t: Transition, tier: FrameTier) => tierAssets(t, tier).frameCount;
+const effectiveStartImg   = (t: Transition, tier: FrameTier) => tierAssets(t, tier).startImg;
+const effectiveEndImg     = (t: Transition, tier: FrameTier) => tierAssets(t, tier).endImg;
 
 /** Ordinal position of a transition id among TRANSITIONS (t1=0, t2=1, …). */
 function transitionOrdinal(id: string): number {
@@ -86,12 +88,11 @@ function transitionOrdinal(id: string): number {
 
 export default function Canvas() {
   const canvasRef  = useRef<HTMLCanvasElement>(null);
-  const isMobile   = useIsMobile();
-  const { register, getState } = useSceneSnap();
+  const tier       = useFrameTier();
+  const { register } = useSceneSnap();
 
-  const W          = isMobile ? MOBILE_W  : DESKTOP_W;
-  const H          = isMobile ? MOBILE_H  : DESKTOP_H;
-  const frameBytes = W * H * 4; // decoded RGBA size of one frame — memory accounting unit
+  const [W, H]     = DIMS[tier];
+  const frameBytes = frameBytesFor(tier); // decoded RGBA size of one frame — memory accounting unit
 
   // Preloaded stills — HTMLImageElement (sync drawImage once .complete)
   const imgsRef    = useRef<Map<string, HTMLImageElement>>(new Map());
@@ -106,7 +107,7 @@ export default function Canvas() {
   // "active" at the time it actually lands, not when it was scheduled.
   const activeSegIdxRef = useRef(0);
 
-  // Read once at mount, same pattern as useIsMobile — avoids reloading
+  // Read once at mount, same pattern as useFrameTier — avoids reloading
   // assets mid-session if the OS setting changes.
   const prefersReducedMotionRef = useRef(false);
 
@@ -126,6 +127,10 @@ export default function Canvas() {
 
   // ── Draw helpers ─────────────────────────────────────────
 
+  // Used by 'stills'-mode transitions (crossfade between two images). The
+  // image is cover-fitted to the backing store — aspect ratio kept, overflow
+  // cropped — so a still of another aspect ratio never letterboxes or
+  // stretches (a no-op crop when it already matches the tier).
   const drawImg = useCallback(
     (ctx: CanvasRenderingContext2D, img: HTMLImageElement, scale: number, filter: string) => {
       ctx.save();
@@ -133,93 +138,84 @@ export default function Canvas() {
       ctx.translate(W / 2, H / 2);
       ctx.scale(scale, scale);
       ctx.translate(-W / 2, -H / 2);
-
-      if (isMobile) {
-        // Letterbox: 16:9 image centered in 9:16 canvas with black bars.
-        const drawH   = Math.round(W / (16 / 9));
-        const offsetY = Math.round((H - drawH) / 2);
-        ctx.drawImage(img, 0, offsetY, W, drawH);
-        ctx.restore();
-        ctx.fillStyle = '#050302';
-        if (offsetY > 0) {
-          ctx.fillRect(0, 0, W, offsetY);
-          ctx.fillRect(0, H - offsetY, W, offsetY);
-        }
-      } else {
-        ctx.drawImage(img, 0, 0, W, H);
-        ctx.restore();
-      }
+      const s  = Math.max(W / img.naturalWidth, H / img.naturalHeight);
+      const dw = img.naturalWidth * s;
+      const dh = img.naturalHeight * s;
+      ctx.drawImage(img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+      ctx.restore();
     },
-    [W, H, isMobile],
+    [W, H],
   );
 
   // ── Preload all stills + first transition's frames ───────
   // The Preloader stays visible until this gate reports ready — no fixed
-  // timers. window.innerWidth is read directly (not the isMobile prop)
-  // because useIsMobile settles one tick after mount; using the prop here
-  // could eager-load the wrong (desktop) frame directory for mobile users.
+  // timers. The tier is read straight from the viewport (readFrameTier), not
+  // the tier prop: useFrameTier settles one render after mount, and using
+  // the prop here could eager-load the desktop frames on a phone or tablet.
   useEffect(() => {
+    const tierNow = readFrameTier();
+
     const srcs = new Set<string>();
     for (const seg of SEGMENTS) {
       if (seg.type === 'station') srcs.add(seg.frameImg);
       else { srcs.add(seg.startImg); srcs.add(seg.endImg); }
     }
     const t0 = TRANSITIONS[0];
-    const firstFrameSrc = t0 ? effectiveStartImg(t0, isMobile) : undefined;
-    // Also preload mobile first-frame fallbacks
+    // Also preload this tier's first/last-frame stills (last frames are what
+    // the canvas draws when resting at a station — see drawArrival)
     for (const seg of SEGMENTS) {
-      if (seg.type !== 'station' && isMobile && seg.startImgMobile) srcs.add(seg.startImgMobile);
+      if (seg.type === 'station' || tierNow === 'desktop') continue;
+      srcs.add(effectiveStartImg(seg, tierNow));
+      srcs.add(effectiveEndImg(seg, tierNow));
     }
 
-    const mobileNow = typeof window !== 'undefined' && window.innerWidth <= MOBILE_BREAKPOINT;
-    const t0FrameCount = t0 ? effectiveFrameCount(t0, mobileNow) : 0;
     const reducedMotion = prefersReducedMotionRef.current;
+    const t0Loader =
+      !reducedMotion && t0 && t0.mode === 'frames' && effectiveFrameCount(t0, tierNow) > 0
+        ? (loadersRef.current.get(t0.id) ?? new FrameLoader(t0, tierNow, frameBytesFor(tierNow)))
+        : null;
 
     // Gate waits for every still PLUS all of t0's frames — intentional:
     // the Preloader stays up until the first scene can scrub smoothly from
     // frame 1, not just until it can start loading. Reduced-motion visitors
     // never fetch the frame sequence at all (see drawTransitionFrames
-    // below), so there's no extra count to wait for.
-    resetPreloadGate(srcs.size + (reducedMotion ? 0 : t0FrameCount));
+    // below), so there's nothing extra to wait for. Keys are asset URLs, so
+    // re-declaring on a re-run keeps whatever was already reported.
+    const expected = Array.from(srcs);
+    if (t0Loader) {
+      for (let i = 0; i < t0Loader.count; i++) expected.push(t0Loader.frameSrc(i));
+    }
+    expectPreloadItems(expected);
 
     srcs.forEach(src => {
+      const report = () => reportPreloadItemDone(src);
       const existing = imgsRef.current.get(src);
       if (existing) {
-        if (existing.complete) reportPreloadItemDone();
+        if (existing.complete) report();
         else {
-          existing.addEventListener('load', reportPreloadItemDone, { once: true });
-          existing.addEventListener('error', reportPreloadItemDone, { once: true });
+          existing.addEventListener('load', report, { once: true });
+          existing.addEventListener('error', report, { once: true });
         }
         return;
       }
       const img = new Image();
-      img.addEventListener('load', reportPreloadItemDone, { once: true });
-      img.addEventListener('error', reportPreloadItemDone, { once: true });
+      img.addEventListener('load', report, { once: true });
+      img.addEventListener('error', report, { once: true });
       img.src = src;
       imgsRef.current.set(src, img);
-      if (src === firstFrameSrc) {
-        const drawFirst = () => {
-          const s = getState();
-          if (s.playState !== 'idle' || s.station !== 0) return;
-          const c = canvasRef.current;
-          if (!c) return;
-          const ctx = c.getContext('2d');
-          if (!ctx) return;
-          ctx.clearRect(0, 0, W, H);
-          ctx.drawImage(img, 0, 0, W, H);
-        };
-        if (img.complete) drawFirst();
-        else img.addEventListener('load', drawFirst, { once: true });
-      }
     });
+    // No first-paint drawing here: a load callback registered now would
+    // capture this render's backing size and tier, and could fire after
+    // useFrameTier settles and the backing store is resized — painting a
+    // desktop-sized frame into the mobile canvas. The draw loop paints
+    // El Umbral itself (current size and tier) and retries until the still
+    // has loaded.
 
-    if (!reducedMotion && t0 && t0.mode === 'frames' && t0FrameCount > 0 && !loadersRef.current.has(t0.id)) {
-      const t0FrameBytes = mobileNow ? MOBILE_W * MOBILE_H * 4 : DESKTOP_W * DESKTOP_H * 4;
-      const loader = new FrameLoader(t0, mobileNow, t0FrameBytes);
-      loadersRef.current.set(t0.id, loader);
-      loader.load(reportPreloadItemDone);
+    if (t0 && t0Loader && !loadersRef.current.has(t0.id)) {
+      loadersRef.current.set(t0.id, t0Loader);
+      t0Loader.load(reportPreloadItemDone);
     }
-  }, [W, H, isMobile, getState]);
+  }, []);
 
   const drawStation = useCallback(
     (ctx: CanvasRenderingContext2D, frameImg: string, lp: number) => {
@@ -291,7 +287,7 @@ export default function Canvas() {
    */
   const enforceBudget = useCallback(
     (activeSegIdx: number) => {
-      const budget         = isMobile ? MEM_BUDGET_MOBILE : MEM_BUDGET_DESKTOP;
+      const budget         = MEM_BUDGET[tier];
       const activeId       = SEGMENTS[activeSegIdx]?.id;
       const activeOrdinal  = activeId ? transitionOrdinal(activeId) : -1;
 
@@ -307,7 +303,7 @@ export default function Canvas() {
         releaseLoader(furthestId);
       }
     },
-    [isMobile, releaseLoader],
+    [tier, releaseLoader],
   );
 
   /**
@@ -320,47 +316,63 @@ export default function Canvas() {
   const startLoader = useCallback(
     (seg: Transition) => {
       if (loadersRef.current.has(seg.id)) return;
-      if (seg.mode !== 'frames' || effectiveFrameCount(seg, isMobile) === 0) return;
-      const loader = new FrameLoader(seg, isMobile, frameBytes);
+      if (seg.mode !== 'frames' || effectiveFrameCount(seg, tier) === 0) return;
+      const loader = new FrameLoader(seg, tier, frameBytes);
       loadersRef.current.set(seg.id, loader);
       loader.load();
     },
-    [isMobile, frameBytes],
+    [tier, frameBytes],
   );
 
+  /**
+   * Draws the frame for `lp`. Returns false while the canvas shows a
+   * stand-in (nearest decoded frame / start still) for a frame that is
+   * still loading — the draw loop keeps ticking so the exact frame is
+   * painted as soon as it decodes, instead of parking on the stand-in.
+   */
   const drawTransitionFrames = useCallback(
-    (ctx: CanvasRenderingContext2D, transition: Transition, lp: number, segIdx: number) => {
+    (ctx: CanvasRenderingContext2D, transition: Transition, lp: number, segIdx: number): boolean => {
       // Reduced motion: never fetch/decode the 130-frame sequence — show the
-      // transition's resting end state as a single static image instead.
+      // transition's resting end state as a single static image instead:
+      // this tier's own last-frame still, painted exactly as normal mode
+      // paints it at rest (same aspect ratio as the backing, no letterbox).
       if (prefersReducedMotionRef.current) {
-        drawTransitionStills(ctx, transition.startImg, transition.endImg, 1);
-        return;
+        const still = imgsRef.current.get(effectiveEndImg(transition, tier));
+        if (!still) return true;
+        if (!still.complete) return false; // retry next tick (bounded by load/error)
+        if (still.naturalWidth > 0) ctx.drawImage(still, 0, 0, W, H);
+        return true;
       }
 
-      const fc = effectiveFrameCount(transition, isMobile);
+      const fc = effectiveFrameCount(transition, tier);
       if (fc === 0) {
         drawTransitionStills(ctx, transition.startImg, transition.endImg, lp);
-        return;
+        return true;
       }
 
       // Lazy init loader (no-op if already loading/loaded)
       startLoader(transition);
       const loader = loadersRef.current.get(transition.id);
-      if (!loader) return; // startLoader declined (shouldn't happen — fc > 0 checked above)
+      if (!loader) return true; // startLoader declined (shouldn't happen — fc > 0 checked above)
 
       const targetIdx = Math.floor(lp * (fc - 1));
       const lastDrawn = lastFrameRef.current.get(transition.id) ?? -2;
 
-      if (targetIdx === lastDrawn) return; // no-op guard
+      if (targetIdx === lastDrawn) return true; // no-op guard
 
-      const frame = loader.getFrame(targetIdx) ?? loader.nearestFrame(targetIdx);
+      const exact = loader.getFrame(targetIdx);
+      const frame = exact ?? loader.nearestFrame(targetIdx);
       if (frame) {
         ctx.drawImage(frame, 0, 0, W, H);
-        loader.setLastDrawn(targetIdx);
-        lastFrameRef.current.set(transition.id, targetIdx);
+        // Only an exact hit is recorded — a stand-in is redrawn (and
+        // replaced) on the next tick once the real frame has decoded.
+        if (exact) {
+          loader.setLastDrawn(targetIdx);
+          lastFrameRef.current.set(transition.id, targetIdx);
+        }
       } else if (!lastFrameRef.current.has(transition.id)) {
         // No frames decoded yet — show startImg so canvas isn't black
-        const startSrc = effectiveStartImg(transition, isMobile);
+        const startSrc = effectiveStartImg(transition, tier);
         const still = imgsRef.current.get(startSrc);
         if (still?.complete && still.naturalWidth > 0) {
           ctx.drawImage(still, 0, 0, W, H);
@@ -385,8 +397,59 @@ export default function Canvas() {
           scheduleIdle(() => startLoader(prev));
         }
       }
+
+      return exact != null || !loader.isLoading;
     },
-    [drawTransitionStills, isMobile, W, H, startLoader],
+    [drawTransitionStills, tier, W, H, startLoader],
+  );
+
+  /**
+   * Resting at station N (N ≥ 1): paints the real last frame of the
+   * transition that arrives there. The transition's own last paint can't be
+   * trusted to be that frame — the smoothing lerp is cut short when the
+   * station takes over, and a fast scroll / NavDot / menu jump can cross a
+   * transition before its frames have decoded (leaving its first frame or a
+   * stand-in on canvas). The videos are continuous (last frame of tN ≈
+   * first frame of tN+1), so this is also right when arriving backwards.
+   * Returns false if nothing could be painted yet (still image loading).
+   */
+  const drawArrival = useCallback(
+    (ctx: CanvasRenderingContext2D, station: number): boolean => {
+      const prev = TRANSITIONS[station - 1];
+      if (!prev) return true;
+      const fc = effectiveFrameCount(prev, tier);
+
+      // Reduced motion falls through to the still below (no loaders exist).
+      if (prev.mode === 'stills' || fc === 0) {
+        const a = imgsRef.current.get(prev.startImg);
+        const b = imgsRef.current.get(prev.endImg);
+        if (!a || !b) return true;
+        if (!a.complete || !b.complete) return false;
+        drawTransitionStills(ctx, prev.startImg, prev.endImg, 1);
+        return true;
+      }
+
+      const last   = fc - 1;
+      const loader = loadersRef.current.get(prev.id);
+      const frame  = loader?.getFrame(last);
+      if (loader && frame) {
+        ctx.drawImage(frame, 0, 0, W, H);
+        loader.setLastDrawn(last);
+        lastFrameRef.current.set(prev.id, last);
+        return true;
+      }
+
+      // Same image file as the last frame, preloaded as a still.
+      const still = imgsRef.current.get(effectiveEndImg(prev, tier));
+      if (!still) return true;
+      if (!still.complete) return false;
+      if (still.naturalWidth > 0) {
+        ctx.drawImage(still, 0, 0, W, H);
+        lastFrameRef.current.set(prev.id, last);
+      }
+      return true;
+    },
+    [drawTransitionStills, tier, W, H],
   );
 
   // ── Target state (written by SceneSnap, read by the rAF loop below) ──
@@ -413,8 +476,15 @@ export default function Canvas() {
   const rafIdRef          = useRef<number | null>(null);
   const loopRunningRef    = useRef(false);
   const ensureLoopRunningRef = useRef<() => void>(() => {});
+  // Station whose arrival frame is already on canvas (-1 = none) — keeps
+  // idle scroll events inside a station from repainting the same frame.
+  const arrivalDrawnRef   = useRef(-1);
 
   useEffect(() => {
+    // Re-created when the backing store changes size (e.g. the tier settles),
+    // which clears the canvas — the current station must be painted again.
+    arrivalDrawnRef.current = -1;
+
     const driver = () => {
       const c = canvasRef.current;
       const ctx = c?.getContext('2d');
@@ -424,6 +494,7 @@ export default function Canvas() {
       let keepGoing = false;
 
       if (state.playState === 'playing') {
+        arrivalDrawnRef.current = -1;
         const trans = TRANSITIONS[state.transitionIdx];
         if (trans) {
           const segIdx    = SEGMENTS.indexOf(trans);
@@ -431,23 +502,27 @@ export default function Canvas() {
 
           if (activeTransIdRef.current !== trans.id) {
             // Entering a new transition — snap (no cross-segment lerp) and
-            // release anything outside the new window.
+            // release anything outside the new window. Forget the last
+            // drawn index: the canvas has shown other content since, so the
+            // no-op guard must not skip the first paint.
             activeTransIdRef.current = trans.id;
             activeSegIdxRef.current  = segIdx;
             displayLpRef.current     = targetLp;
+            lastFrameRef.current.delete(trans.id);
             releaseOutsideWindow(segIdx);
           } else {
             displayLpRef.current += (targetLp - displayLpRef.current) * LERP_ALPHA;
           }
 
           const lp = displayLpRef.current;
+          let settled = true;
 
           if (trans.mode === 'stills' || trans.frameCount === 0) {
             ctx.clearRect(0, 0, W, H);
             drawTransitionStills(ctx, trans.startImg, trans.endImg, lp);
           } else {
             // Frames: do NOT pre-clear — keep last valid frame while loading
-            drawTransitionFrames(ctx, trans, lp, segIdx);
+            settled = drawTransitionFrames(ctx, trans, lp, segIdx);
           }
 
           // Checked every tick, not just on entry: decoded bytes trickle in
@@ -455,24 +530,29 @@ export default function Canvas() {
           // actually crosses the budget can land well after it was admitted.
           enforceBudget(segIdx);
 
-          keepGoing = Math.abs(targetLp - displayLpRef.current) > LERP_EPSILON;
+          keepGoing = !settled || Math.abs(targetLp - displayLpRef.current) > LERP_EPSILON;
         }
       } else {
-        // idle — only station 0 needs an explicit draw (initial mount).
-        // Stations 1-4: keep whatever the transition left on canvas —
-        // the last painted frame IS the correct still, no visual jump.
+        // idle — every station paints its own resting frame explicitly;
+        // never rely on whatever the previous transition left on canvas.
         activeTransIdRef.current = null;
         enforceBudget(activeSegIdxRef.current);
         if (state.station === 0) {
           const t0       = TRANSITIONS[0];
-          const startSrc = t0 ? effectiveStartImg(t0, isMobile) : undefined;
+          const startSrc = t0 ? effectiveStartImg(t0, tier) : undefined;
           const img      = startSrc ? imgsRef.current.get(startSrc) : undefined;
-          if (img?.complete && img.naturalWidth > 0) {
-            ctx.clearRect(0, 0, W, H);
-            ctx.drawImage(img, 0, 0, W, H); // raw — matches FrameLoader bitmap render
+          if (img?.complete) {
+            if (img.naturalWidth > 0) {
+              ctx.clearRect(0, 0, W, H);
+              ctx.drawImage(img, 0, 0, W, H); // raw — matches FrameLoader bitmap render
+            }
+          } else if (img) {
+            keepGoing = true; // still loading — retry next frame (bounded by load/error)
           }
+        } else if (arrivalDrawnRef.current !== state.station) {
+          if (drawArrival(ctx, state.station)) arrivalDrawnRef.current = state.station;
+          else keepGoing = true; // still image not loaded yet — retry next frame
         }
-        // else: no-op — last transition frame stays on canvas
       }
 
       if (keepGoing) {
@@ -497,7 +577,7 @@ export default function Canvas() {
       if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current);
       loopRunningRef.current = false;
     };
-  }, [drawTransitionStills, drawTransitionFrames, releaseOutsideWindow, enforceBudget, isMobile, W, H]);
+  }, [drawTransitionStills, drawTransitionFrames, drawArrival, releaseOutsideWindow, enforceBudget, tier, W, H]);
 
   // ── Release everything on unmount (route change, etc.) ──────
   useEffect(() => {

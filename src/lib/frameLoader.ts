@@ -1,4 +1,4 @@
-import type { Transition } from '@/config/segments';
+import { tierAssets, type Transition, type FrameTier } from '@/config/segments';
 
 // Loads a transition's frame sequence as ImageBitmaps (decoded off-main-thread).
 // Memory management: call release() when the segment is far behind (RELEASE_LAG).
@@ -59,14 +59,10 @@ export class FrameLoader {
   // Bytes per decoded frame (W*H*4), used for the global memory accounting above.
   private readonly frameBytes: number;
 
-  constructor(transition: Transition, isMobile: boolean, frameBytes: number) {
-    if (isMobile && transition.framesDirMobile) {
-      this.framesDir  = transition.framesDirMobile;
-      this.frameCount = transition.frameCountMobile ?? transition.frameCount;
-    } else {
-      this.framesDir  = transition.framesDir ?? '';
-      this.frameCount = transition.frameCount;
-    }
+  constructor(transition: Transition, tier: FrameTier, frameBytes: number) {
+    const assets    = tierAssets(transition, tier);
+    this.framesDir  = assets.framesDir;
+    this.frameCount = assets.frameCount;
     this.frameBytes = frameBytes;
   }
 
@@ -96,6 +92,11 @@ export class FrameLoader {
     return this.lastDrawnIndex;
   }
 
+  /** True while frames are still being fetched/decoded (more may arrive). */
+  get isLoading(): boolean {
+    return this.loading && !this.cancelled;
+  }
+
   /** Effective frame count (mobile or desktop, whichever this loader was built for). */
   get count(): number {
     return this.frameCount;
@@ -112,7 +113,12 @@ export class FrameLoader {
     return null;
   }
 
-  async load(onFrameDone?: () => void): Promise<void> {
+  /** URL of frame `index` (0-based) — also the key passed to onFrameDone. */
+  frameSrc(index: number): string {
+    return `${this.framesDir}/frame_${String(index + 1).padStart(4, '0')}.webp`;
+  }
+
+  async load(onFrameDone?: (src: string) => void): Promise<void> {
     if (this.loading || this.frameCount === 0 || !this.framesDir) return;
     this.loading = true;
 
@@ -125,8 +131,7 @@ export class FrameLoader {
       while (qi < queue.length) {
         if (this.cancelled) return;
         const i = queue[qi++];
-        const pad = String(i + 1).padStart(4, '0');
-        const src = `${this.framesDir}/frame_${pad}.webp`;
+        const src = this.frameSrc(i);
         try {
           const res = await fetch(src);
           if (this.cancelled) return;
@@ -144,7 +149,7 @@ export class FrameLoader {
         } catch {
           this.frames[i] = null;
         }
-        onFrameDone?.();
+        onFrameDone?.(src);
       }
     };
 
