@@ -5,7 +5,7 @@ import StationCopyWrapper from './StationCopyWrapper';
 import ScrollHint from '@/components/ScrollHint/ScrollHint';
 import S4Puerta from '@/components/stations/S4Puerta/S4Puerta';
 import S2Principios from '@/components/stations/S2Principios/S2Principios';
-import S3Memoria from '@/components/stations/S3Memoria/S3Memoria';
+import S3Memoria, { S3Veil } from '@/components/stations/S3Memoria/S3Memoria';
 import styles from './Hero.module.css';
 
 // ── Section wrapper ──────────────────────────────────────────
@@ -41,20 +41,24 @@ function S2Copy() {
 // stationIndex=2: entra al 90–100 % de t2, tras la pausa sin texto que deja
 // la salida de s2 (84 %); antes entraba de golpe en el último 5 %.
 // visible en s3 idle, sale con crossfade estándar durante t3.
-// Medio-derecha, como el resto de las escenas — el contenido interno
-// (retrato, nombre, fechas) sigue centrado dentro de su propia columna
-// (S3Memoria.module.css .root ya fija text-align:center por su cuenta).
+// Dentro de s3 el retrato viaja desde su lugar a la derecha hasta el centro
+// y el fondo se desenfoca (S3Memoria.tsx); S3Veil es la capa de desenfoque,
+// hermana del panel para que su posición fija no quede atrapada en él.
 function TeofiloCopy() {
   return (
-    <StationCopyWrapper
-      stationIndex={2}
-      fadeInStart={0.90}
-      fadeOutStart={0.25}
-      fadeOutEnd={0.50}
-      interactiveThreshold={0}
-    >
-      <S3Memoria />
-    </StationCopyWrapper>
+    <>
+      <S3Veil />
+      <StationCopyWrapper
+        stationIndex={2}
+        fadeInStart={0.90}
+        fadeOutStart={0.25}
+        fadeOutEnd={0.50}
+        interactiveThreshold={0}
+        className={styles.memoria}
+      >
+        <S3Memoria />
+      </StationCopyWrapper>
+    </>
   );
 }
 

@@ -122,6 +122,27 @@
 
 
 
+/* ── La Memoria: final centred position (see S3Memoria.tsx) ────────
+   The panel is centred in the viewport; S3Memoria's inverse transform
+   (--s3-dx/--s3-dy) puts it back at its resting place until the portrait
+   has travelled. Keeps the wrapper's reveal offset (--_reveal-y). */
+.memoria[data-s3="final"] {
+  left: 50%;
+  right: auto;
+  top: calc(50% + 24px);
+  bottom: auto;
+  width: min(680px, calc(100vw - 48px));
+  max-width: none;
+  padding: 0;
+  transform: translate(-50%, calc(-50% + var(--_reveal-y))) translate(var(--s3-dx, 0px), var(--s3-dy, 0px));
+}
+@media (max-width: 768px) {
+  .memoria[data-s3="final"] {
+    top: calc(50% + 28px);
+    width: calc(100vw - 36px);
+  }
+}
+
 /* ── La Puerta: stay clear of the knocking hand (desktop) ─────────
    The block grows toward the centre as --safe-right grows, and on 16:10
    / 16:9 laptops the frame's cover crop puts the hand close to it. Cap the
