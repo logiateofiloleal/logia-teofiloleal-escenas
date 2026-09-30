@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Image, { getImageProps } from 'next/image';
+import Link from 'next/link';
 import Header from '@/components/Header/Header';
 import { requerirSesion } from '@/lib/session';
 import { cerrarSesion } from './actions';
@@ -55,11 +56,12 @@ export default async function InternoPage() {
 
           <p className={styles.texto}>
             Has ingresado al área interna de la Respetable Logia Teófilo Leal N° 115.
-            Las herramientas de trabajo estarán disponibles aquí próximamente.
           </p>
 
+          <Link href="/panel" className={`${styles.submit} ${styles.accion}`}>Gestionar aspirantes</Link>
+
           <form action={cerrarSesion}>
-            <button type="submit" className={styles.submit}>Cerrar sesión</button>
+            <button type="submit" className={`${styles.submit} ${styles.secundario}`}>Cerrar sesión</button>
           </form>
 
           <a href="/" className={styles.back}>

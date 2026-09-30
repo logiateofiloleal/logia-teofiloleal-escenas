@@ -138,6 +138,22 @@
 
 .submit:focus-visible { outline: 2px solid var(--oro-claro); outline-offset: 3px; }
 
+/* "Gestionar aspirantes": enlace con aspecto de botón principal */
+.accion {
+  display: block;
+  margin-bottom: .8rem;
+  text-align: center;
+  text-decoration: none;
+}
+
+/* "Cerrar sesión": secundaria, más discreta */
+.secundario {
+  padding: 13px 16px;
+  border-color: rgba(184, 149, 58, .3);
+  color: rgba(222, 208, 184, .82);
+  font-size: 11px;
+}
+
 .back {
   display: inline-flex;
   align-items: center;
