@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { STATION_IDS } from '@/config/segments';
 import { stationScrollY } from '@/lib/stationScroll';
+import AccesoModal from '@/components/AccesoModal/AccesoModal';
 import styles from './Header.module.css';
 
 // Scroll to top of hero (station 1)
@@ -28,6 +29,19 @@ function scrollALaPuerta(e: React.MouseEvent) {
 export default function Header() {
   const [open, setOpen] = useState(false);
   const close = useCallback(() => setOpen(false), []);
+  // Acceso interno: modal de login sobre la página actual (no navega).
+  const [acceso, setAcceso] = useState(false);
+  const cerrarAcceso = useCallback(() => setAcceso(false), []);
+
+  // /?acceso (p. ej. al entrar a /interno sin sesión) abre el modal y limpia la URL.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (!params.has('acceso')) return;
+    params.delete('acceso');
+    const q = params.toString();
+    window.history.replaceState(window.history.state, '', window.location.pathname + (q ? '?' + q : '') + window.location.hash);
+    setAcceso(true);
+  }, []);
 
   return (
     <>
@@ -83,7 +97,6 @@ export default function Header() {
             { label: 'Teófilo Leal',           href: '/teofilo-leal',       onClick: close },
             { label: 'Tocar la puerta',        href: '#',                   onClick: (e: React.MouseEvent) => { scrollALaPuerta(e); close(); } },
             { label: 'Solicitud de aspirante', href: '/aspirantes',         onClick: close },
-            { label: 'Acceso interno',         href: '/login',              onClick: close },
           ].map(item => (
             <li key={item.label}>
               {item.href.startsWith('/') ? (
@@ -103,6 +116,17 @@ export default function Header() {
               )}
             </li>
           ))}
+          <li>
+            <button
+              type="button"
+              className={`${styles.link} ${styles.linkButton}`}
+              aria-haspopup="dialog"
+              onClick={() => { close(); setAcceso(true); }}
+            >
+              <span className={styles.linkSym} aria-hidden="true">✦</span>
+              Acceso interno
+            </button>
+          </li>
         </ul>
 
         <div className={styles.contactos} aria-label="Redes sociales">
@@ -127,6 +151,8 @@ export default function Header() {
           onKeyDown={e => e.key === 'Escape' && close()}
         />
       )}
+
+      {acceso && <AccesoModal onClose={cerrarAcceso} />}
     </>
   );
 }
