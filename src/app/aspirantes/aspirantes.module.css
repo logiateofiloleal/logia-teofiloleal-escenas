@@ -41,6 +41,15 @@
   height: 100%;
   object-fit: cover;
   object-position: 100% 35%; /* la mano, en el borde derecho, nunca se recorta */
+  /* La figura, algo más pequeña y hacia la derecha: escala anclada arriba a
+     la derecha; el borde izquierdo y el inferior que quedan libres se
+     funden con el fondo. */
+  transform: scale(.88);
+  transform-origin: 100% 0;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 16%), linear-gradient(to bottom, #000 78%, transparent 100%);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(to right, transparent 0, #000 16%), linear-gradient(to bottom, #000 78%, transparent 100%);
+  mask-composite: intersect;
 }
 
 .stage::before {
@@ -564,7 +573,12 @@
    emblemas y rendija detrás del hero; la figura queda bajo la tarjeta. */
 @media (max-width: 768px), (orientation: portrait) {
   .stage { height: max(100svh, 640px); }
-  .stageImg { object-position: 50% 0%; }
+  .stageImg {
+    object-position: 50% 0%;
+    transform: none;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
   .stage::after {
     -webkit-mask-image: linear-gradient(to bottom, transparent 42%, #000 78%);
     mask-image: linear-gradient(to bottom, transparent 42%, #000 78%);
