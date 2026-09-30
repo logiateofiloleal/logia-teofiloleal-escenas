@@ -22,7 +22,7 @@
 
 /* ── Hero ─────────────────────────────────────────────────── */
 .hero {
-  padding: clamp(7rem, 16vh, 10rem) clamp(2rem, 8vw, 8rem) clamp(3rem, 6vh, 5rem);
+  padding: clamp(7rem, 16vh, 10rem) clamp(2rem, 8vw, 8rem) clamp(2.4rem, 4.5vh, 3.8rem);
   text-align: center;
   border-bottom: 1px solid rgba(184, 149, 58, .07);
 }
@@ -81,9 +81,9 @@
 
 /* ── Contenido ────────────────────────────────────────────── */
 .contentWrap {
-  max-width: 660px;
+  max-width: 780px;
   margin: 0 auto;
-  padding: clamp(3rem, 6vh, 5rem) clamp(1rem, 5vw, 3rem) clamp(5rem, 10vh, 8rem);
+  padding: clamp(2rem, 4vh, 3.2rem) clamp(1rem, 5vw, 3rem) clamp(5rem, 10vh, 8rem);
 }
 
 .card {
@@ -127,9 +127,9 @@
 
 .cardSub {
   font-family: var(--sans);
-  font-size: clamp(13px, 1vw, 14px);
+  font-size: clamp(14px, 1.05vw, 15px);
   line-height: 1.75;
-  color: rgba(215, 200, 175, .72);
+  color: rgba(215, 200, 175, .8);
   max-width: 420px;
   margin: 0 auto;
 }
@@ -160,7 +160,7 @@
 
 .label {
   font-family: var(--sans);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: .2em;
   text-transform: uppercase;
   color: var(--oro-claro);
@@ -168,9 +168,9 @@
 
 .hint {
   font-family: var(--sans);
-  font-size: 12px;
+  font-size: 13px;
   letter-spacing: .02em;
-  color: rgba(215, 200, 175, .7);
+  color: rgba(215, 200, 175, .78);
   margin-top: -.2rem;
 }
 
@@ -185,7 +185,7 @@
   font-size: clamp(17px, 1.7vw, 18px);
   font-weight: 400;
   line-height: 1.5;
-  padding: 12px 15px;
+  padding: 14px 16px;
   -webkit-appearance: none;
   appearance: none;
   transition: border-color .3s ease, box-shadow .3s ease;
@@ -193,7 +193,7 @@
 
 .textarea {
   resize: vertical;
-  min-height: 140px;
+  min-height: 176px;
 }
 
 .input::placeholder,
@@ -219,7 +219,7 @@
 
 .fieldError {
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
   color: #f0a08e;
 }
@@ -233,8 +233,8 @@
 
 .checkbox {
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   margin-top: 2px;
   accent-color: var(--oro-claro);
   cursor: pointer;
@@ -249,9 +249,9 @@
 
 .consentLabel {
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: 14.5px;
   line-height: 1.65;
-  color: rgba(215, 200, 175, .8);
+  color: rgba(215, 200, 175, .88);
   cursor: pointer;
 }
 
@@ -279,7 +279,7 @@
 /* Aviso general del envío: permanece hasta la siguiente respuesta */
 .alert {
   font-family: var(--sans);
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
   letter-spacing: .02em;
   color: #f0a08e;
@@ -293,13 +293,13 @@
 .submit {
   width: 100%;
   margin-top: .3rem;
-  padding: 16px;
+  padding: 19px 16px;
   background: rgba(14, 13, 11, .55);
   border: 1px solid rgba(140, 105, 30, .72);
   border-radius: 1px;
   color: rgba(232, 224, 208, .92);
   font-family: var(--sans);
-  font-size: clamp(11px, .88vw, 12px);
+  font-size: clamp(11.5px, .9vw, 12.5px);
   letter-spacing: .22em;
   text-transform: uppercase;
   cursor: pointer;
