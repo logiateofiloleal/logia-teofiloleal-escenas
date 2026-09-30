@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { getImageProps } from 'next/image';
 import Header from '@/components/Header/Header';
 import AspiranteForm from './AspiranteForm';
 import styles from './aspirantes.module.css';
@@ -7,6 +8,30 @@ import styles from './aspirantes.module.css';
 // Destino de "Tocar la puerta" (S4) y del menú. Misma estructura interna
 // que /teofilo-leal: Header, hero con kicker, contenido y pie. El envío y
 // la validación viven en actions.ts y lib/aspiranteValidation.ts.
+
+// "El otro lado del toque": último frame de la escena 3 (la mano del
+// profano en la puerta), recortado del original 4K. Desktop horizontal
+// reencuadrado para que cabeza, rendija y mano queden a la derecha del
+// formulario; móvil y tablets en vertical con el frame vertical 4K.
+function Atmosfera() {
+  const common = { alt: '', sizes: '100vw', loading: 'eager' as const };
+  const {
+    props: { srcSet: desktop },
+  } = getImageProps({ ...common, src: '/assets/img/fondos/aspirantes-toque-desktop.webp', width: 2308, height: 1443 });
+  const {
+    props: { srcSet: mobile, ...rest },
+  } = getImageProps({ ...common, src: '/assets/img/fondos/aspirantes-toque-mobile.webp', width: 1440, height: 2547 });
+
+  return (
+    <div className={styles.stage} aria-hidden="true">
+      <picture>
+        <source media="(min-width: 769px) and (orientation: landscape)" srcSet={desktop} />
+        <source srcSet={mobile} />
+        <img {...rest} alt="" className={styles.stageImg} fetchPriority="high" />
+      </picture>
+    </div>
+  );
+}
 
 export const metadata: Metadata = {
   title: 'Solicitud de aspirante — Logia Teófilo Leal N° 115',
@@ -20,6 +45,8 @@ export default function AspirantesPage() {
       <Header />
 
       <main className={styles.page}>
+        <Atmosfera />
+
         <header className={styles.hero}>
           <div className={styles.heroInner}>
             <div className={styles.kicker}>

@@ -1,7 +1,7 @@
-/* Página interna con la misma base que /teofilo-leal (fondo, hero,
-   kicker, pie). Los estilos del formulario parten de Old-Project
-   (.asp-*) con el contraste subido a AA: etiquetas, ayudas y errores
-   >= 4.5:1 sobre el fondo. */
+/* Página interna con la misma base que /teofilo-leal (hero, kicker,
+   pie) sobre la atmósfera del toque (.stage). Los estilos del
+   formulario parten de Old-Project (.asp-*) con el contraste subido a
+   AA: etiquetas, ayudas y errores >= 4.5:1 sobre el fondo. */
 
 .page {
   position: relative;
@@ -20,20 +20,76 @@
   .page { background-attachment: scroll; }
 }
 
+/* ── Atmósfera: el otro lado del toque ────────────────────────
+   Frame fijo a sangre solo en la parte alta de la página. De arriba
+   abajo: imagen casi limpia → scrim vertical y viñeta lateral → desenfoque
+   progresivo donde empieza la tarjeta → fundido exacto al color de fondo,
+   sin corte. */
+.stage {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: max(100vh, 760px);
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.stageImg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 100% 35%; /* la mano, en el borde derecho, nunca se recorta */
+}
+
+.stage::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(to bottom, rgba(5,3,2,.50) 0%, rgba(5,3,2,.10) 16%, rgba(5,3,2,.18) 40%, rgba(5,3,2,.78) 72%, var(--bg) 100%),
+    radial-gradient(ellipse 70% 95% at 50% 38%, transparent 45%, rgba(5,3,2,.78) 100%);
+}
+
+.stage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  -webkit-backdrop-filter: blur(9px);
+  backdrop-filter: blur(9px);
+  -webkit-mask-image: linear-gradient(to bottom, transparent 38%, #000 74%);
+  mask-image: linear-gradient(to bottom, transparent 38%, #000 74%);
+}
+
 /* ── Hero ─────────────────────────────────────────────────── */
 .hero {
+  position: relative;
+  z-index: 1;
   padding: clamp(7rem, 16vh, 10rem) clamp(2rem, 8vw, 8rem) clamp(2.4rem, 4.5vh, 3.8rem);
   text-align: center;
-  border-bottom: 1px solid rgba(184, 149, 58, .07);
 }
 
 .heroInner {
+  position: relative;
   max-width: 560px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 1.6rem;
+}
+
+/* Velo local detrás del texto del hero: lo separa de la rendija de luz */
+.heroInner::before {
+  content: '';
+  position: absolute;
+  inset: -56px -110px;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(5,3,2,.80), rgba(5,3,2,.55) 50%, rgba(5,3,2,.2) 80%, transparent);
 }
 
 .kicker {
@@ -45,7 +101,20 @@
   font-size: clamp(8px, .72vw, 10px);
   letter-spacing: .28em;
   text-transform: uppercase;
-  color: rgba(184, 149, 58, .5);
+  color: rgba(201, 168, 76, .8);
+  text-shadow: 0 0 2px rgba(0,0,0,.9), 0 0 14px rgba(0,0,0,.95);
+}
+
+/* Velo propio del kicker: es la línea más fina y la que cruza la rendija
+   (en vertical, justo encima de la luz) */
+.kicker { position: relative; }
+.kicker::before {
+  content: '';
+  position: absolute;
+  inset: -14px -10px;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(5,3,2,.88), rgba(5,3,2,.62) 60%, transparent);
 }
 
 .rule {
@@ -67,7 +136,8 @@
   font-weight: 500;
   line-height: 1.1;
   letter-spacing: -.01em;
-  color: rgba(232, 224, 208, .92);
+  color: rgba(236, 228, 212, .95);
+  text-shadow: 0 0 2px rgba(0,0,0,.8), 0 0 24px rgba(0,0,0,.85);
 }
 
 .subtitle {
@@ -75,20 +145,41 @@
   font-size: clamp(13px, 1.1vw, 16px);
   line-height: 1.8;
   letter-spacing: .01em;
-  color: rgba(215, 200, 175, .6);
+  color: rgba(222, 208, 184, .82);
   max-width: 520px;
+  text-shadow: 0 0 2px rgba(0,0,0,.9), 0 0 14px rgba(0,0,0,.95);
 }
 
 /* ── Contenido ────────────────────────────────────────────── */
 .contentWrap {
+  position: relative;
+  z-index: 1;
   max-width: 780px;
   margin: 0 auto;
   padding: clamp(2rem, 4vh, 3.2rem) clamp(1rem, 5vw, 3rem) clamp(5rem, 10vh, 8rem);
 }
 
+/* Halo dorado muy sutil detrás de la tarjeta */
+.contentWrap::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: min(1180px, 150%);
+  height: 80%;
+  transform: translateX(-50%);
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(184,149,58,.12), rgba(184,149,58,.04) 55%, transparent);
+}
+
+/* Tarjeta ligeramente translúcida: deja pasar la atmósfera, no el detalle */
 .card {
-  border: 1px solid rgba(154, 116, 50, .22);
-  background: rgba(154, 116, 50, .04);
+  border: 1px solid rgba(184, 149, 58, .26);
+  background: rgba(11, 8, 5, .62);
+  -webkit-backdrop-filter: blur(14px) saturate(1.05);
+  backdrop-filter: blur(14px) saturate(1.05);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .55), inset 0 1px 0 rgba(232, 200, 120, .06);
   padding: clamp(2.2rem, 5vh, 3.6rem) clamp(1.25rem, 5vw, 3.2rem);
 }
 
@@ -103,7 +194,7 @@
   font-size: 10px;
   letter-spacing: .35em;
   text-transform: uppercase;
-  color: rgba(184, 149, 58, .55);
+  color: rgba(201, 168, 76, .8);
   margin-bottom: 1.1rem;
 }
 
@@ -388,10 +479,23 @@
 
 /* ── Footer institucional ─────────────────────────────────── */
 .footer {
+  position: relative;
+  z-index: 1;
   background: var(--bg);
-  border-top: 1px solid rgba(184, 149, 58, .12);
   padding: clamp(40px, 6vw, 72px) 24px clamp(32px, 5vw, 56px);
   text-align: center;
+}
+
+/* Filete que se desvanece hacia los bordes: separa sin cortar el fondo */
+.footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: min(720px, 80%);
+  height: 1px;
+  transform: translateX(-50%);
+  background: linear-gradient(to right, transparent, rgba(184, 149, 58, .2), transparent);
 }
 
 .footerInner {
@@ -453,6 +557,18 @@
 /* ── Responsive ───────────────────────────────────────────── */
 @media (max-width: 768px) {
   .hero { padding-left: 1.5rem; padding-right: 1.5rem; }
+  .heroInner::before { inset: -36px -24px; }
+}
+
+/* Vertical (móvil y tablets en retrato): frame vertical anclado arriba —
+   emblemas y rendija detrás del hero; la figura queda bajo la tarjeta. */
+@media (max-width: 768px), (orientation: portrait) {
+  .stage { height: max(100svh, 640px); }
+  .stageImg { object-position: 50% 0%; }
+  .stage::after {
+    -webkit-mask-image: linear-gradient(to bottom, transparent 42%, #000 78%);
+    mask-image: linear-gradient(to bottom, transparent 42%, #000 78%);
+  }
 }
 
 @media (max-width: 520px) {
