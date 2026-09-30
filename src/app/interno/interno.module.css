@@ -1,6 +1,7 @@
-/* Acceso interno: interior del templo con la tarjeta en el espacio
-   oscuro de la derecha. Mismo lenguaje que /aspirantes (tarjeta translúcida, oro
-   sobrio, campos y botón) pero más quieto: sin hero ni pie. */
+/* Área interna (tras el acceso): interior del templo con la tarjeta en el
+   espacio oscuro de la derecha. Mismo lenguaje que /aspirantes (tarjeta
+   translúcida, oro sobrio) pero más quieto: sin hero ni pie. El formulario
+   de acceso vive en el modal (components/AccesoModal). */
 
 .page {
   position: relative;
@@ -104,64 +105,14 @@
   margin: 0 auto 2rem;
 }
 
-/* ── Formulario (mismos campos que /aspirantes) ────────────── */
-.form {
-  display: flex;
-  flex-direction: column;
-  gap: 1.4rem;
-  text-align: left;
-}
-
-.field {
-  display: flex;
-  flex-direction: column;
-  gap: .5rem;
-}
-
-.label {
-  font-family: var(--sans);
-  font-size: 12px;
-  letter-spacing: .2em;
-  text-transform: uppercase;
-  color: var(--oro-claro);
-}
-
-.input {
-  width: 100%;
-  background: rgba(14, 13, 11, .6);
-  border: 1px solid rgba(184, 149, 58, .32);
-  border-radius: 0;
-  color: rgba(232, 224, 208, .94);
+.texto {
   font-family: var(--serif);
-  font-size: clamp(17px, 1.7vw, 18px);
-  line-height: 1.5;
-  padding: 14px 16px;
-  -webkit-appearance: none;
-  appearance: none;
-  transition: border-color .3s ease;
-}
-
-.input::placeholder {
-  color: rgba(200, 180, 150, .42);
-  font-style: italic;
-}
-
-.input:hover { border-color: rgba(184, 149, 58, .5); }
-
-.input:focus-visible {
-  outline: 2px solid var(--oro-claro);
-  outline-offset: 2px;
-  border-color: rgba(184, 149, 58, .6);
-}
-
-.aviso {
-  min-height: 1.5em;
-  margin: -.4rem 0 -.6rem;
-  font-family: var(--sans);
-  font-size: 14px;
-  line-height: 1.5;
-  text-align: center;
-  color: rgba(222, 208, 184, .85);
+  font-size: clamp(17px, 1.6vw, 18px);
+  font-weight: 300;
+  line-height: 1.75;
+  color: rgba(232, 217, 176, .86);
+  margin: 0 auto 1.8rem;
+  max-width: 330px;
 }
 
 .submit {
@@ -230,7 +181,7 @@
   .logo { width: 48px; height: 48px; margin-bottom: .8rem; }
   .title { margin-bottom: .8rem; }
   .rule { margin-bottom: 1.4rem; }
-  .form { gap: 1.1rem; }
+  .texto { margin-bottom: 1.3rem; }
   .back { margin-top: .8rem; }
   .stage::after {
     background:
@@ -239,5 +190,5 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .input, .submit, .back, .back .ln { transition: none; }
+  .submit, .back, .back .ln { transition: none; }
 }
