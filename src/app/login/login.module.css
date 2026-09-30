@@ -1,5 +1,5 @@
-/* Acceso interno: interior del templo (frame-5) con la tarjeta a la
-   derecha. Mismo lenguaje que /aspirantes (tarjeta translúcida, oro
+/* Acceso interno: interior del templo con la tarjeta en el espacio
+   oscuro de la derecha. Mismo lenguaje que /aspirantes (tarjeta translúcida, oro
    sobrio, campos y botón) pero más quieto: sin hero ni pie. */
 
 .page {
@@ -9,7 +9,9 @@
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  padding: 104px clamp(24px, 8vw, 140px) 48px;
+  /* tarjeta (420px) centrada hacia el 70 % del ancho: en el espacio
+     negativo de la imagen, sin pegarse al borde */
+  padding: 104px max(24px, calc(30vw - 210px)) 48px;
   background: var(--bg);
   overflow: hidden;
 }
@@ -29,8 +31,8 @@
   width: calc(100% + 24px);
   height: calc(100% + 24px);
   object-fit: cover;
-  object-position: 0% 62%;        /* hermano a la izquierda, altar al centro */
-  filter: blur(1.5px) brightness(.92);
+  object-position: 50% 50%;       /* en 16:10 recorta por igual: la columna central no cae bajo la tarjeta */
+  filter: blur(1px);              /* la imagen ya viene equilibrada: sin oscurecer */
 }
 
 .stage::after {
@@ -38,9 +40,9 @@
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(to right, rgba(5,3,2,.22) 0%, rgba(5,3,2,.26) 42%, rgba(5,3,2,.70) 64%, rgba(5,3,2,.86) 100%),
-    linear-gradient(to bottom, rgba(5,3,2,.45) 0%, transparent 18%, transparent 80%, rgba(5,3,2,.6) 100%),
-    radial-gradient(ellipse 90% 85% at 38% 50%, transparent 50%, rgba(5,3,2,.6) 100%);
+    linear-gradient(to right, transparent 0%, transparent 46%, rgba(5,3,2,.30) 60%, rgba(5,3,2,.42) 100%),
+    /* arriba protege el Header (la columna iluminada cae bajo el nombre) */
+    linear-gradient(to bottom, rgba(5,3,2,.66) 0%, rgba(5,3,2,.34) 9%, transparent 18%, transparent 84%, rgba(5,3,2,.45) 100%);
 }
 
 /* ── Tarjeta ───────────────────────────────────────────────── */
@@ -220,7 +222,9 @@
     align-items: flex-end;
     padding: 96px 16px 32px;
   }
-  .stageImg { object-position: 52% 0%; }
+  /* el frontón del templo centrado en la franja superior (luna y sol a los
+     lados); en vertical la cabeza del hermano quedaría bajo la tarjeta */
+  .stageImg { object-position: 28% 0%; }
   /* Tarjeta más compacta para dejar más franja de templo arriba */
   .card { padding: 1.6rem 1.25rem 1.2rem; }
   .logo { width: 48px; height: 48px; margin-bottom: .8rem; }
@@ -230,7 +234,7 @@
   .back { margin-top: .8rem; }
   .stage::after {
     background:
-      linear-gradient(to bottom, rgba(5,3,2,.40) 0%, rgba(5,3,2,.12) 14%, rgba(5,3,2,.20) 32%, rgba(5,3,2,.78) 56%, rgba(5,3,2,.9) 100%);
+      linear-gradient(to bottom, rgba(5,3,2,.70) 0%, rgba(5,3,2,.40) 9%, rgba(5,3,2,.08) 17%, rgba(5,3,2,.10) 30%, rgba(5,3,2,.70) 56%, rgba(5,3,2,.85) 100%);
   }
 }
 

@@ -6,10 +6,11 @@ import styles from './login.module.css';
 
 // ── Acceso interno ───────────────────────────────────────────────────
 // Ya no es el profano sino el hermano iniciado: interior del templo, el
-// hermano a la izquierda y el altar al centro; la tarjeta a la derecha
-// (abajo en vertical). Prueba visual con Old-Project/assets/escenas/
-// frame-5 (sin la pared vacía de la izquierda); la autenticación se
-// conecta en el bloque del panel.
+// hermano a la izquierda, el altar al centro y un espacio oscuro a la
+// derecha para la tarjeta (abajo en vertical). Fondo en prueba:
+// login-templo-hermano.webp, hecho a medida; el anterior
+// (login-templo.webp, de Old-Project frame-5) se conserva por si se
+// vuelve a él. La autenticación se conecta en el bloque del panel.
 
 export const metadata: Metadata = {
   title: 'Acceso interno — Logia Teófilo Leal N° 115',
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
 
 function Templo() {
   const { props } = getImageProps({
-    alt: '', sizes: '100vw', loading: 'eager', src: '/assets/img/fondos/login-templo.webp', width: 1204, height: 941,
+    alt: '', sizes: '100vw', loading: 'eager', src: '/assets/img/fondos/login-templo-hermano.webp', width: 1672, height: 941,
   });
 
   return (
