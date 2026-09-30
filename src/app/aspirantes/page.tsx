@@ -17,7 +17,7 @@ function Atmosfera() {
   const common = { alt: '', sizes: '100vw', loading: 'eager' as const };
   const {
     props: { srcSet: desktop },
-  } = getImageProps({ ...common, src: '/assets/img/fondos/aspirantes-toque-desktop.webp', width: 2308, height: 1443 });
+  } = getImageProps({ ...common, src: '/assets/img/fondos/aspirantes-toque-desktop-amplio.webp', width: 2886, height: 1804 });
   const {
     props: { srcSet: mobile, ...rest },
   } = getImageProps({ ...common, src: '/assets/img/fondos/aspirantes-toque-mobile.webp', width: 1440, height: 2547 });

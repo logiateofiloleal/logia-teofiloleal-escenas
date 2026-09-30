@@ -86,10 +86,10 @@
 .heroInner::before {
   content: '';
   position: absolute;
-  inset: -56px -110px;
+  inset: -56px -150px;             /* ancho: con el encuadre amplio la rendija cae junto al título */
   z-index: -1;
   pointer-events: none;
-  background: radial-gradient(closest-side, rgba(5,3,2,.80), rgba(5,3,2,.55) 50%, rgba(5,3,2,.2) 80%, transparent);
+  background: radial-gradient(closest-side, rgba(5,3,2,.84), rgba(5,3,2,.70) 45%, rgba(5,3,2,.42) 72%, rgba(5,3,2,.14) 90%, transparent);
 }
 
 .kicker {
