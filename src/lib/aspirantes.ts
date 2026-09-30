@@ -127,3 +127,104 @@ export async function crearAspirante(input: AspiranteInput): Promise<ResultadoAl
     throw err;
   }
 }
+
+// ── Panel interno: lectura y cambio de estado ─────────────────────────
+// Solo se leen y reescriben claves registro/<id>; los índices de correo y
+// teléfono no se tocan nunca desde el panel. Las Server Actions que llaman
+// a estas funciones verifican la sesión antes.
+
+const ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const LECTURAS_EN_PARALELO = 8;
+const NOTA_PANEL = 'Estado actualizado desde el panel';
+
+export const esEstado = (v: string): v is EstadoAspirante => (ESTADOS as readonly string[]).includes(v);
+
+/** Forma mínima de un registro válido (lo demás se muestra si existe). */
+function esAspirante(v: unknown): v is Aspirante {
+  const a = v as Partial<Aspirante> | null;
+  return !!a && typeof a === 'object' && typeof a.id === 'string' && typeof a.nombre === 'string'
+    && typeof a.timestamp === 'string' && typeof a.estado === 'string' && Array.isArray(a.historialEstados);
+}
+
+export interface ListadoAspirantes {
+  aspirantes: Aspirante[];
+  /** Registros presentes pero ilegibles (JSON corrupto o forma inválida): se omiten. */
+  ilegibles: number;
+}
+
+/**
+ * Todas las solicitudes, más recientes primero. list() recorre todas las
+ * páginas del listado; las lecturas van en lotes para no abrir cientos de
+ * peticiones a la vez. Un registro corrupto se omite (y se cuenta); un
+ * error de red se propaga para que el panel lo muestre como tal.
+ */
+export async function listarAspirantes(): Promise<ListadoAspirantes> {
+  const s = store();
+  const { blobs } = await s.list({ prefix: 'registro/' });
+  const aspirantes: Aspirante[] = [];
+  let ilegibles = 0;
+  for (let i = 0; i < blobs.length; i += LECTURAS_EN_PARALELO) {
+    const lote = await Promise.all(blobs.slice(i, i + LECTURAS_EN_PARALELO).map(async b => {
+      try {
+        const v: unknown = await s.get(b.key, { type: 'json' });
+        if (v === null) return 'borrado' as const; // desapareció entre el listado y la lectura
+        return esAspirante(v) ? v : ('ilegible' as const);
+      } catch (err) {
+        if (err instanceof SyntaxError) return 'ilegible' as const;
+        throw err;
+      }
+    }));
+    for (const r of lote) {
+      if (r === 'ilegible') ilegibles++;
+      else if (r !== 'borrado') aspirantes.push(r);
+    }
+  }
+  aspirantes.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+  return { aspirantes, ilegibles };
+}
+
+/** Una solicitud por id (null si el id no es válido o no existe). Lanza si está corrupta. */
+export async function obtenerAspirante(id: string): Promise<Aspirante | null> {
+  if (!ID_RE.test(id)) return null;
+  const v: unknown = await store().get(clave.registro(id), { type: 'json' });
+  if (v === null) return null;
+  if (!esAspirante(v)) throw new Error(`registro/${id} ilegible`);
+  return v;
+}
+
+export type ResultadoCambio =
+  | { ok: true; aspirante: Aspirante; sinCambios: boolean }
+  | { ok: false; motivo: 'no-encontrado' | 'conflicto' };
+
+/**
+ * Cambia el estado y AÑADE una entrada al historial, conservando el resto
+ * del registro tal cual. La escritura es condicional (onlyIfMatch con el
+ * ETag leído): si otro cambio llegó en medio, se relee y se reintenta, así
+ * que ningún cambio de estado pisa a otro ni se pierde historial.
+ */
+export async function cambiarEstado(id: string, estado: EstadoAspirante): Promise<ResultadoCambio> {
+  if (!ID_RE.test(id)) return { ok: false, motivo: 'no-encontrado' };
+  const s = store();
+  const key = clave.registro(id);
+  for (let intento = 0; intento < 3; intento++) {
+    const entrada = await s.getWithMetadata(key, { type: 'json' });
+    if (!entrada) return { ok: false, motivo: 'no-encontrado' };
+    const actual: unknown = entrada.data;
+    if (!esAspirante(actual)) throw new Error(`registro/${id} ilegible`);
+    if (actual.estado === estado) return { ok: true, aspirante: actual, sinCambios: true };
+
+    // El servidor local de Blobs no envía el ETag en GET; el listado sí.
+    const etag = entrada.etag ?? (await s.list({ prefix: key })).blobs.find(b => b.key === key)?.etag;
+    if (!etag) throw new Error(`sin ETag para registro/${id}`);
+
+    const actualizado: Aspirante = {
+      ...actual,
+      estado,
+      historialEstados: [...actual.historialEstados, { estado, fecha: new Date().toISOString(), nota: NOTA_PANEL }],
+    };
+    if ((await s.setJSON(key, actualizado, { onlyIfMatch: etag })).modified) {
+      return { ok: true, aspirante: actualizado, sinCambios: false };
+    }
+  }
+  return { ok: false, motivo: 'conflicto' };
+}
