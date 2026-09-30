@@ -325,6 +325,31 @@
 .ok { color: #9fd6a4; }
 .error { color: #f0a08e; }
 
+/* Confirmación del cambio de estado con el regreso a la lista al lado */
+.confirmacion {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+}
+
+.volverSolicitudes {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  padding: 8px 16px;
+  border: 1px solid rgba(184, 149, 58, .45);
+  font-family: var(--sans);
+  font-size: 12px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: rgba(239, 230, 210, .95);
+}
+
+.volverSolicitudes:hover { border-color: #B8953A; background: rgba(184, 149, 58, .08); }
+.volverSolicitudes:focus-visible { outline: 2px solid var(--oro-claro); outline-offset: 3px; }
+
 /* ── Móvil ─────────────────────────────────────────────────── */
 @media (max-width: 760px) {
   .brand span span { display: none; }

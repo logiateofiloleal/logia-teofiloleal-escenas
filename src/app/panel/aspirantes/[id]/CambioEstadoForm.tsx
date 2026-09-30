@@ -1,6 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
+import Link from 'next/link';
 import { actualizarEstado, type EstadoCambio } from '../../actions';
 import styles from '../../panel.module.css';
 
@@ -22,17 +23,25 @@ export default function CambioEstadoForm({ id, estadoActual, estados }: { id: st
       <input type="hidden" name="id" value={id} />
       <label className={styles.label} htmlFor="estado">Cambiar estado</label>
       <div className={styles.cambioFila}>
-        <select id="estado" name="estado" className={styles.select} defaultValue={estadoActual}>
+        {/* key: tras guardar, React reinicia el formulario; el selector se
+            remonta con el estado ya guardado en vez de volver al anterior */}
+        <select key={estadoActual} id="estado" name="estado" className={styles.select} defaultValue={estadoActual}>
           {estados.map(e => <option key={e} value={e}>{e}</option>)}
         </select>
         <button type="submit" className={styles.boton} disabled={pending}>
           {pending ? 'Guardando…' : 'Guardar'}
         </button>
       </div>
-      {state.mensaje && (
-        <p className={state.status === 'ok' ? styles.ok : styles.error} role={state.status === 'ok' ? 'status' : 'alert'}>
-          {state.mensaje}
-        </p>
+      {state.status === 'ok' && state.mensaje && (
+        // Sin redirección automática: se ve el estado actualizado y se
+        // vuelve a la lista cuando se quiera.
+        <div className={styles.confirmacion}>
+          <p className={styles.ok} role="status">{state.mensaje}</p>
+          <Link href="/panel" className={styles.volverSolicitudes}>Volver a solicitudes</Link>
+        </div>
+      )}
+      {state.status === 'error' && state.mensaje && (
+        <p className={styles.error} role="alert">{state.mensaje}</p>
       )}
     </form>
   );
