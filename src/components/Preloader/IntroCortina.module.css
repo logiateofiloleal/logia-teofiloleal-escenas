@@ -101,11 +101,15 @@
   transition: border-color .3s ease, background .3s ease, color .3s ease;
 }
 
+/* Visible solo cuando ya responde (tras hidratar; antes lleva [hidden]) */
+.continuar[hidden] { display: none; }
+.continuar[data-listo="true"] { animation: entrar .5s ease both; }
+
 .continuar:hover { border-color: #B8953A; background: rgba(184, 149, 58, .08); color: #efe6d2; }
 .continuar:focus-visible { outline: 2px solid var(--oro-claro); outline-offset: 4px; }
 
 @media (prefers-reduced-motion: reduce) {
   .cortina, .continuar { transition: none; }
-  .contenido { animation: none; }
+  .contenido, .continuar[data-listo="true"] { animation: none; }
   .rueda, .dedo { animation: none; opacity: 1; }
 }

@@ -15,6 +15,10 @@ const TECLAS_AVANCE = new Set(['ArrowDown', 'PageDown', ' ', 'Enter']);
 
 export default function IntroCortina({ onContinuar }: { onContinuar: () => void }) {
   const [saliendo, setSaliendo] = useState(false);
+  // La cortina llega pintada desde el servidor; "Continuar" solo se muestra
+  // cuando ya responde (tras hidratar). Con conexiones lentas un clic antes
+  // de hidratar se perdería y el botón parecería no funcionar.
+  const [listo, setListo] = useState(false);
   const hechoRef = useRef(false);
   const botonRef = useRef<HTMLButtonElement>(null);
   const onContinuarRef = useRef(onContinuar);
@@ -29,8 +33,13 @@ export default function IntroCortina({ onContinuar }: { onContinuar: () => void 
   const continuarRef = useRef(continuar);
   continuarRef.current = continuar;
 
+  // Foco en "Continuar" en cuanto es visible (sin atrapar el foco).
   useEffect(() => {
-    botonRef.current?.focus({ preventScroll: true });
+    if (listo) botonRef.current?.focus({ preventScroll: true });
+  }, [listo]);
+
+  useEffect(() => {
+    setListo(true);
     let y0: number | null = null;
     const onWheel = (e: WheelEvent) => { if (e.deltaY > 4) continuarRef.current(); };
     const onTouchStart = (e: TouchEvent) => { y0 = e.touches[0]?.clientY ?? null; };
@@ -71,7 +80,8 @@ export default function IntroCortina({ onContinuar }: { onContinuar: () => void 
           <circle className={styles.dedo} cx="14" cy="38" r="5" fill="none" stroke="currentColor" strokeWidth="1.5" />
         </svg>
 
-        <button ref={botonRef} type="button" className={styles.continuar} onClick={continuar}>
+        {/* hidden (atributo HTML) funciona aunque el CSS aún no haya llegado */}
+        <button ref={botonRef} type="button" className={styles.continuar} data-listo={listo} hidden={!listo} onClick={continuar}>
           Continuar
         </button>
       </div>
