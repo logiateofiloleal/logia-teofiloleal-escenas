@@ -43,7 +43,8 @@
   cursor: pointer;
   box-shadow: none;
   transition: transform .25s ease, background .25s ease, box-shadow .25s ease, border-color .25s ease, color .25s ease;
-  pointer-events: auto;
+  /* No pointer-events here: the button inherits its panel's (see
+     StationCopyWrapper), so it never takes clicks while invisible. */
 }
 
 .btn:hover {

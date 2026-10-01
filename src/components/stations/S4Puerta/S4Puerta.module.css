@@ -24,7 +24,9 @@
   cursor: pointer;
   box-shadow: 0 0 24px rgba(214, 168, 79, 0.12);
   transition: transform .25s ease, background .25s ease, box-shadow .25s ease, border-color .25s ease;
-  pointer-events: auto;
+  /* No pointer-events here: the button inherits the panel's, which
+     StationCopyWrapper turns on only while S4 is visible. Forcing auto made
+     the invisible button swallow clicks over the earlier stations. */
 }
 
 .btn:hover {
