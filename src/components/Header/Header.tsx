@@ -33,8 +33,9 @@ export default function Header() {
   // Acceso interno: modal de login sobre la página actual (no navega).
   const [acceso, setAcceso] = useState(false);
   const cerrarAcceso = useCallback(() => setAcceso(false), []);
-  // "Inicio del recorrido" is a real link to /: on the landing it scrolls back
-  // to the first station instead; elsewhere (e.g. /teofilo-leal) it navigates.
+  // The logo and "Inicio del recorrido" are real links to /: on the landing
+  // they scroll back to the first station instead; elsewhere (e.g.
+  // /teofilo-leal) they navigate.
   const enLanding = usePathname() === '/';
   const irAlInicio = useCallback((e: React.MouseEvent) => {
     if (enLanding) scrollAlInicio(e);
@@ -54,12 +55,12 @@ export default function Header() {
   return (
     <>
       <header className={styles.header} aria-label="Cabecera institucional">
-        <a
-          href="#"
+        <Link
+          href="/"
           className={styles.brand}
           id="eh-brand-link"
           aria-label="Ir al inicio del recorrido"
-          onClick={scrollAlInicio}
+          onClick={irAlInicio}
         >
           <div className={styles.mark}>
             <Image
@@ -73,7 +74,7 @@ export default function Header() {
             <b>Logia Teófilo Leal N° 115</b>
             <span>Oriente de Barquisimeto</span>
           </div>
-        </a>
+        </Link>
 
         <button
           className={styles.toggle}
