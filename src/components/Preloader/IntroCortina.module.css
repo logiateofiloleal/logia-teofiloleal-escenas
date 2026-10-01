@@ -1,0 +1,115 @@
+/* Cortina previa al preloader: pantalla completa, casi opaca, sin caja.
+   z 700: por encima del Header (450–510), NavDots (500), el botón de
+   sonido (460) y el Preloader (600); por debajo del modal de acceso. */
+
+.cortina {
+  position: fixed;
+  inset: 0;
+  z-index: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 45%, rgba(20, 14, 8, .9) 0%, rgba(5, 3, 2, .97) 70%),
+    #050302;
+  transition: opacity .45s ease;
+}
+
+.cortina[data-saliendo="true"] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* El contenido entra con un instante de retraso: si la sesión ya la vio,
+   la cortina se retira al hidratar sin llegar a mostrar texto. */
+.contenido {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 520px;
+  text-align: center;
+  animation: entrar .7s ease .25s both;
+}
+
+@keyframes entrar {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.titulo {
+  font-family: var(--serif);
+  font-size: clamp(26px, 3.4vw, 40px);
+  font-weight: 400;
+  line-height: 1.2;
+  color: #efe6d2;
+  letter-spacing: .01em;
+}
+
+.texto {
+  font-family: var(--sans);
+  font-size: clamp(14px, 1.1vw, 15.5px);
+  line-height: 1.6;
+  letter-spacing: .02em;
+  color: rgba(222, 208, 184, .82);
+}
+
+.icono {
+  margin-top: 18px;
+  color: rgba(201, 168, 76, .85);
+}
+
+/* Ratón: la rueda baja y se desvanece, en bucle suave */
+.rueda { animation: rueda 1.8s ease-in-out infinite; }
+
+@keyframes rueda {
+  0%   { transform: translateY(0);   opacity: 0; }
+  20%  { opacity: 1; }
+  70%  { transform: translateY(7px); opacity: 0; }
+  100% { transform: translateY(7px); opacity: 0; }
+}
+
+/* Deslizar: un círculo (el dedo) sube por la guía */
+.deslizar { display: none; }
+.dedo { animation: dedo 2s ease-in-out infinite; }
+
+@keyframes dedo {
+  0%   { transform: translateY(0);     opacity: 0; }
+  20%  { opacity: 1; }
+  75%  { transform: translateY(-26px); opacity: 0; }
+  100% { transform: translateY(-26px); opacity: 0; }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .raton { display: none; }
+  .deslizar { display: block; }
+}
+
+.continuar {
+  margin-top: 22px;
+  padding: 10px 22px;
+  min-height: 44px;
+  background: none;
+  border: 1px solid rgba(184, 149, 58, .42);
+  color: rgba(239, 230, 210, .9);
+  font-family: var(--sans);
+  font-size: 12px;
+  letter-spacing: .24em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: border-color .3s ease, background .3s ease, color .3s ease;
+}
+
+/* Visible solo cuando ya responde (tras hidratar; antes lleva [hidden]) */
+.continuar[hidden] { display: none; }
+.continuar[data-listo="true"] { animation: entrar .5s ease both; }
+
+.continuar:hover { border-color: #B8953A; background: rgba(184, 149, 58, .08); color: #efe6d2; }
+.continuar:focus-visible { outline: 2px solid var(--oro-claro); outline-offset: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cortina, .continuar { transition: none; }
+  .contenido, .continuar[data-listo="true"] { animation: none; }
+  .rueda, .dedo { animation: none; opacity: 1; }
+}

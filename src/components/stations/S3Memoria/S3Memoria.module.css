@@ -162,3 +162,88 @@
 @media (max-width: 360px) {
   .nombre { font-size: clamp(1.2rem, 7vw, 1.6rem) !important; }
 }
+
+/* ── Evolution: final centred composition (data-s3="final") ─────────
+   Set by S3Memoria.tsx once measured. The panel always holds this final
+   layout; an inverse transform (--s3-dx/dy on the panel, --s3-scale on
+   .root, --s3-turn on .marco) returns the portrait to its resting place
+   and shrinks to identity as the visitor scrolls through s3. Panel
+   position lives in Hero.module.css (.memoria). */
+[data-s3="final"] .root {
+  --s3-hf: min(50vh, 520px);            /* final portrait height */
+  overflow: visible;                    /* overflow-x:hidden would add a scrollbar */
+  position: relative;
+  isolation: isolate;
+  transform: scale(var(--s3-scale, 1));
+  transform-origin: var(--s3-ox, 50%) var(--s3-oy, 50%);
+}
+[data-s3="final"] .root > * {
+  margin-left: auto !important;
+  margin-right: auto !important;
+  text-align: center;
+}
+[data-s3="final"] .marco {
+  width: calc(var(--s3-hf) * 0.8 + 14px);
+  margin-bottom: clamp(12px, 2.2vh, 22px) !important;
+  /* Perspective divided by the root's scale so the turn projects exactly as
+     the resting (smaller) frame's perspective(1000px) does. */
+  transform: perspective(calc(1000px / var(--s3-scale, 1))) rotateY(var(--s3-turn, 0deg));
+  transform-origin: right center;
+}
+[data-s3="final"] .inMemoriam { margin-bottom: clamp(8px, 1.6vh, 16px); }
+[data-s3="final"] .nombre     { margin-bottom: 6px !important; }
+[data-s3="final"] .fechas     { margin-bottom: 6px; }
+[data-s3="final"] .roles      { margin-bottom: 10px; }
+[data-s3="final"] .epitafio   { display: block; }
+
+/* Text contrast comes from the text itself (recipe C), not from darkening
+   the scene: slightly lighter tones and a dense shadow on the four lines. */
+[data-s3="final"] .fechas > span { color: #f2d893; }
+[data-s3="final"] .roles    { color: rgba(255, 255, 255, 0.82) !important; }
+[data-s3="final"] .epitafio { color: rgba(255, 255, 255, 0.88) !important; }
+[data-s3="final"] :is(.nombre, .fechas > span, .roles, .epitafio) {
+  text-shadow: 0 0 2px rgba(0, 0, 0, .85), 0 0 12px rgba(0, 0, 0, .85), 0 0 26px rgba(0, 0, 0, .6) !important;
+}
+
+/* Local radial, only behind the text lines under the portrait (desktop):
+   keeps dates/roles/phrase >= 4.5:1 over the door's light and its floor
+   reflection. Extends below the phrase so it sits in the radial's useful
+   part, not its fading edge. Fades in with the text (--s3-local). */
+[data-s3="final"] .root::before {
+  content: '';
+  position: absolute;
+  left: 2%;
+  right: 2%;
+  top: 70%;
+  bottom: -12%;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--s3-local, 0);
+  background: radial-gradient(closest-side, rgba(5, 3, 2, .34) 0%, rgba(5, 3, 2, .19) 55%, rgba(5, 3, 2, 0) 100%);
+}
+
+/* Depth of field behind the tribute (S3Veil). Blur only — no scrim. The
+   brightness() inside the same filter gives back the light that a
+   gamma-space blur takes from a thin bright shaft on a near-black frame
+   (blacks stay black: 0 × 1.15 = 0). Opacity is driven by S3Memoria.tsx. */
+.veil {
+  position: fixed;
+  inset: 0;
+  z-index: 5;                           /* below the station panel (z:10) */
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  will-change: opacity;
+  -webkit-backdrop-filter: blur(14px) brightness(1.15);
+  backdrop-filter: blur(14px) brightness(1.15);
+}
+
+@media (max-width: 768px) {
+  [data-s3="final"] .root { --s3-hf: min(40vh, calc((100vw - 96px) * 1.25)); }
+  [data-s3="final"] .root::before { display: none; } /* text already >= 7:1 here */
+  /* Perceptual fidelity first: gentler blur and compensation on phones. */
+  .veil {
+    -webkit-backdrop-filter: blur(10px) brightness(1.16);
+    backdrop-filter: blur(10px) brightness(1.16);
+  }
+}

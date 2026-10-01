@@ -8,6 +8,14 @@
 /* ── Sections ────────────────────────────────────────────────── */
 .section {
   position: relative;
+  /* Transparent to clicks (the sticky box inherits it). Sections are
+     positioned and each sticky box is 100vh tall even in shorter sections
+     (s3 is 80vh), forming its own stacking context — so the next section
+     (and its sticky box) slid up over the current station's fixed copy and
+     swallowed its clicks: Teófilo's portrait lost its link as s3
+     progressed. The copy panels set their own pointer-events
+     (StationCopyWrapper), which override this. */
+  pointer-events: none;
 }
 
 .sticky {
@@ -121,6 +129,27 @@
 
 
 
+
+/* ── La Memoria: final centred position (see S3Memoria.tsx) ────────
+   The panel is centred in the viewport; S3Memoria's inverse transform
+   (--s3-dx/--s3-dy) puts it back at its resting place until the portrait
+   has travelled. Keeps the wrapper's reveal offset (--_reveal-y). */
+.memoria[data-s3="final"] {
+  left: 50%;
+  right: auto;
+  top: calc(50% + 24px);
+  bottom: auto;
+  width: min(680px, calc(100vw - 48px));
+  max-width: none;
+  padding: 0;
+  transform: translate(-50%, calc(-50% + var(--_reveal-y))) translate(var(--s3-dx, 0px), var(--s3-dy, 0px));
+}
+@media (max-width: 768px) {
+  .memoria[data-s3="final"] {
+    top: calc(50% + 28px);
+    width: calc(100vw - 36px);
+  }
+}
 
 /* ── La Puerta: stay clear of the knocking hand (desktop) ─────────
    The block grows toward the centre as --safe-right grows, and on 16:10

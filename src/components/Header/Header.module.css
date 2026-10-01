@@ -164,6 +164,17 @@
 
 .menu ul li:last-child .link { border-bottom: none; }
 
+/* "Acceso interno" abre un modal: botón con el mismo aspecto que los enlaces */
+.linkButton {
+  width: 100%;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  text-align: left;
+  cursor: pointer;
+}
+.linkButton:focus-visible { outline: 2px solid var(--oro-claro); outline-offset: 2px; }
+
 .link:hover { color: rgba(232,224,208,.95); }
 
 .linkSym {

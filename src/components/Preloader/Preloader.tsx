@@ -1,8 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import Image from 'next/image';
 import { getPreloadProgress, waitForPreloadReady } from '@/lib/preloadGate';
+import { SESION, guardarSesion, leerSesion } from '@/lib/sesionLanding';
+import IntroCortina from './IntroCortina';
 import styles from './Preloader.module.css';
 
 const PRE = {
@@ -15,19 +17,27 @@ const PRE = {
   durRetiro:  980,
 };
 
-const SESSION_KEY = 'logiaPreloaderVisto';
+const yaVisto = () => leerSesion(SESION.preloader) === 'true';
+const marcarVisto = () => guardarSesion(SESION.preloader, 'true');
 
-function yaVisto(): boolean {
-  try { return sessionStorage.getItem(SESSION_KEY) === 'true'; }
-  catch { return false; }
-}
-
-function marcarVisto(): void {
-  try { sessionStorage.setItem(SESSION_KEY, 'true'); }
-  catch {}
-}
-
+// Orden de la entrada: intro (IntroCortina) → preloader → landing. La
+// coreografía del preloader solo arranca al continuar desde la intro, así
+// que nunca se superponen. La intro se muestra una vez por sesión.
 export default function Preloader() {
+  // Se renderiza en el servidor (la cortina tapa desde el primer pintado);
+  // si la sesión ya la vio, se retira al montar.
+  const [fase, setFase] = useState<'intro' | 'preloader'>('intro');
+
+  useEffect(() => {
+    if (leerSesion(SESION.intro) === 'true') { setFase('preloader'); return; }
+    document.body.style.overflow = 'hidden'; // sin scroll detrás de la intro
+  }, []);
+
+  const continuarDesdeIntro = useCallback(() => {
+    guardarSesion(SESION.intro, 'true');
+    setFase('preloader');
+  }, []);
+
   const preRef    = useRef<HTMLDivElement>(null);
   const panelRef  = useRef<HTMLDivElement>(null);
   const barraRef  = useRef<HTMLDivElement>(null);
@@ -62,6 +72,7 @@ export default function Preloader() {
   }, []);
 
   useEffect(() => {
+    if (fase !== 'preloader') return;
     if (reducedMotion || yaVisto()) { skip(); return; }
 
     document.body.style.overflow = 'hidden';
@@ -119,10 +130,11 @@ export default function Preloader() {
     }, 16);
 
     return () => { clearInterval(timer); limpiarSkip(); };
-  }, [skip, cubrirConPanel, reducedMotion]);
+  }, [fase, skip, cubrirConPanel, reducedMotion]);
 
   return (
     <>
+      {fase === 'intro' && <IntroCortina onContinuar={continuarDesdeIntro} />}
       <div ref={preRef} className={styles.preloader} aria-hidden="true">
         <div className={styles.contenido}>
           <div className={styles.logoWrap}>

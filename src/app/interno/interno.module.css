@@ -1,0 +1,210 @@
+/* Área interna (tras el acceso): interior del templo con la tarjeta en el
+   espacio oscuro de la derecha. Mismo lenguaje que /aspirantes (tarjeta
+   translúcida, oro sobrio) pero más quieto: sin hero ni pie. El formulario
+   de acceso vive en el modal (components/AccesoModal). */
+
+.page {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  /* tarjeta (420px) centrada hacia el 70 % del ancho: en el espacio
+     negativo de la imagen, sin pegarse al borde */
+  padding: 104px max(24px, calc(30vw - 210px)) 48px;
+  background: var(--bg);
+  overflow: hidden;
+}
+
+/* ── Templo: fondo fijo, desenfoque muy sutil, scrim hacia la tarjeta ── */
+.stage {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.stageImg {
+  position: absolute;
+  inset: -12px;                   /* el blur no deja bordes claros */
+  width: calc(100% + 24px);
+  height: calc(100% + 24px);
+  object-fit: cover;
+  object-position: 50% 50%;       /* en 16:10 recorta por igual: la columna central no cae bajo la tarjeta */
+  filter: blur(1px);              /* la imagen ya viene equilibrada: sin oscurecer */
+}
+
+.stage::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to right, transparent 0%, transparent 46%, rgba(5,3,2,.30) 60%, rgba(5,3,2,.42) 100%),
+    /* arriba protege el Header (la columna iluminada cae bajo el nombre) */
+    linear-gradient(to bottom, rgba(5,3,2,.66) 0%, rgba(5,3,2,.34) 9%, transparent 18%, transparent 84%, rgba(5,3,2,.45) 100%);
+}
+
+/* ── Tarjeta ───────────────────────────────────────────────── */
+.card {
+  position: relative;
+  z-index: 1;
+  width: min(420px, 100%);
+  padding: clamp(2.2rem, 5vh, 3rem) clamp(1.5rem, 4vw, 2.6rem);
+  text-align: center;
+  border: 1px solid rgba(184, 149, 58, .26);
+  background: rgba(9, 7, 5, .64);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, .6), inset 0 1px 0 rgba(232, 200, 120, .06);
+}
+
+/* Halo dorado muy sutil */
+.card::before {
+  content: '';
+  position: absolute;
+  inset: -16% -22%;
+  z-index: -1;
+  pointer-events: none;
+  background: radial-gradient(closest-side, rgba(184,149,58,.10), transparent);
+}
+
+.logo {
+  display: block;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 1.2rem;
+  opacity: .92;
+}
+
+.kicker {
+  display: block;
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: .3em;
+  text-transform: uppercase;
+  color: rgba(201, 168, 76, .8);
+  margin-bottom: .9rem;
+}
+
+.title {
+  font-family: var(--serif);
+  font-size: clamp(28px, 3vw, 34px);
+  font-weight: 400;
+  line-height: 1.2;
+  color: #e8d9b0;
+  margin-bottom: 1rem;
+}
+
+.rule {
+  width: 40px;
+  height: 1px;
+  background: #B8953A;
+  opacity: .5;
+  margin: 0 auto 2rem;
+}
+
+.texto {
+  font-family: var(--serif);
+  font-size: clamp(17px, 1.6vw, 18px);
+  font-weight: 300;
+  line-height: 1.75;
+  color: rgba(232, 217, 176, .86);
+  margin: 0 auto 1.8rem;
+  max-width: 330px;
+}
+
+.submit {
+  width: 100%;
+  padding: 19px 16px;
+  background: rgba(14, 13, 11, .55);
+  border: 1px solid rgba(140, 105, 30, .72);
+  border-radius: 1px;
+  color: rgba(232, 224, 208, .92);
+  font-family: var(--sans);
+  font-size: clamp(11.5px, .9vw, 12.5px);
+  letter-spacing: .22em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .3s ease, border-color .3s ease, box-shadow .3s ease;
+}
+
+.submit:hover {
+  border-color: #B8953A;
+  background: rgba(184, 149, 58, .07);
+  box-shadow: 0 6px 24px rgba(184, 149, 58, .11);
+}
+
+.submit:focus-visible { outline: 2px solid var(--oro-claro); outline-offset: 3px; }
+
+/* "Gestionar aspirantes": enlace con aspecto de botón principal */
+.accion {
+  display: block;
+  margin-bottom: .8rem;
+  text-align: center;
+  text-decoration: none;
+}
+
+/* "Cerrar sesión": secundaria, más discreta */
+.secundario {
+  padding: 13px 16px;
+  border-color: rgba(184, 149, 58, .3);
+  color: rgba(222, 208, 184, .82);
+  font-size: 11px;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: .6rem;
+  margin-top: 1.6rem;
+  padding: 10px 0;
+  font-family: var(--sans);
+  font-size: 11px;
+  letter-spacing: .2em;
+  text-transform: uppercase;
+  text-decoration: none;
+  color: rgba(210, 195, 170, .78);
+  transition: color .3s ease;
+}
+
+.back .ln {
+  display: block;
+  width: 24px;
+  height: 1px;
+  background: rgba(184, 149, 58, .45);
+  transition: width .35s ease, background .3s ease;
+}
+
+.back:hover { color: rgba(232, 224, 208, .95); }
+.back:hover .ln { width: 36px; background: #B8953A; }
+.back:focus-visible { outline: 2px solid var(--oro-claro); outline-offset: 4px; }
+
+/* ── Vertical (móvil y tablets en retrato): tarjeta abajo, franja del
+   altar y el delta visible arriba ─────────────────────────── */
+@media (max-width: 768px), (orientation: portrait) {
+  .page {
+    justify-content: center;
+    align-items: flex-end;
+    padding: 96px 16px 32px;
+  }
+  /* el frontón del templo centrado en la franja superior (luna y sol a los
+     lados); en vertical la cabeza del hermano quedaría bajo la tarjeta */
+  .stageImg { object-position: 28% 0%; }
+  /* Tarjeta más compacta para dejar más franja de templo arriba */
+  .card { padding: 1.6rem 1.25rem 1.2rem; }
+  .logo { width: 48px; height: 48px; margin-bottom: .8rem; }
+  .title { margin-bottom: .8rem; }
+  .rule { margin-bottom: 1.4rem; }
+  .texto { margin-bottom: 1.3rem; }
+  .back { margin-top: .8rem; }
+  .stage::after {
+    background:
+      linear-gradient(to bottom, rgba(5,3,2,.70) 0%, rgba(5,3,2,.40) 9%, rgba(5,3,2,.08) 17%, rgba(5,3,2,.10) 30%, rgba(5,3,2,.70) 56%, rgba(5,3,2,.85) 100%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .submit, .back, .back .ln { transition: none; }
+}
