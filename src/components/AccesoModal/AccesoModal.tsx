@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
 import { iniciarSesion, sesionActiva, type EstadoAcceso } from '@/app/interno/actions';
+import { ordenAudio } from '@/lib/audioEvento';
 import styles from './AccesoModal.module.css';
 
 // ── Modal del acceso interno ─────────────────────────────────────────
@@ -34,6 +35,8 @@ export default function AccesoModal({ onClose }: { onClose: () => void }) {
   const passwordRef = useRef<HTMLInputElement>(null);
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  // Se cierra para ir a /interno: la música de la landing no debe reanudarse.
+  const navegandoRef = useRef(false);
 
   // Abrir: bloquea el scroll (en <html>: el <body> lo gestionan Preloader y
   // FinalGate), deja inerte el resto de la página y devuelve el foco al
@@ -47,10 +50,12 @@ export default function AccesoModal({ onClose }: { onClose: () => void }) {
     const inertes = [...document.body.children].filter(el => el !== portal && !el.hasAttribute('inert')) as HTMLElement[];
     inertes.forEach(el => el.setAttribute('inert', ''));
     usuarioRef.current?.focus();
+    // La música de la landing (si suena) se suspende mientras el modal está abierto.
+    ordenAudio('suspender');
 
     let vigente = true;
     sesionActiva().then(activa => {
-      if (vigente && activa) { onCloseRef.current(); router.push('/interno'); }
+      if (vigente && activa) { navegandoRef.current = true; onCloseRef.current(); router.push('/interno'); }
     }).catch(() => {});
 
     return () => {
@@ -58,6 +63,7 @@ export default function AccesoModal({ onClose }: { onClose: () => void }) {
       html.style.overflow = overflowPrevio;
       inertes.forEach(el => el.removeAttribute('inert'));
       previo?.focus?.();
+      if (!navegandoRef.current) ordenAudio('reanudar');
     };
   }, [router]);
 
@@ -65,6 +71,7 @@ export default function AccesoModal({ onClose }: { onClose: () => void }) {
   // (el usuario se conserva para corregir sin reescribir).
   useEffect(() => {
     if (state.status === 'ok') {
+      navegandoRef.current = true;
       router.push('/interno');
       onCloseRef.current();
     } else if (state.status === 'error') {
