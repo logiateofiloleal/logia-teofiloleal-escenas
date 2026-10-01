@@ -3,6 +3,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { STATION_IDS } from '@/config/segments';
 import { stationScrollY } from '@/lib/stationScroll';
 import AccesoModal from '@/components/AccesoModal/AccesoModal';
@@ -32,6 +33,14 @@ export default function Header() {
   // Acceso interno: modal de login sobre la página actual (no navega).
   const [acceso, setAcceso] = useState(false);
   const cerrarAcceso = useCallback(() => setAcceso(false), []);
+  // The logo and "Inicio del recorrido" are real links to /: on the landing
+  // they scroll back to the first station instead; elsewhere (e.g.
+  // /teofilo-leal) they navigate.
+  const enLanding = usePathname() === '/';
+  const irAlInicio = useCallback((e: React.MouseEvent) => {
+    if (enLanding) scrollAlInicio(e);
+    close();
+  }, [enLanding, close]);
 
   // /?acceso (p. ej. al entrar a /interno sin sesión) abre el modal y limpia la URL.
   useEffect(() => {
@@ -46,12 +55,12 @@ export default function Header() {
   return (
     <>
       <header className={styles.header} aria-label="Cabecera institucional">
-        <a
-          href="#"
+        <Link
+          href="/"
           className={styles.brand}
           id="eh-brand-link"
           aria-label="Ir al inicio del recorrido"
-          onClick={scrollAlInicio}
+          onClick={irAlInicio}
         >
           <div className={styles.mark}>
             <Image
@@ -65,7 +74,7 @@ export default function Header() {
             <b>Logia Teófilo Leal N° 115</b>
             <span>Oriente de Barquisimeto</span>
           </div>
-        </a>
+        </Link>
 
         <button
           className={styles.toggle}
@@ -93,7 +102,7 @@ export default function Header() {
 
         <ul>
           {[
-            { label: 'Inicio del recorrido',   href: '#',                   onClick: (e: React.MouseEvent) => { scrollAlInicio(e); close(); } },
+            { label: 'Inicio del recorrido',   href: '/',                   onClick: irAlInicio },
             { label: 'Teófilo Leal',           href: '/teofilo-leal',       onClick: close },
             { label: 'Tocar la puerta',        href: '#',                   onClick: (e: React.MouseEvent) => { scrollALaPuerta(e); close(); } },
             { label: 'Solicitud de aspirante', href: '/aspirantes',         onClick: close },
