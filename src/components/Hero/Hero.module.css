@@ -8,6 +8,14 @@
 /* ── Sections ────────────────────────────────────────────────── */
 .section {
   position: relative;
+  /* Transparent to clicks (the sticky box inherits it). Sections are
+     positioned and each sticky box is 100vh tall even in shorter sections
+     (s3 is 80vh), forming its own stacking context — so the next section
+     (and its sticky box) slid up over the current station's fixed copy and
+     swallowed its clicks: Teófilo's portrait lost its link as s3
+     progressed. The copy panels set their own pointer-events
+     (StationCopyWrapper), which override this. */
+  pointer-events: none;
 }
 
 .sticky {
