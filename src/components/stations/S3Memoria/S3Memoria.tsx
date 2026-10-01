@@ -21,24 +21,39 @@ import styles from './S3Memoria.module.css';
 // position, so SceneSnap/ScrollEngine stay untouched; the block's entry
 // (end of t2) and exit (t3 25–50%) remain StationCopyWrapper's job.
 
-const TRAVEL: [number, number] = [0.02, 0.40];          // portrait travel, eased
+// Timeline inside s3 (p 0 → 1). The station's resting point — where the
+// NavDots and the menu land — is p = 0.35 (stationScroll DWELL_RATIO).
+// Everything settles BEFORE it: the portrait arrives first (≈ 86 % of the
+// way to the resting point), then depth of field and the tribute finish
+// just after, and the rest of s3 is a still, contemplative hold.
+const TRAVEL: [number, number] = [0.00, 0.30];          // position + scale
+const TURN: [number, number] = [0.00, 0.26];            // −14° → frontal, done before arrival
+const BLUR: [number, number] = [0.02, 0.32];            // depth of field settles after the portrait
 const TEXTS: [string, number, number][] = [              // staggered text reveal
-  ['inMemoriam', 0.14, 0.26],
-  ['nombre',     0.18, 0.30],
-  ['fechas',     0.22, 0.34],
-  ['roles',      0.26, 0.38],
-  ['epitafio',   0.30, 0.42],
+  ['inMemoriam', 0.12, 0.22],
+  ['nombre',     0.15, 0.25],
+  ['fechas',     0.18, 0.28],
+  ['roles',      0.21, 0.31],
+  ['epitafio',   0.24, 0.33],
 ];
-const LOCAL_VEIL: [number, number] = [0.18, 0.42];      // radial behind the text block
+const LOCAL_VEIL: [number, number] = [0.12, 0.32];      // radial behind the text block
 const RESTING_TURN_DEG = -14;                            // .marco's desktop tilt
 // Eases the displayed progress toward the scroll position (same idea as the
 // canvas frame lerp) so a mouse-wheel step animates instead of jumping.
-const LERP = 0.2;
+// Slightly softer than the canvas: the travel is short (0–0.30 of 80vh), so
+// one wheel step covers almost half of it.
+const LERP = 0.16;
 const LERP_EPSILON = 0.0005;
 
 const clamp01 = (v: number) => Math.min(Math.max(v, 0), 1);
 const ss = (a: number, b: number, v: number) => { const x = clamp01((v - a) / (b - a)); return x * x * (3 - 2 * x); };
-const easeInOutCubic = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2);
+// Arrival curve: smootherstep (zero velocity AND acceleration at both ends —
+// soft departure, no perceptible stop) on a slightly warped time, which
+// moves the speed peak to ~42 % and leaves a longer, gentler deceleration
+// into the centre. Monotonic: no overshoot or settling back.
+const smootherstep = (u: number) => u * u * u * (u * (u * 6 - 15) + 10);
+const llegada = (t: number) => smootherstep(clamp01(t) ** 0.8);
+const fase = ([a, b]: [number, number], p: number) => llegada((p - a) / (b - a));
 
 interface Geometry { dx: number; dy: number; scale: number; ox: number; oy: number; turn: number }
 
@@ -110,14 +125,16 @@ export default function S3Memoria() {
       shown = shown < 0 || reduced ? target : shown + (target - shown) * LERP;
       if (Math.abs(target - shown) < LERP_EPSILON) shown = target;
       const p = shown;
-      const e = reduced ? 1 : easeInOutCubic(clamp01((p - TRAVEL[0]) / (TRAVEL[1] - TRAVEL[0])));
+      const e = reduced ? 1 : fase(TRAVEL, p);
       const k = 1 - e;
-      setVars(geom.dx * k, geom.dy * k, 1 + (geom.scale - 1) * k, geom.turn * k);
+      const kTurn = reduced ? 0 : 1 - fase(TURN, p);
+      setVars(geom.dx * k, geom.dy * k, 1 + (geom.scale - 1) * k, geom.turn * kTurn);
       for (const [el, a, b] of texts) if (el) el.style.opacity = String(reduced ? 1 : ss(a, b, p));
       panel.style.setProperty('--s3-local', String(reduced ? 1 : ss(LOCAL_VEIL[0], LOCAL_VEIL[1], p)));
-      // Depth of field follows the travel and fades with the block itself
-      // (StationCopyWrapper drives the panel's opacity on entry/exit).
-      const op = e * (parseFloat(panel.style.opacity) || 0);
+      // Depth of field follows the arrival (settling just after it) and
+      // fades with the block itself (StationCopyWrapper drives the panel's
+      // opacity on entry/exit).
+      const op = (reduced ? 1 : fase(BLUR, p)) * (parseFloat(panel.style.opacity) || 0);
       veil.style.opacity = op.toFixed(3);
       veil.style.visibility = op > 0.001 ? 'visible' : 'hidden';
       if (shown !== target) schedule(); // keep easing toward the scroll position
