@@ -289,3 +289,36 @@
   .copy h2 { font-size: clamp(1.3rem, 7vw, 1.9rem); }
   .copy p  { font-size: clamp(.84rem, 4vw, .96rem); }
 }
+
+/* ── La Puerta on phones in landscape ────────────────────────────
+   No other S4 rule covers this case: desktop needs >= 1025px, landscape
+   tablets an aspect ratio up to 3:2, phones <= 768px wide. So 844×390 fell
+   back to the base .copy (vertically centred, right: --safe-right), which
+   put the title on the head and the paragraph across the knocking hand;
+   740px-wide phones got the portrait layout, full width over the scene.
+   Here the block takes the column between the hand (same projection as the
+   desktop cap: x 0.645 of the 16:9 frame, cover-fitted, + 16px) and the
+   NavDots, centred in the band between the Header and the closing line,
+   with type compact enough to fit a ~230px tall band. */
+@media (max-width: 1024px) and (max-height: 500px) and (min-aspect-ratio: 3/2) {
+  .copy.puerta {
+    --frame-w: max(100vw, 177.78vh);
+    --frame-x: calc((100vw - var(--frame-w)) / 2);
+    left: calc(var(--frame-x) + var(--frame-w) * 0.645 + 16px);
+    right: 44px;
+    top: 72px;
+    bottom: 60px;
+    width: auto;
+    max-width: none;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transform: translateY(var(--_reveal-y));
+    text-align: left;
+  }
+  .puerta h2 { font-size: clamp(1.15rem, 5.4vh, 1.45rem); margin-bottom: 4px; }
+  .puerta p  { max-width: none; font-size: clamp(.76rem, 3.5vh, .86rem); line-height: 1.45; }
+  .puerta a  { margin-top: 12px; padding: 9px 20px; font-size: .7rem; }
+  .puerta::before { inset: -16px -14px; }
+}
