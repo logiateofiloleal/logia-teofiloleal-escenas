@@ -322,3 +322,46 @@
   .puerta a  { margin-top: 12px; padding: 9px 20px; font-size: .7rem; }
   .puerta::before { inset: -16px -14px; }
 }
+
+/* ── Los Principios on landscape tablets ─────────────────────────
+   The compact, vertically centred block capped against the light shaft
+   (desktop rule above) only starts at >= 1025px and 3:2. Landscape tablets
+   (1024×768, 1180×820…) kept the full-height .top column: a fixed-width
+   block whose list sat on the walking figure and the shaft, pushed to the
+   bottom with a large gap under the title. Same treatment as desktop. */
+@media (min-width: 769px) and (min-aspect-ratio: 1/1) and (max-aspect-ratio: 1500/1000) {
+  .copy.top {
+    --frame-w: max(100vw, 177.78vh);
+    --frame-x: calc((100vw - var(--frame-w)) / 2);
+    top: 50%;
+    bottom: auto;
+    transform: translateY(calc(-50% + var(--_reveal-y)));
+    max-width: min(540px, calc(100vw - var(--safe-right) - (var(--frame-x) + var(--frame-w) * 0.515) - 16px));
+  }
+}
+
+/* ── Los Principios on phones in landscape ───────────────────────
+   No rule covered 844×390 / 780×360: the .top column started under the
+   Header (top: 5vh), covered the figure and the shaft, and ran past the
+   bottom edge at 360px. The block takes the column right of the shaft
+   (same projection as desktop: x 0.515 of the 16:9 frame + 16px), between
+   the menu button and the bottom edge — 72px from the right keeps clear of
+   the menu button, NavDots and audio toggle — with type compact enough to fit. */
+@media (max-width: 1024px) and (max-height: 500px) and (min-aspect-ratio: 3/2) {
+  .copy.top {
+    --frame-w: max(100vw, 177.78vh);
+    --frame-x: calc((100vw - var(--frame-w)) / 2);
+    left: calc(var(--frame-x) + var(--frame-w) * 0.515 + 16px);
+    right: 72px;
+    top: 58px;
+    bottom: 20px;
+    width: auto;
+    max-width: none;
+    padding: 0;
+    justify-content: center;
+    transform: translateY(var(--_reveal-y));
+    text-align: left;
+  }
+  .copy.top > span:first-child { margin-bottom: 4px; }
+  .copy.top h2 { font-size: clamp(1.05rem, 5vh, 1.4rem); margin-bottom: 0; }
+}

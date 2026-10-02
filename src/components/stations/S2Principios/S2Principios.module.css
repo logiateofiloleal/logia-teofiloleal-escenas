@@ -101,3 +101,23 @@
   .titulo { font-size: clamp(.9rem, 3.8vw, 1.02rem); }
   .texto { font-size: clamp(.76rem, 3.2vw, .86rem) !important; }
 }
+
+/* Landscape tablets: the list follows the title as one block, like desktop
+   (Hero.module.css, same media query). */
+@media (min-width: 769px) and (min-aspect-ratio: 1/1) and (max-aspect-ratio: 1500/1000) {
+  .principios {
+    margin-top: clamp(16px, 3vh, 30px);
+    gap: clamp(14px, 2.4vh, 22px);
+  }
+}
+
+/* Phones in landscape: compact rows so title + three principles fit the
+   short band right of the light shaft (Hero.module.css, same query). */
+@media (max-width: 1024px) and (max-height: 500px) and (min-aspect-ratio: 3/2) {
+  .principios { margin-top: 2px; gap: 8px; }
+  .principio { max-width: none; gap: 10px; }
+  .medallion { width: 30px; height: 30px; margin-top: 0; }
+  .medallion img { width: 16px !important; height: 16px !important; }
+  .titulo { font-size: clamp(.86rem, 4vh, .98rem); margin-bottom: 1px; }
+  .texto { font-size: clamp(.72rem, 3.3vh, .8rem) !important; line-height: 1.38; }
+}
