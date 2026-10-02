@@ -95,3 +95,14 @@
     letter-spacing: .06em;
   }
 }
+
+/* Phones in landscape: the audio toggle sits at the right edge, clear of
+   the centred line, so the portrait lift above it (bottom: 80px, above)
+   isn't needed — on 740×360 it pushed the line onto the CTA. Same base
+   position as wider screens. Pairs with .puerta's landscape rule in
+   Hero.module.css. */
+@media (max-width: 1024px) and (max-height: 500px) and (min-aspect-ratio: 3/2) {
+  .espera {
+    bottom: clamp(6vh, 8vh, 10vh);
+  }
+}
