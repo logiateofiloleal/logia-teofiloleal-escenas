@@ -111,6 +111,11 @@ export default function Canvas() {
   // assets mid-session if the OS setting changes.
   const prefersReducedMotionRef = useRef(false);
 
+  // Scroll direction inside the active transition (its target progress went
+  // down since the last change) — gates the prefetch of the previous one.
+  const movingBackRef     = useRef(false);
+  const lastTargetLpRef   = useRef(0);
+
   // ── Backing store ────────────────────────────────────────
   useEffect(() => {
     const c = canvasRef.current;
@@ -384,13 +389,17 @@ export default function Canvas() {
       // one, and the previous transition if scrolling back near the start
       // (covers reversing direction without a visible stall). Scheduled on
       // idle so it never competes with the active scrub's decode work.
+      // Only when actually moving backward: going forward, the previous
+      // transition was just released by the window pass, and re-fetching it
+      // here meant decoding all its frames again only for the budget pass to
+      // release them a moment later (measured: 260 wasted decodes per lap).
       if (lp > 0.6) {
         const nextIdx = segIdx + NEXT_TRANSITION_STEP;
         const next = SEGMENTS[nextIdx];
         if (next?.type === 'transition' && !loadersRef.current.has(next.id)) {
           scheduleIdle(() => startLoader(next));
         }
-      } else if (lp < 0.4) {
+      } else if (lp < 0.4 && movingBackRef.current) {
         const prevIdx = segIdx - NEXT_TRANSITION_STEP;
         const prev = SEGMENTS[prevIdx];
         if (prev?.type === 'transition' && !loadersRef.current.has(prev.id)) {
@@ -508,9 +517,15 @@ export default function Canvas() {
             activeTransIdRef.current = trans.id;
             activeSegIdxRef.current  = segIdx;
             displayLpRef.current     = targetLp;
+            movingBackRef.current    = false;
+            lastTargetLpRef.current  = targetLp;
             lastFrameRef.current.delete(trans.id);
             releaseOutsideWindow(segIdx);
           } else {
+            if (targetLp !== lastTargetLpRef.current) {
+              movingBackRef.current   = targetLp < lastTargetLpRef.current;
+              lastTargetLpRef.current = targetLp;
+            }
             displayLpRef.current += (targetLp - displayLpRef.current) * LERP_ALPHA;
           }
 
