@@ -1,4 +1,5 @@
 import { tierAssets, type Transition, type FrameTier } from '@/config/segments';
+import { scheduleIdle } from '@/lib/scheduleIdle';
 
 // Loads a transition's frame sequence as ImageBitmaps (decoded off-main-thread).
 // Memory management: call release() when the segment is far behind (RELEASE_LAG).
@@ -30,6 +31,22 @@ async function decodeFrame(blob: Blob): Promise<FrameSource> {
 function closeFrame(frame: FrameSource): void {
   if ('close' in frame) (frame as ImageBitmap).close();
   // HTMLImageElement has no explicit close; GC handles it.
+}
+
+// Closing a whole transition (130 decoded frames) in one go takes 50–120 ms
+// on the main thread (measured), and release() runs inside Canvas's draw
+// loop — a visible stall on every transition change. Closing a few frames
+// per idle slot keeps each slice to a few ms; the timeout keeps it moving
+// while the visitor scrolls non-stop.
+const CLOSE_CHUNK = 8;
+const CLOSE_TIMEOUT_MS = 250;
+
+function closeGradually(frames: FrameSource[]): void {
+  const step = () => {
+    for (let n = 0; n < CLOSE_CHUNK && frames.length > 0; n++) closeFrame(frames.pop()!);
+    if (frames.length > 0) scheduleIdle(step, CLOSE_TIMEOUT_MS);
+  };
+  scheduleIdle(step, CLOSE_TIMEOUT_MS);
 }
 
 // ── Module-level memory accounting ──────────────────────────────────────
@@ -64,13 +81,6 @@ export class FrameLoader {
     this.framesDir  = assets.framesDir;
     this.frameCount = assets.frameCount;
     this.frameBytes = frameBytes;
-  }
-
-  /** Closes a decoded frame and keeps the global memory counters in sync. */
-  private closeAndAccount(frame: FrameSource): void {
-    closeFrame(frame);
-    liveBytes -= this.frameBytes;
-    liveBitmaps--;
   }
 
   getFrame(index: number): FrameSource | null {
@@ -160,13 +170,19 @@ export class FrameLoader {
     this.loading = false;
   }
 
+  /**
+   * Drops this loader's frames. They stop counting toward the memory budget
+   * right away (so Canvas's budget pass never over-releases), and are closed
+   * a few at a time off the draw loop — see closeGradually.
+   */
   release(): void {
     this.cancelled = true;
     this.loading = false;
-    for (const frame of this.frames) {
-      if (frame) this.closeAndAccount(frame);
-    }
+    const decoded = this.frames.filter((f): f is FrameSource => f != null);
+    liveBytes -= decoded.length * this.frameBytes;
+    liveBitmaps -= decoded.length;
     this.frames = [];
     this.lastDrawnIndex = -1;
+    if (decoded.length > 0) closeGradually(decoded);
   }
 }
