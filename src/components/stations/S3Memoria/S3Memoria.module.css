@@ -18,7 +18,7 @@
   font-size: clamp(.6rem, .76vw, .72rem) !important;
   letter-spacing: .38em;
   text-transform: uppercase;
-  color: rgba(184, 149, 58, 0.72) !important;
+  color: rgba(184, 149, 58, 0.82) !important; /* .82 (was .72): >= 4.5:1 over the S3 veil (was 4.0:1) */
   text-shadow: 0 1px 6px rgba(0,0,0,.7) !important;
   margin-bottom: 16px;
   font-weight: 400;

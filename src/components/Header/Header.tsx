@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -33,6 +33,14 @@ export default function Header() {
   // Acceso interno: modal de login sobre la página actual (no navega).
   const [acceso, setAcceso] = useState(false);
   const cerrarAcceso = useCallback(() => setAcceso(false), []);
+  // Opened from the menu, which closes (and goes inert) at the same time:
+  // focus the menu button first, so the modal hands focus back to it.
+  const toggleRef = useRef<HTMLButtonElement>(null);
+  const abrirAcceso = useCallback(() => {
+    close();
+    toggleRef.current?.focus();
+    setAcceso(true);
+  }, [close]);
   // The logo and "Inicio del recorrido" are real links to /: on the landing
   // they scroll back to the first station instead; elsewhere (e.g.
   // /teofilo-leal) they navigate.
@@ -77,6 +85,7 @@ export default function Header() {
         </Link>
 
         <button
+          ref={toggleRef}
           className={styles.toggle}
           aria-label={open ? 'Cerrar menú de navegación' : 'Abrir menú de navegación'}
           aria-expanded={open}
@@ -95,6 +104,7 @@ export default function Header() {
         className={`${styles.menu} ${open ? styles.abierto : ''}`}
         aria-label="Menú principal"
         aria-hidden={!open}
+        inert={!open} // closed (off-screen) menu: its links are not tab stops
       >
         <div className={styles.emblem} aria-hidden="true">
           <Image src="/assets/img/logo.png" alt="" width={86} height={86} draggable={false} />
@@ -130,7 +140,7 @@ export default function Header() {
               type="button"
               className={`${styles.link} ${styles.linkButton}`}
               aria-haspopup="dialog"
-              onClick={() => { close(); setAcceso(true); }}
+              onClick={abrirAcceso}
             >
               <span className={styles.linkSym} aria-hidden="true">✦</span>
               Acceso interno

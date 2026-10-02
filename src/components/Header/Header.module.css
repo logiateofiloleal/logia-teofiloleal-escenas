@@ -63,7 +63,10 @@
   font-size: clamp(9px, .75vw, 11px);
   letter-spacing: .22em;
   text-transform: uppercase;
-  color: rgba(184,149,58,.6);
+  /* .8 (was .6): >= 4.5:1 on the header's dark backdrop (was 3.1:1); the
+     shadow keeps it apart from the door's light shaft behind it on phones. */
+  color: rgba(184,149,58,.8);
+  text-shadow: 0 1px 6px rgba(0,0,0,.75);
 }
 
 /* ── Toggle / Hamburger ───────────────────────────────────── */
@@ -215,7 +218,8 @@
 }
 
 .contactoLink:hover,
-.contactoLink:focus-visible { color: rgba(184,149,58,.72); outline: none; }
+.contactoLink:focus-visible { color: rgba(184,149,58,.72); }
+.contactoLink:focus-visible { outline: 2px solid var(--oro-claro); outline-offset: 2px; } /* like .linkButton */
 
 /* ── Overlay ──────────────────────────────────────────────── */
 .overlay {
