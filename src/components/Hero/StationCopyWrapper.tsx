@@ -76,6 +76,10 @@ export default function StationCopyWrapper({
       el.style.opacity       = String(opacity);
       el.style.setProperty('--_reveal-y', `${(1 - opacity) * 14}px`);
       el.style.pointerEvents = opacity > interactiveThreshold ? 'auto' : 'none';
+      // Same condition for the keyboard: a hidden panel's links (S3 portrait,
+      // S4 CTA) must not be tab stops while invisible.
+      const inert = opacity <= interactiveThreshold;
+      if (el.inert !== inert) el.inert = inert;
     });
   }, [register, stationIndex, fadeInStart, fadeInEnd, fadeOutStart, fadeOutEnd, interactiveThreshold]);
 
