@@ -4,6 +4,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import Image from 'next/image';
 import { getPreloadProgress, waitForPreloadReady } from '@/lib/preloadGate';
 import { SESION, guardarSesion, leerSesion } from '@/lib/sesionLanding';
+import { avisarLandingLista, reiniciarLandingLista } from '@/lib/landingLista';
 import IntroCortina from './IntroCortina';
 import styles from './Preloader.module.css';
 
@@ -29,8 +30,10 @@ export default function Preloader() {
   const [fase, setFase] = useState<'intro' | 'preloader'>('intro');
 
   useEffect(() => {
-    if (leerSesion(SESION.intro) === 'true') { setFase('preloader'); return; }
+    reiniciarLandingLista();
+    if (leerSesion(SESION.intro) === 'true') { setFase('preloader'); return reiniciarLandingLista; }
     document.body.style.overflow = 'hidden'; // sin scroll detrás de la intro
+    return reiniciarLandingLista;
   }, []);
 
   const continuarDesdeIntro = useCallback(() => {
@@ -52,6 +55,7 @@ export default function Preloader() {
     if (preRef.current)   preRef.current.classList.add(styles.oculto);
     if (panelRef.current) panelRef.current.classList.add(styles.oculto);
     document.body.style.overflow = '';
+    avisarLandingLista();
   }, []);
 
   const cubrirConPanel = useCallback(() => {
@@ -62,6 +66,7 @@ export default function Preloader() {
       marcarVisto();
       if (preRef.current) preRef.current.classList.add(styles.oculto);
       document.body.style.overflow = '';
+      avisarLandingLista(); // tras el panel que cubre la pantalla
       setTimeout(() => {
         if (!panel.isConnected) return;
         panel.classList.remove(styles.cubriendo);

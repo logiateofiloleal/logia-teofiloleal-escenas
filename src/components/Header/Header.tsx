@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { STATION_IDS } from '@/config/segments';
 import { stationScrollY } from '@/lib/stationScroll';
+import { alEstarLista } from '@/lib/landingLista';
 import AccesoModal from '@/components/AccesoModal/AccesoModal';
 import styles from './Header.module.css';
 
@@ -50,6 +51,34 @@ export default function Header() {
     const q = params.toString();
     window.history.replaceState(window.history.state, '', window.location.pathname + (q ? '?' + q : '') + window.location.hash);
     setAcceso(true);
+  }, []);
+
+  // "Tocar la puerta" from another page links to /?estacion=puerta: on the
+  // landing, the URL is cleaned at once (it can't fire twice) and, once the
+  // Preloader has released the scroll, the page jumps straight to La
+  // Puerta's resting point — instant, so t1–t3 aren't scrubbed on the way.
+  const irALaPuerta = useCallback((e: React.MouseEvent) => {
+    if (enLanding) scrollALaPuerta(e);
+    close();
+  }, [enLanding, close]);
+
+  useEffect(() => {
+    if (window.location.pathname !== '/') return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('estacion') !== 'puerta') return;
+    params.delete('estacion');
+    const q = params.toString();
+    window.history.replaceState(window.history.state, '', '/' + (q ? '?' + q : '') + window.location.hash);
+    let raf = 0;
+    const cancelar = alEstarLista(() => {
+      // Two frames after the scroll is released, so the layout has settled.
+      raf = requestAnimationFrame(() => {
+        raf = requestAnimationFrame(() => {
+          window.scrollTo({ top: stationScrollY(LA_PUERTA, window.innerHeight), behavior: 'instant' });
+        });
+      });
+    });
+    return () => { cancelar(); cancelAnimationFrame(raf); };
   }, []);
 
   return (
@@ -104,7 +133,7 @@ export default function Header() {
           {[
             { label: 'Inicio del recorrido',   href: '/',                   onClick: irAlInicio },
             { label: 'Teófilo Leal',           href: '/teofilo-leal',       onClick: close },
-            { label: 'Tocar la puerta',        href: '#',                   onClick: (e: React.MouseEvent) => { scrollALaPuerta(e); close(); } },
+            { label: 'Tocar la puerta',        href: '/?estacion=puerta',   onClick: irALaPuerta },
             { label: 'Solicitud de aspirante', href: '/aspirantes',         onClick: close },
           ].map(item => (
             <li key={item.label}>
