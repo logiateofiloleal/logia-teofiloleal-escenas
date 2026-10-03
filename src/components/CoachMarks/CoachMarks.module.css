@@ -13,7 +13,7 @@
   pointer-events: none;
   background:
     radial-gradient(ellipse 34% 30% at var(--gx, 50%) var(--gy, 50%), rgba(5, 3, 2, .34) 0%, rgba(5, 3, 2, 0) 100%),
-    rgba(5, 3, 2, .28);
+    rgba(5, 3, 2, .32);
   animation: velo-entrar .9s ease both;
   transition: opacity .45s ease;   /* = SALIDA_MS */
 }
