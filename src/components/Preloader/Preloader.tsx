@@ -39,11 +39,11 @@ export default function Preloader() {
     ? window.matchMedia('(prefers-reduced-motion: reduce)').matches
     : false;
 
-  const skip = useCallback(() => {
+  const skip = useCallback((entrada = false) => {
     if (preRef.current)   preRef.current.classList.add(styles.oculto);
     if (panelRef.current) panelRef.current.classList.add(styles.oculto);
     document.body.style.overflow = '';
-    avisarLandingLista();
+    avisarLandingLista(entrada);
   }, []);
 
   const cubrirConPanel = useCallback(() => {
@@ -54,7 +54,7 @@ export default function Preloader() {
       marcarVisto();
       if (preRef.current) preRef.current.classList.add(styles.oculto);
       document.body.style.overflow = '';
-      avisarLandingLista(); // tras el panel que cubre la pantalla
+      avisarLandingLista(true); // tras el panel que cubre la pantalla; entrada por el preloader
       setTimeout(() => {
         if (!panel.isConnected) return;
         panel.classList.remove(styles.cubriendo);
@@ -65,7 +65,14 @@ export default function Preloader() {
   }, []);
 
   useEffect(() => {
-    if (reducedMotion || yaVisto()) { skip(); return; }
+    if (reducedMotion || yaVisto()) {
+      // Con movimiento reducido no hay coreografía, pero la primera carga de
+      // la sesión sigue siendo la entrada normal (guía incluida).
+      const entrada = reducedMotion && !yaVisto();
+      if (entrada) marcarVisto();
+      skip(entrada);
+      return;
+    }
 
     document.body.style.overflow = 'hidden';
 

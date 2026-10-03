@@ -60,8 +60,16 @@
   line-height: 1.4;
   letter-spacing: .03em;
   text-align: right;
-  color: rgba(239, 230, 210, .88);
-  text-shadow: 0 1px 6px rgba(0, 0, 0, .9);
+  color: rgba(239, 230, 210, .9);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, .9), 0 0 10px rgba(201, 168, 76, .28);
+  /* Pulso ceremonial suave, al ritmo de la flecha (1,4 s); solo opacidad
+     (se compone en la GPU, sin repintar el texto). */
+  animation: pista-pulso 1.4s ease-in-out infinite;
+}
+
+@keyframes pista-pulso {
+  0%, 100% { opacity: .68; }
+  50%      { opacity: 1; }
 }
 
 .pistaFlecha {
@@ -92,5 +100,5 @@
 @media (prefers-reduced-motion: reduce) {
   .toggle { animation: none; transition: none; }
   .pista { animation: pista-vida 6.5s linear both; }
-  .pistaFlecha { animation: none; }
+  .pistaFlecha, .pistaTexto { animation: none; }
 }

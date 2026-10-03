@@ -6,9 +6,10 @@
 //   logiaPreloaderVisto  'true'       el preloader ya se reprodujo
 //   logiaSonido          'on' | 'off' preferencia de sonido elegida
 //
-// Entre visitas (localStorage) — guía de primera visita (CoachMarks):
-//   logiaFtueNavegacion  'true'       el visitante ya inició el recorrido con la guía
+// Entre visitas (localStorage) — primera ayuda del sonido (AmbientAudio):
 //   logiaFtueSonido      'true'       ya se mostró la ayuda del sonido
+// (La guía de navegación no se guarda: aparece en cada entrada por el
+// preloader — ver landingLista.ts.)
 // Solo indicadores funcionales, sin datos personales.
 
 export const SESION = {
@@ -17,7 +18,6 @@ export const SESION = {
 } as const;
 
 export const FTUE = {
-  navegacion: 'logiaFtueNavegacion',
   sonido: 'logiaFtueSonido',
 } as const;
 
@@ -32,7 +32,7 @@ export function guardarSesion(clave: Clave, valor: string): void {
   try { sessionStorage.setItem(clave, valor); } catch {}
 }
 
-/** true si el paso de la guía de primera visita ya se completó en este navegador. */
+/** true si esa ayuda de primera visita ya se mostró en este navegador. */
 export function ftueVisto(clave: ClaveFtue): boolean {
   try { return localStorage.getItem(clave) === 'true'; } catch { return false; }
 }
