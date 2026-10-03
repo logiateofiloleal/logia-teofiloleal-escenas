@@ -11,6 +11,7 @@ import AmbientAudio from '@/components/AmbientAudio/AmbientAudio';
 import BrandSeal from '@/components/BrandSeal/BrandSeal';
 import Header from '@/components/Header/Header';
 import NavDots from '@/components/NavDots/NavDots';
+import CoachMarks from '@/components/CoachMarks/CoachMarks';
 import Hero from '@/components/Hero/Hero';
 import Cierre from '@/components/Cierre/Cierre';
 import UmbralOverlay from '@/components/UmbralOverlay/UmbralOverlay';
@@ -66,6 +67,9 @@ export default function HeroPage() {
           {/* Fixed UI chrome — always on top */}
           <Header />
           <NavDots />
+          {/* Guía de primera visita sobre la escena (tras el Preloader; después
+              del Header, cuyo salto a S4 debe ocurrir antes de que decida). */}
+          <CoachMarks />
           {/* Scrollable content — Cierre no longer mounts here; it's the
               reserved response rendered by FinalGateOverlay on demand. */}
           <main>

@@ -1,0 +1,136 @@
+/* Guía de primera visita: abajo al centro, sobre la escena, sin caja.
+   z 20: por encima del canvas, los textos de estación (10) y el ScrollHint
+   (12); por debajo del Header (450), NavDots (500) y el botón de sonido (460).
+   No captura clics: la escena sigue entera a la vista y operable. */
+
+.guia {
+  position: fixed;
+  left: 50%;
+  bottom: clamp(28px, 6vh, 56px);
+  transform: translateX(-50%);
+  z-index: 20;
+  width: max-content;
+  max-width: calc(100vw - 48px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  text-align: center;
+  pointer-events: none;
+  animation: entrar .8s ease .2s both;
+  transition: opacity .45s ease;   /* = SALIDA_MS en CoachMarks.tsx */
+}
+
+/* Velo radial suave detrás del texto (nunca se lee como una caja). */
+.guia::before {
+  content: "";
+  position: absolute;
+  inset: -28px -48px;
+  z-index: -1;
+  background: radial-gradient(closest-side, rgba(5, 3, 2, .55) 0%, rgba(5, 3, 2, .3) 55%, rgba(5, 3, 2, 0) 100%);
+}
+
+.guia[data-saliendo="true"] { opacity: 0; }
+
+@keyframes entrar {
+  from { opacity: 0; transform: translate(-50%, 6px); }
+  to   { opacity: 1; transform: translate(-50%, 0); }
+}
+
+.titulo {
+  font-family: var(--serif);
+  font-size: clamp(17px, 1.6vw, 21px);
+  font-weight: 400;
+  line-height: 1.25;
+  letter-spacing: .01em;
+  color: #efe6d2;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, .85);
+}
+
+.texto {
+  font-family: var(--sans);
+  font-size: clamp(11.5px, .85vw, 13px);
+  line-height: 1.5;
+  letter-spacing: .03em;
+  color: rgba(222, 208, 184, .82);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, .85);
+}
+
+.gesto {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: rgba(201, 168, 76, .85);
+  filter: drop-shadow(0 0 6px rgba(0, 0, 0, .8));
+}
+
+/* Ratón: la rueda baja y se desvanece; los chevrons descienden en bucle. */
+.rueda { animation: rueda 1.8s ease-in-out infinite; }
+
+@keyframes rueda {
+  0%   { transform: translateY(0);   opacity: 0; }
+  20%  { opacity: 1; }
+  70%  { transform: translateY(5px); opacity: 0; }
+  100% { transform: translateY(5px); opacity: 0; }
+}
+
+.chevrons { animation: chevrons 1.8s ease-in-out infinite; }
+
+@keyframes chevrons {
+  0%, 100% { transform: translateY(0);   opacity: .45; }
+  50%      { transform: translateY(4px); opacity: 1; }
+}
+
+/* Deslizar: un círculo (el dedo) sube por la guía. */
+.deslizar { display: none; }
+.dedo { animation: dedo 2s ease-in-out infinite; }
+
+@keyframes dedo {
+  0%   { transform: translateY(0);     opacity: 0; }
+  20%  { opacity: 1; }
+  75%  { transform: translateY(-22px); opacity: 0; }
+  100% { transform: translateY(-22px); opacity: 0; }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .raton { display: none; }
+  .deslizar { display: flex; }
+}
+
+/* Teléfonos en vertical: en la franja libre entre el texto de El Umbral
+   (termina hacia el 40–50 % de la altura) y el profano (desde ~76 %). */
+@media (max-width: 768px) and (orientation: portrait) {
+  .guia { top: calc(50% + 12px); bottom: auto; }
+}
+
+/* Teléfonos en horizontal: el texto de El Umbral ocupa la derecha (o todo
+   el ancho) casi hasta abajo; el aviso se compacta abajo a la izquierda,
+   en dos líneas y sin icono. */
+@media (max-height: 500px) and (min-aspect-ratio: 3/2) {
+  .guia {
+    left: max(16px, env(safe-area-inset-left, 0px));
+    bottom: 10px;
+    transform: none;
+    align-items: flex-start;
+    text-align: left;
+    gap: 1px;
+    max-width: min(300px, 42vw);
+    animation-name: entrar-izq;
+  }
+  .guia::before { inset: -14px -24px; }
+  .titulo { font-size: 13.5px; }
+  .texto { font-size: 10.5px; }
+  .gesto { display: none !important; }
+}
+
+@keyframes entrar-izq {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .guia { animation: none; transition: none; }
+  .rueda, .chevrons, .dedo { animation: none; opacity: 1; }
+}

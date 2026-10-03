@@ -32,3 +32,7 @@
 @media (max-width: 768px) {
   .hint { display: none; }
 }
+
+/* Mientras la guía de primera visita (CoachMarks) está a la vista ocupa
+   este mismo lugar: el indicador se retira hasta que ella se va. */
+:global(html[data-guia]) .hint { opacity: 0 !important; }
