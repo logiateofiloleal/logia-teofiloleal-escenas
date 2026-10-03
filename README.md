@@ -2,6 +2,8 @@
 
 Experiencia cinematográfica scroll-driven. Fase 1: hero principal.
 
+> **MVP entregable (baseline final, 2026-10-03):** ver [`docs/MVP-ENTREGABLE-2026-10-03.md`](docs/MVP-ENTREGABLE-2026-10-03.md) — alcance, arquitectura, datos, acceso interno, deploy y regla para trabajo futuro.
+
 ## Dev
 
 ```bash
