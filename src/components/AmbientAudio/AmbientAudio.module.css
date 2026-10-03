@@ -37,17 +37,46 @@
   50%      { box-shadow: 0 0 0 8px rgba(201, 168, 76, 0); }
 }
 
-/* Pista: flecha fina a la izquierda del botón, apuntándolo. Decorativa,
-   sin clics; aparece, se acerca unos píxeles y se desvanece sola (5 s). */
+/* Pista: texto breve y flecha fina a la izquierda del botón, apuntándolo.
+   Sin clics; aparece, la flecha se acerca unos píxeles y todo se desvanece
+   solo (6,5 s = PISTA_MS). */
 .pista {
   position: fixed;
   right: 80px;              /* 28 (margen) + 40 (botón) + 12 */
-  bottom: 40px;             /* centrada con el botón */
+  bottom: 28px;             /* misma franja que el botón (40 px de alto) */
+  height: 40px;
   z-index: 460;
-  color: rgba(201, 168, 76, .9);
+  display: flex;
+  align-items: center;
+  gap: 10px;
   pointer-events: none;
+  animation: pista-vida 6.5s ease both;
+}
+
+.pistaTexto {
+  max-width: 330px;         /* una línea en escritorio */
+  font-family: var(--sans);
+  font-size: 12px;
+  line-height: 1.4;
+  letter-spacing: .03em;
+  text-align: right;
+  color: rgba(239, 230, 210, .9);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, .9), 0 0 10px rgba(201, 168, 76, .28);
+  /* Pulso ceremonial suave, al ritmo de la flecha (1,4 s); solo opacidad
+     (se compone en la GPU, sin repintar el texto). */
+  animation: pista-pulso 1.4s ease-in-out infinite;
+}
+
+@keyframes pista-pulso {
+  0%, 100% { opacity: .68; }
+  50%      { opacity: 1; }
+}
+
+.pistaFlecha {
+  flex-shrink: 0;
+  color: rgba(201, 168, 76, .9);
   filter: drop-shadow(0 0 6px rgba(0, 0, 0, .8));
-  animation: pista-vida 5s ease both, pista-acercar 1.4s ease-in-out infinite;
+  animation: pista-acercar 1.4s ease-in-out infinite;
 }
 
 @keyframes pista-vida {
@@ -64,10 +93,12 @@
 
 @media (max-width: 768px) {
   .toggle { right: 14px; bottom: 14px; }
-  .pista { right: 64px; bottom: 26px; }
+  .pista { right: 64px; bottom: 14px; }
+  .pistaTexto { max-width: 160px; font-size: 11.5px; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .toggle { animation: none; transition: none; }
-  .pista { animation: pista-vida 5s linear both; }
+  .pista { animation: pista-vida 6.5s linear both; }
+  .pistaFlecha, .pistaTexto { animation: none; }
 }

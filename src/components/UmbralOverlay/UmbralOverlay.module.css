@@ -119,3 +119,9 @@
     overflow-wrap: break-word;
   }
 }
+
+/* Mientras la guía de navegación está visible (CoachMarks pone
+   html[data-guia]), el texto de El Umbral pasa al fondo para no competir
+   con ella; al primer scroll la guía se retira y vuelve a su estado normal
+   (la opacidad que este componente fija según el scroll). */
+:global(html[data-guia]) .overlay { opacity: .3 !important; }

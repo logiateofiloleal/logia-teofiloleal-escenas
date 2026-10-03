@@ -2,12 +2,13 @@
 // Siempre dentro de try/catch: sessionStorage puede no estar disponible
 // (modo privado estricto, almacenamiento bloqueado).
 //
-//   logiaGuiaVista       'true'       la intro "cómo se recorre" ya se mostró
 //   logiaPreloaderVisto  'true'       el preloader ya se reprodujo
 //   logiaSonido          'on' | 'off' preferencia de sonido elegida
+//
+// Las ayudas de navegación y sonido no se guardan: aparecen en cada entrada
+// por el preloader (ver landingLista.ts y CoachMarks).
 
 export const SESION = {
-  intro: 'logiaGuiaVista',
   preloader: 'logiaPreloaderVisto',
   sonido: 'logiaSonido',
 } as const;

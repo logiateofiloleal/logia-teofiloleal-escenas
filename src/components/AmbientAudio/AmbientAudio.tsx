@@ -10,8 +10,7 @@ const SRC = '/assets/audio/ambient-loop.mp3';
 const VOLUME = 0.45;
 const FADE_MS = 500;
 
-const PISTA_MS = 5000;                 // la flecha se va sola
-const PRELOADER_RETIRO_MS = 1200;      // retirada del panel del Preloader (durRetiro 980 + margen)
+const PISTA_MS = 6500;                 // la ayuda se va sola (= pista-vida en el CSS)
 
 const leerSonido = () => leerSesion(SESION.sonido);
 const guardarSonido = (v: 'on' | 'off') => guardarSesion(SESION.sonido, v);
@@ -38,9 +37,10 @@ function fundir(audio: HTMLAudioElement, hasta: number, ms: number): Promise<voi
 // interacción válida. Si el navegador aun así lo rechaza, sigue en
 // silencio y el botón queda listo para reintentar.
 //
-// Pista: en la carga en que se mostró la intro (una vez por sesión), al
-// quedar visible la landing y si el sonido sigue apagado, una flecha
-// discreta señala el botón unos segundos (decorativa, no bloquea clics).
+// Pista: en una entrada por el preloader, poco después de que el visitante
+// inicia el recorrido (la pide CoachMarks por el canal de audioEvento), si el
+// sonido sigue apagado, un texto breve y una flecha discreta señalan el botón
+// unos segundos. No bloquea clics ni es obligatoria.
 //
 // Un solo reproductor y un solo botón. Al salir de la landing, fade-out y
 // pausa; el modal de acceso lo suspende mientras está abierto.
@@ -114,6 +114,8 @@ export default function AmbientAudio() {
       if (orden === 'suspender' && !suspendidoRef.current) {
         suspendidoRef.current = { audible: !audio.muted && !audio.paused };
         if (suspendidoRef.current.audible) fundir(audio, 0, FADE_MS).then(() => { if (suspendidoRef.current) audio.pause(); });
+      } else if (orden === 'pista') {
+        if (audio.muted) setPista(true); // si ya lo activó, no hace falta
       } else if (orden === 'reanudar' && suspendidoRef.current) {
         const { audible } = suspendidoRef.current;
         suspendidoRef.current = null;
@@ -135,24 +137,6 @@ export default function AmbientAudio() {
     };
   }, []);
 
-  // La pista solo acompaña a la intro de esta carga: si al montar la
-  // sesión aún no la había visto, se espera a que la landing quede visible
-  // (el Preloader libera el scroll del body y su panel se retira).
-  useEffect(() => {
-    if (leerSesion(SESION.intro) === 'true') return;
-    let bloqueado = false;
-    let espera: ReturnType<typeof setTimeout> | undefined;
-    const sondeo = setInterval(() => {
-      if (document.body.style.overflow === 'hidden') { bloqueado = true; return; }
-      if (!bloqueado || leerSesion(SESION.intro) !== 'true') return; // intro aún sin cerrar
-      clearInterval(sondeo);
-      espera = setTimeout(() => {
-        if (audioRef.current?.muted !== false) setPista(true);
-      }, leerSesion(SESION.preloader) === 'true' ? PRELOADER_RETIRO_MS : 400);
-    }, 200);
-    return () => { clearInterval(sondeo); if (espera) clearTimeout(espera); };
-  }, []);
-
   useEffect(() => {
     if (!pista) return;
     const t = setTimeout(() => setPista(false), PISTA_MS);
@@ -170,10 +154,13 @@ export default function AmbientAudio() {
   return (
     <>
       {pista && (
-        <svg className={styles.pista} viewBox="0 0 56 16" width="56" height="16" aria-hidden="true">
-          <line x1="2" y1="8" x2="50" y2="8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
-          <polyline points="43,2.5 51,8 43,13.5" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
+        <div className={styles.pista} role="status">
+          <span className={styles.pistaTexto}>Activa el sonido para una experiencia completa.</span>
+          <svg className={styles.pistaFlecha} viewBox="0 0 56 16" width="56" height="16" aria-hidden="true">
+            <line x1="2" y1="8" x2="50" y2="8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+            <polyline points="43,2.5 51,8 43,13.5" fill="none" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </div>
       )}
       <button
         type="button"
