@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { waitForPreloadReady } from '@/lib/preloadGate';
 import { AUDIO_EVENTO, type AudioOrden } from '@/lib/audioEvento';
-import { SESION, FTUE, guardarSesion, leerSesion, ftueVisto, marcarFtue } from '@/lib/sesionLanding';
+import { SESION, guardarSesion, leerSesion } from '@/lib/sesionLanding';
 import styles from './AmbientAudio.module.css';
 
 const SRC = '/assets/audio/ambient-loop.mp3';
@@ -37,10 +37,10 @@ function fundir(audio: HTMLAudioElement, hasta: number, ms: number): Promise<voi
 // interacción válida. Si el navegador aun así lo rechaza, sigue en
 // silencio y el botón queda listo para reintentar.
 //
-// Pista: en la primera visita, poco después de que el visitante inicia el
-// recorrido (la pide CoachMarks por el canal de audioEvento), si el sonido
-// sigue apagado, un texto breve y una flecha discreta señalan el botón unos
-// segundos. No bloquea clics ni es obligatoria; se muestra una sola vez.
+// Pista: en una entrada por el preloader, poco después de que el visitante
+// inicia el recorrido (la pide CoachMarks por el canal de audioEvento), si el
+// sonido sigue apagado, un texto breve y una flecha discreta señalan el botón
+// unos segundos. No bloquea clics ni es obligatoria.
 //
 // Un solo reproductor y un solo botón. Al salir de la landing, fade-out y
 // pausa; el modal de acceso lo suspende mientras está abierto.
@@ -115,9 +115,7 @@ export default function AmbientAudio() {
         suspendidoRef.current = { audible: !audio.muted && !audio.paused };
         if (suspendidoRef.current.audible) fundir(audio, 0, FADE_MS).then(() => { if (suspendidoRef.current) audio.pause(); });
       } else if (orden === 'pista') {
-        if (ftueVisto(FTUE.sonido)) return;
-        marcarFtue(FTUE.sonido);
-        if (audio.muted) setPista(true);
+        if (audio.muted) setPista(true); // si ya lo activó, no hace falta
       } else if (orden === 'reanudar' && suspendidoRef.current) {
         const { audible } = suspendidoRef.current;
         suspendidoRef.current = null;

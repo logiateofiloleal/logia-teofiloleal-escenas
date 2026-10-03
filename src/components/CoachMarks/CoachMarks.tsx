@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import { alEstarLista } from '@/lib/landingLista';
-import { FTUE, ftueVisto } from '@/lib/sesionLanding';
 import { ordenAudio } from '@/lib/audioEvento';
 import styles from './CoachMarks.module.css';
 
@@ -14,8 +13,9 @@ import styles from './CoachMarks.module.css';
 // bloquea ni captura clics. El primer desplazamiento real —rueda, deslizar,
 // teclado, NavDots o menú, todos acaban en un scroll nativo— avanza el
 // recorrido y, a la vez, desvanece guía y velo. Solo se escucha `scroll`,
-// pasivo: nunca se consume ni se duplica el gesto. Después, la primera
-// ayuda del sonido junto a su botón (AmbientAudio, recordada entre visitas).
+// pasivo: nunca se consume ni se duplica el gesto. Después, la ayuda del
+// sonido junto a su botón (AmbientAudio; solo si sigue apagado). Ambas
+// ayudas dependen solo de que esta entrada haya sido por el preloader.
 
 const SALIDA_MS = 450;          // fade-out de guía y velo (= CSS)
 const PISTA_SONIDO_MS = 1200;   // tras iniciar el recorrido, la ayuda del sonido
@@ -74,7 +74,7 @@ export default function CoachMarks() {
         setFase('saliendo');
         timers.push(setTimeout(() => setFase('oculto'), SALIDA_MS));
       }
-      if (!ftueVisto(FTUE.sonido)) timers.push(setTimeout(() => ordenAudio('pista'), PISTA_SONIDO_MS));
+      timers.push(setTimeout(() => ordenAudio('pista'), PISTA_SONIDO_MS));
     };
 
     const cancelar = alEstarLista(porPreloader => {
