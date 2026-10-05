@@ -388,7 +388,7 @@ export default function Canvas() {
       const exact = loader.getFrame(targetIdx);
       const nearIdx = exact ? targetIdx : loader.nearestIndex(targetIdx);
       const frame = exact ?? (nearIdx >= 0 ? loader.getFrame(nearIdx) : null);
-      recordDraw(transition.id, lp, nearIdx < 0 ? -1 : Math.abs(nearIdx - targetIdx));
+      recordDraw(transition.id, lp, nearIdx < 0 ? -1 : Math.abs(nearIdx - targetIdx), exact ? undefined : loader.causeOf(targetIdx));
       if (!exact) loader.want(targetIdx); // stand-in on screen: fetch this frame next
       if (frame) {
         ctx.drawImage(frame, 0, 0, W, H);

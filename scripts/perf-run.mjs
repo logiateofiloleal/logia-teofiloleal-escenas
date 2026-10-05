@@ -5,7 +5,7 @@
 //
 //   node scripts/perf-run.mjs --target prod                 # https://logiateofiloleal.com, no throttling
 //   node scripts/perf-run.mjs --target local --throttle     # http://localhost:3111, ~10 Mbps / 40 ms
-//   node scripts/perf-run.mjs --target https://deploy-preview-N--site.netlify.app --throttle --warm
+//   node scripts/perf-run.mjs --target https://deploy-preview-N--site.netlify.app --throttle --warm --runs 3
 //
 // Options:
 //   --target  prod | local | <url>     (default local)
@@ -17,8 +17,11 @@
 //   --warm                             visit twice in the SAME browser context: the first visit is cold and fills the
 //                                      HTTP cache, the second is warm. The report adds, per visit, how the frame
 //                                      requests were served (network / disk cache / 304 revalidation). With an
-//                                      `immutable` Cache-Control a warm visit must show 0 network requests.
-//   --json                             print the raw result as JSON only
+//                                      `immutable` Cache-Control a warm visit must show 0 network requests for URLs
+//                                      the cold visit finished downloading.
+//   --runs N                           repeat the whole profile N times (fresh browser context each) and report the
+//                                      MEDIAN with (min–max) — a single run is too noisy to compare two builds
+//   --json                             print the aggregated result as JSON only
 //
 // Local needs `pnpm build && PORT=3111 pnpm start` running.
 import { chromium } from 'playwright-core';
@@ -41,151 +44,214 @@ const [vw, vh] = String(opt('viewport', mobile ? '390x844' : '1440x900')).split(
 const asJson = Boolean(opt('json', false));
 const downOnly = Boolean(opt('down-only', false));
 const warm = Boolean(opt('warm', false));
+const runs = Math.max(1, Number(opt('runs', 1)) || 1);
 const SCROLL_MS = speed === 'fast' ? 3000 : 9000;
 
 const browser = await chromium.launch();
-// A fresh context = empty HTTP cache. Without --warm the cache is also disabled,
-// so the way back up re-downloads released scenes (worst case); with --warm it is
-// enabled and shared by both visits.
-const ctx = await browser.newContext(
-  mobile
-    ? { viewport: { width: vw, height: vh }, deviceScaleFactor: 3, isMobile: true, hasTouch: true }
-    : { viewport: { width: vw, height: vh } },
-);
 
-const seenFrameUrls = new Set(); // /frames/ URLs requested by earlier visits
+// One profile run = a fresh context (empty HTTP cache). Without --warm the cache
+// is also disabled, so the way back up re-downloads released scenes (worst
+// case); with --warm it is enabled and shared by both visits.
+async function runProfile() {
+  const ctx = await browser.newContext(
+    mobile
+      ? { viewport: { width: vw, height: vh }, deviceScaleFactor: 3, isMobile: true, hasTouch: true }
+      : { viewport: { width: vw, height: vh } },
+  );
+  const seenFrameUrls = new Set();   // /frames/ URLs requested by earlier visits
+  let unfinishedBefore = new Set();  // …of which the previous visit never saw finish (still in flight when it ended)
 
-async function visit(label) {
-  const page = await ctx.newPage();
-  const cdp = await ctx.newCDPSession(page);
-  await cdp.send('Network.enable');
-  await cdp.send('Network.setCacheDisabled', { cacheDisabled: !warm });
-  if (throttle) {
-    await cdp.send('Network.emulateNetworkConditions', {
-      offline: false,
-      latency: 40,
-      downloadThroughput: (10 * 1024 * 1024) / 8,
-      uploadThroughput: (5 * 1024 * 1024) / 8,
+  async function visit(label) {
+    const page = await ctx.newPage();
+    const cdp = await ctx.newCDPSession(page);
+    await cdp.send('Network.enable');
+    await cdp.send('Network.setCacheDisabled', { cacheDisabled: !warm });
+    if (throttle) {
+      await cdp.send('Network.emulateNetworkConditions', {
+        offline: false,
+        latency: 40,
+        downloadThroughput: (10 * 1024 * 1024) / 8,
+        uploadThroughput: (5 * 1024 * 1024) / 8,
+      });
+    }
+
+    let bytes = 0;
+    const frameUrls = new Map(); // requestId → url, only /frames/
+    const how = new Map();       // requestId → 'cache' | '304' | 'network' (first classification wins)
+    const finished = new Set();  // requestIds that finished or failed
+    cdp.on('Network.loadingFinished', (e) => { bytes += e.encodedDataLength; finished.add(e.requestId); });
+    cdp.on('Network.loadingFailed', (e) => { finished.add(e.requestId); });
+    cdp.on('Network.requestWillBeSent', (e) => { if (e.request.url.includes('/frames/')) frameUrls.set(e.requestId, e.request.url); });
+    cdp.on('Network.requestServedFromCache', (e) => { if (frameUrls.has(e.requestId) && !how.has(e.requestId)) how.set(e.requestId, 'cache'); });
+    cdp.on('Network.responseReceived', (e) => {
+      if (!frameUrls.has(e.requestId) || how.has(e.requestId)) return;
+      if (e.response.fromDiskCache || e.response.fromPrefetchCache) how.set(e.requestId, 'cache');
+      else how.set(e.requestId, e.response.status === 304 ? '304' : 'network');
     });
-  }
 
-  let bytes = 0;
-  const frameUrls = new Map(); // requestId → url, only /frames/
-  const how = new Map();       // requestId → 'cache' | '304' | 'network' (first classification wins)
-  cdp.on('Network.loadingFinished', (e) => { bytes += e.encodedDataLength; });
-  cdp.on('Network.requestWillBeSent', (e) => { if (e.request.url.includes('/frames/')) frameUrls.set(e.requestId, e.request.url); });
-  cdp.on('Network.requestServedFromCache', (e) => { if (frameUrls.has(e.requestId) && !how.has(e.requestId)) how.set(e.requestId, 'cache'); });
-  cdp.on('Network.responseReceived', (e) => {
-    if (!frameUrls.has(e.requestId) || how.has(e.requestId)) return;
-    if (e.response.fromDiskCache || e.response.fromPrefetchCache) how.set(e.requestId, 'cache');
-    else how.set(e.requestId, e.response.status === 304 ? '304' : 'network');
-  });
+    const t0 = Date.now();
+    await page.goto(`${base}/?perf=1&memdebug=1`, { waitUntil: 'domcontentloaded' });
+    await page.waitForFunction(() => document.body.style.overflow === 'hidden', null, { timeout: 15000 }).catch(() => {});
+    await page.waitForFunction(() => document.body.style.overflow !== 'hidden', null, { timeout: 180000 });
+    const preloaderMs = Date.now() - t0;
+    const bytesAtPreloaderEnd = bytes;
+    await page.evaluate(() => window.__perfProbe?.reset());
 
-  const t0 = Date.now();
-  await page.goto(`${base}/?perf=1&memdebug=1`, { waitUntil: 'domcontentloaded' });
-  await page.waitForFunction(() => document.body.style.overflow === 'hidden', null, { timeout: 15000 }).catch(() => {});
-  await page.waitForFunction(() => document.body.style.overflow !== 'hidden', null, { timeout: 180000 });
-  const preloaderMs = Date.now() - t0;
-  const bytesAtPreloaderEnd = bytes;
-  await page.evaluate(() => window.__perfProbe?.reset());
+    // Scroll top → bottom of the hero at constant speed, then back up.
+    const result = await page.evaluate(async ([ms, downOnly]) => {
+      const hero = document.documentElement.scrollHeight - innerHeight;
+      // `instant`: the page sets scroll-behavior: smooth, which would turn every
+      // scrollTo into an animation and the run into a measurement of that.
+      const run = (from, to) => new Promise((res) => {
+        const t = performance.now();
+        (function f(n) {
+          const p = Math.min(1, (n - t) / ms);
+          scrollTo({ top: from + (to - from) * p, behavior: 'instant' });
+          p < 1 ? requestAnimationFrame(f) : res();
+        })(t);
+      });
+      // Peak of the memdebug overlay (decoded frame memory) while scrolling.
+      let peakMb = 0;
+      const sampler = setInterval(() => {
+        const el = [...document.querySelectorAll('div')].find((d) => d.children.length === 0 && /live memory/.test(d.textContent));
+        const m = el && /memory:\s*([\d.]+)/.exec(el.textContent);
+        if (m) peakMb = Math.max(peakMb, +m[1]);
+      }, 200);
+      await run(0, hero);
+      if (!downOnly) await run(hero, 0);
+      await new Promise((r) => setTimeout(r, 500));
+      clearInterval(sampler);
+      return {
+        peakMb,
+        probe: window.__perfProbe ? JSON.parse(JSON.stringify(window.__perfProbe.data)) : null,
+      };
+    }, [SCROLL_MS, downOnly]);
+    await page.close();
 
-  // Scroll top → bottom of the hero at constant speed, then back up.
-  const result = await page.evaluate(async ([ms, downOnly]) => {
-    const hero = document.documentElement.scrollHeight - innerHeight;
-    // `instant`: the page sets scroll-behavior: smooth, which would turn every
-    // scrollTo into an animation and the run into a measurement of that.
-    const run = (from, to) => new Promise((res) => {
-      const t = performance.now();
-      (function f(n) {
-        const p = Math.min(1, (n - t) / ms);
-        scrollTo({ top: from + (to - from) * p, behavior: 'instant' });
-        p < 1 ? requestAnimationFrame(f) : res();
-      })(t);
-    });
-    // Peak of the memdebug overlay (decoded frame memory) while scrolling.
-    let peakMb = 0;
-    const sampler = setInterval(() => {
-      const el = [...document.querySelectorAll('div')].find((d) => d.children.length === 0 && /live memory/.test(d.textContent));
-      const m = el && /memory:\s*([\d.]+)/.exec(el.textContent);
-      if (m) peakMb = Math.max(peakMb, +m[1]);
-    }, 200);
-    await run(0, hero);
-    if (!downOnly) await run(hero, 0);
-    await new Promise((r) => setTimeout(r, 500));
-    clearInterval(sampler);
-    return {
-      peakMb,
-      probe: window.__perfProbe ? JSON.parse(JSON.stringify(window.__perfProbe.data)) : null,
+    // How the frame requests were served. `repeated*` only counts URLs the
+    // previous visit already requested: with `immutable` they must come from the
+    // cache. `repeatedInFlight` is the part of those that the previous visit had
+    // not finished downloading when it ended — those legitimately go to the network.
+    const served = { network: 0, diskCache: 0, revalidated304: 0, repeatedNetwork: 0, repeated304: 0, repeatedInFlight: 0 };
+    const unfinished = new Set();
+    for (const [id, url] of frameUrls) {
+      if (!finished.has(id)) unfinished.add(url);
+      const h = how.get(id) ?? 'network';
+      const seenBefore = seenFrameUrls.has(url);
+      if (h === 'cache') served.diskCache++;
+      else if (h === '304') { served.revalidated304++; if (seenBefore) served.repeated304++; }
+      else {
+        served.network++;
+        if (seenBefore) { served.repeatedNetwork++; if (unfinishedBefore.has(url)) served.repeatedInFlight++; }
+      }
+    }
+    for (const url of frameUrls.values()) seenFrameUrls.add(url);
+    unfinishedBefore = unfinished;
+
+    const out = {
+      visit: label,
+      preloaderMs, mbAtPreloaderEnd: +(bytesAtPreloaderEnd / 1048576).toFixed(2),
+      mbTotal: +(bytes / 1048576).toFixed(2), frameRequests: frameUrls.size, framesServed: served,
+      peakDecodedMb: result.peakMb,
+      probeMissing: !result.probe,
+      transitions: {},
     };
-  }, [SCROLL_MS, downOnly]);
-  await page.close();
-
-  // How the frame requests were served. `repeated*` only counts URLs the
-  // previous visit already downloaded: with `immutable` they must come from the
-  // cache — any network hit or 304 there means the header is not applying.
-  const served = { network: 0, diskCache: 0, revalidated304: 0, repeatedNetwork: 0, repeated304: 0 };
-  for (const [id, url] of frameUrls) {
-    const h = how.get(id) ?? 'network';
-    const seenBefore = seenFrameUrls.has(url);
-    if (h === 'cache') served.diskCache++;
-    else if (h === '304') { served.revalidated304++; if (seenBefore) served.repeated304++; }
-    else { served.network++; if (seenBefore) served.repeatedNetwork++; }
+    for (const [id, t] of Object.entries(result.probe ?? {})) {
+      const pct = (n) => +((100 * n) / Math.max(1, t.draws)).toFixed(1);
+      out.transitions[id] = {
+        draws: t.draws,
+        far2Pct: pct(t.far2),      // main metric: stand-in 2+ frames away (distance 1 is not perceptible)
+        far5Pct: pct(t.far5),
+        fallbackPct: pct(t.fallback),
+        noFramePct: pct(t.noFrame),
+        maxDist: t.maxDist,
+        // Why the exact frame was missing, for stand-ins 2+ frames away (share of those draws).
+        far2Causes: t.causesFar2 ?? { a: 0, b: 0, c: 0 },
+        allCauses: t.causes ?? { a: 0, b: 0, c: 0 },
+      };
+    }
+    return out;
   }
-  for (const url of frameUrls.values()) seenFrameUrls.add(url);
 
-  const out = {
-    visit: label,
-    target: base, throttle, speed, mobile, viewport: `${vw}x${vh}`,
-    preloaderMs, mbAtPreloaderEnd: +(bytesAtPreloaderEnd / 1048576).toFixed(2),
-    mbTotal: +(bytes / 1048576).toFixed(2), frameRequests: frameUrls.size, framesServed: served,
-    peakDecodedMb: result.peakMb,
-    probeMissing: !result.probe,
-    transitions: {},
-  };
-  for (const [id, t] of Object.entries(result.probe ?? {})) {
-    const pct = (n) => +((100 * n) / Math.max(1, t.draws)).toFixed(1);
-    out.transitions[id] = {
-      draws: t.draws,
-      far2Pct: pct(t.far2),      // main metric: stand-in 2+ frames away (distance 1 is not perceptible)
-      far5Pct: pct(t.far5),
-      fallbackPct: pct(t.fallback),
-      noFramePct: pct(t.noFrame),
-      maxDist: t.maxDist,
-      fallbackByLpDecile: t.byLp.map((b) => (b.draws ? Math.round((100 * b.fallback) / b.draws) : null)),
-    };
-  }
-  return out;
+  const visits = [await visit(warm ? 'fría' : 'única')];
+  if (warm) visits.push(await visit('caliente'));
+  await ctx.close();
+  return visits;
 }
 
-const results = [await visit(warm ? 'fría' : 'única')];
-if (warm) results.push(await visit('caliente'));
+const all = [];
+for (let i = 0; i < runs; i++) {
+  all.push(await runProfile());
+  if (!asJson && runs > 1) console.error(`run ${i + 1}/${runs} listo`);
+}
 await browser.close();
 
+// ── Aggregation: median (min–max) over runs ───────────────────────────
+const median = (xs) => {
+  const s = [...xs].sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+};
+const fmt = (xs, d = 1) => {
+  const r = (n) => +n.toFixed(d);
+  return runs === 1 ? `${r(xs[0])}` : `${r(median(xs))} (${r(Math.min(...xs))}–${r(Math.max(...xs))})`;
+};
+const col = (visitIdx, pick) => all.map((r) => pick(r[visitIdx]));
+
+const summary = { target: base, throttle, speed, mobile, viewport: `${vw}x${vh}`, downOnly, runs, visits: [] };
+for (let v = 0; v < all[0].length; v++) {
+  const label = all[0][v].visit;
+  const ids = Object.keys(all[0][v].transitions);
+  const sumCauses = (id, key) => {
+    const t = { a: 0, b: 0, c: 0 };
+    for (const r of all) for (const k of 'abc') t[k] += r[v].transitions[id]?.[key]?.[k] ?? 0;
+    return t;
+  };
+  summary.visits.push({
+    visit: label,
+    probeMissing: all[0][v].probeMissing,
+    preloaderMs: col(v, (x) => x.preloaderMs),
+    mbTotal: col(v, (x) => x.mbTotal),
+    peakDecodedMb: col(v, (x) => x.peakDecodedMb),
+    frameRequests: col(v, (x) => x.frameRequests),
+    served: Object.fromEntries(Object.keys(all[0][v].framesServed).map((k) => [k, col(v, (x) => x.framesServed[k])])),
+    transitions: Object.fromEntries(ids.map((id) => [id, {
+      far2Pct: col(v, (x) => x.transitions[id]?.far2Pct ?? 0),
+      far5Pct: col(v, (x) => x.transitions[id]?.far5Pct ?? 0),
+      fallbackPct: col(v, (x) => x.transitions[id]?.fallbackPct ?? 0),
+      maxDist: col(v, (x) => x.transitions[id]?.maxDist ?? 0),
+      far2Causes: sumCauses(id, 'far2Causes'),
+      allCauses: sumCauses(id, 'allCauses'),
+    }])),
+  });
+}
+
 if (asJson) {
-  console.log(JSON.stringify(results));
+  console.log(JSON.stringify(summary));
 } else {
-  for (const out of results) {
+  console.log(
+    `\n${base}  throttle=${throttle}  speed=${speed}${downOnly ? ' down-only' : ''}${mobile ? ' mobile' : ''}  ` +
+    `viewport=${vw}x${vh}  runs=${runs}  (mediana (mín–máx))`,
+  );
+  for (const v of summary.visits) {
+    console.log(`\n[${v.visit}]`);
+    if (v.probeMissing) console.log('(sin sonda: ese despliegue no incluye ?perf=1, solo se miden bytes y tiempo del preloader)');
+    console.log(`preloader ${fmt(v.preloaderMs, 0)} ms · ${fmt(v.mbTotal)} MB totales · pico decodificado ${fmt(v.peakDecodedMb)} MB`);
+    const s = v.served;
     console.log(
-      `\n[${out.visit}] ${out.target}  throttle=${out.throttle}  speed=${out.speed}${downOnly ? ' down-only' : ''}` +
-      `${out.mobile ? ' mobile' : ''}  viewport=${out.viewport}`,
-    );
-    if (out.probeMissing) console.log('(sin sonda: ese despliegue no incluye ?perf=1, solo se miden bytes y tiempo del preloader)');
-    console.log(
-      `preloader: ${out.preloaderMs} ms · ${out.mbAtPreloaderEnd} MB hasta que se va · ${out.mbTotal} MB total · ` +
-      `pico decodificado ${out.peakDecodedMb} MB`,
-    );
-    const s = out.framesServed;
-    console.log(
-      `frames: ${out.frameRequests} requests → red ${s.network} · caché ${s.diskCache} · 304 ${s.revalidated304}` +
-      (out.visit === 'caliente'
-        ? `  | ya descargados en la visita fría pero pedidos a la red: ${s.repeatedNetwork}, revalidados (304): ${s.repeated304}`
+      `requests de frames ${fmt(v.frameRequests, 0)}: red ${fmt(s.network, 0)} · caché ${fmt(s.diskCache, 0)} · 304 ${fmt(s.revalidated304, 0)}` +
+      (v.visit === 'caliente'
+        ? ` | ya pedidos antes y aun así a la red: ${fmt(s.repeatedNetwork, 0)} (de ellos en vuelo al cerrar la visita fría: ${fmt(s.repeatedInFlight, 0)}), 304 repetidos: ${fmt(s.repeated304, 0)}`
         : ''),
     );
-    for (const [id, t] of Object.entries(out.transitions)) {
+    for (const [id, t] of Object.entries(v.transitions)) {
+      const c = t.far2Causes;
+      const tot = c.a + c.b + c.c;
+      const share = (n) => (tot ? `${Math.round((100 * n) / tot)}%` : '-');
       console.log(
-        `${id}: draws=${t.draws} a ≥2 frames=${t.far2Pct}% a ≥5=${t.far5Pct}% (cualquier stand-in=${t.fallbackPct}%, sin frame=${t.noFramePct}%) distMax=${t.maxDist}`,
+        `${id}: a ≥2 frames ${fmt(t.far2Pct)}% · a ≥5 ${fmt(t.far5Pct)}% · cualquier stand-in ${fmt(t.fallbackPct)}% · dist máx ${fmt(t.maxDist, 0)}` +
+        `  | causa de los ≥2 (suma ${runs} corr.): a(no descargado) ${c.a} ${share(c.a)} · b(sin decodificar) ${c.b} ${share(c.b)} · c(liberado) ${c.c} ${share(c.c)}`,
       );
-      console.log(`    stand-in % por tramo de lp (0-10%…90-100%): ${t.fallbackByLpDecile.join(' ')}`);
     }
   }
 }

@@ -73,6 +73,14 @@ const URGENT_MAX = 4;
 const PENDING = 0;
 const INFLIGHT = 1;
 const SETTLED = 2;
+const DECODING = 3; // downloaded, createImageBitmap still running
+
+// Frames each transition had decoded before its loader was released (budget or
+// window pass). A frame missing from a fresh loader but present here is waiting
+// for a re-decode, not for the network — see FrameLoader.causeOf.
+const decodedBefore = new Map<string, Uint8Array>();
+
+export type StandInCause = 'a' | 'b' | 'c';
 
 export class FrameLoader {
   private frames: (FrameSource | null)[] = [];
@@ -169,6 +177,16 @@ export class FrameLoader {
     return i < 0 ? null : this.frames[i];
   }
 
+  /**
+   * Why `index` isn't decodable right now (measurement only, see perfProbe):
+   * a = not downloaded yet, b = downloaded but still decoding, c = was decoded
+   * before this loader was released and is waiting to be fetched/decoded again.
+   */
+  causeOf(index: number): StandInCause {
+    if (decodedBefore.get(this.id)?.[index]) return 'c';
+    return this.state[index] === DECODING ? 'b' : 'a';
+  }
+
   /** URL of frame `index` (0-based) — also the key passed to onFrameDone. */
   frameSrc(index: number): string {
     return `${this.framesDir}/frame_${String(index + 1).padStart(4, '0')}.webp`;
@@ -215,6 +233,7 @@ export class FrameLoader {
       if (this.cancelled) return;
       const blob = await res.blob();
       if (this.cancelled) return;
+      this.state[index] = DECODING;
       const frame = await decodeFrame(blob);
       if (!this.cancelled) {
         this.frames[index] = frame;
@@ -241,6 +260,11 @@ export class FrameLoader {
     this.cancelled = true;
     frameScheduler.remove(this);
     const decoded = this.frames.filter((f): f is FrameSource => f != null);
+    if (decoded.length > 0) {
+      const seen = decodedBefore.get(this.id) ?? new Uint8Array(this.frameCount);
+      this.frames.forEach((f, i) => { if (f) seen[i] = 1; });
+      decodedBefore.set(this.id, seen);
+    }
     liveBytes -= decoded.length * this.frameBytes;
     liveBitmaps -= decoded.length;
     this.frames = [];
