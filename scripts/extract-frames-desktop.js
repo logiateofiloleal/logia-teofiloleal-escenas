@@ -18,7 +18,7 @@ const args = process.argv.slice(2);
 const frameRate = parseInt(args[0]) || 16;
 
 const videoPath = 'public/assets/frames-1.mp4';
-const desktopDir = 'public/frames/v1/desktop/escena-1';
+const desktopDir = 'assets-src/frames/v1/desktop/escena-1';
 
 console.log(`\nExtracting: ${videoPath}`);
 console.log(`FPS: ${frameRate}`);

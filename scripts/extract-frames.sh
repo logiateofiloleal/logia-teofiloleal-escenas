@@ -8,7 +8,8 @@
 #   bash scripts/extract-frames.sh --input ~/videos/t1.mp4 --id t1
 #   bash scripts/extract-frames.sh --input ~/videos/t1-mobile.mp4 --id t1 --scale 480:854
 #
-# Output: public/frames/v1/desktop/<id>/frame_0001.webp … (or frames/v1/mobile/ for 9:16)
+# Output: assets-src/frames/v1/desktop/<id>/frame_0001.webp … (or frames/v1/mobile/ for 9:16)
+# Then pack them for delivery:  node scripts/build-frame-packs.mjs
 # After extracting, update src/config/segments.ts:
 #   Find the transition entry, set mode:'frames', framesDir:'/frames/v1/desktop/<id>', frameCount:<actual count>
 
@@ -34,9 +35,9 @@ fi
 
 # Determine output path based on scale
 if [[ "$SCALE" == "480:854" ]]; then
-  OUT_DIR="public/frames/v1/mobile/${ID}"
+  OUT_DIR="assets-src/frames/v1/mobile/${ID}"
 else
-  OUT_DIR="public/frames/v1/desktop/${ID}"
+  OUT_DIR="assets-src/frames/v1/desktop/${ID}"
 fi
 
 mkdir -p "$OUT_DIR"

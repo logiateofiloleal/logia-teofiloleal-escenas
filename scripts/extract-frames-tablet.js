@@ -38,9 +38,9 @@ if (!videosDir) {
 }
 
 const SCENES = [
-  { video: 'frames-1.mp4',         outDir: 'public/frames/v1/tablet/escena-1' },
-  { video: 'escena-2-desktop.mp4', outDir: 'public/frames/v1/tablet/escena-2' },
-  { video: 'escena-3-desktop.mp4', outDir: 'public/frames/v1/tablet/escena-3' },
+  { video: 'frames-1.mp4',         outDir: 'assets-src/frames/v1/tablet/escena-1' },
+  { video: 'escena-2-desktop.mp4', outDir: 'assets-src/frames/v1/tablet/escena-2' },
+  { video: 'escena-3-desktop.mp4', outDir: 'assets-src/frames/v1/tablet/escena-3' },
 ];
 
 const counts = {};

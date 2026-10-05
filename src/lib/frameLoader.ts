@@ -1,8 +1,14 @@
 import { tierAssets, type Transition, type FrameTier } from '@/config/segments';
+import { FRAME_PACKS, type FramePack } from '@/config/framePacks.generated';
 import { scheduleIdle } from '@/lib/scheduleIdle';
 
 // Loads a transition's frame sequence as ImageBitmaps (decoded off-main-thread).
 // Memory management: call release() when the segment is far behind (RELEASE_LAG).
+//
+// Frames travel in PACKS (scripts/build-frame-packs.mjs): one request carries
+// ~16-18 WebP frames concatenated as they are, and the loader cuts them apart
+// with blob.slice. 390 requests per visitor — each paying ~0.7 s of latency —
+// became 24 + the stills.
 
 // Safari <15.4 doesn't have createImageBitmap; fall back to HTMLImageElement.
 const HAS_CREATE_IMAGE_BITMAP = typeof createImageBitmap === 'function';
@@ -26,6 +32,49 @@ async function decodeFrame(blob: Blob): Promise<FrameSource> {
 function closeFrame(frame: FrameSource): void {
   if ('close' in frame) (frame as ImageBitmap).close();
   // HTMLImageElement has no explicit close; GC handles it.
+}
+
+// ── Decode queue ────────────────────────────────────────────────────────
+// A pack lands all at once: 16-18 createImageBitmap calls in the same tick. On
+// phones (iOS especially) that is a burst of decode work and memory, so frames
+// go through one shared queue with at most DECODE_CONCURRENCY running. The
+// frame the canvas is waiting for can jump the queue (FrameLoader.want).
+const DECODE_CONCURRENCY = 4;
+
+interface DecodeJob {
+  loader: FrameLoader;
+  index: number;
+  blob: Blob;
+  done: () => void;
+}
+
+const decodeQueue: DecodeJob[] = [];
+let decodeRunning = 0;
+
+function pumpDecode(): void {
+  while (decodeRunning < DECODE_CONCURRENCY && decodeQueue.length > 0) {
+    const job = decodeQueue.shift()!;
+    if (job.loader.cancelled) { job.done(); continue; }
+    decodeRunning++;
+    job.loader.decodeOne(job.index, job.blob).finally(() => {
+      decodeRunning--;
+      job.done();
+      pumpDecode();
+    });
+  }
+}
+
+function enqueueDecode(loader: FrameLoader, index: number, blob: Blob): Promise<void> {
+  return new Promise<void>((resolve) => {
+    decodeQueue.push({ loader, index, blob, done: resolve });
+    pumpDecode();
+  });
+}
+
+/** Moves a queued decode to the front (the canvas is showing a stand-in for it). */
+function prioritizeDecode(loader: FrameLoader, index: number): void {
+  const i = decodeQueue.findIndex(j => j.loader === loader && j.index === index);
+  if (i > 0) decodeQueue.unshift(decodeQueue.splice(i, 1)[0]);
 }
 
 // Closing a whole transition (130 decoded frames) in one go takes 50–120 ms
@@ -60,20 +109,19 @@ export function getLiveBitmaps(): number {
 }
 
 // ── Coarse-to-fine load order ───────────────────────────────────────────
-// Frames are fetched in passes — every 8th frame, then every 4th, 2nd, and
-// finally the rest — instead of 0 → N in order. After the first pass the
-// canvas always has a frame within 4 of any position, so a scrub that outruns
-// the network degrades to "slightly coarser" rather than "frozen on a frame
-// 100 away". See FrameScheduler below for how passes of different scenes
-// share the connection.
-const PASS_STRIDES = [8, 4, 2, 1] as const;
-const LAST_LEVEL = PASS_STRIDES.length - 1;
-const URGENT_MAX = 4;
+// Packs are ordered by pass: every 8th frame (level 0), then the rest of every
+// 4th (1), 2nd (2), and finally the others (3), instead of 0 → N in order.
+// After the first pack the canvas always has a frame within 4 of any
+// position, so a scrub that outruns the network degrades to "slightly
+// coarser" rather than "frozen on a frame 100 away". See FrameScheduler below
+// for how passes of different scenes share the connection.
+const URGENT_MAX = 3;
+const PACK_RETRIES = 1; // one retry, then the pack's frames are given up (stand-ins cover them)
 
 const PENDING = 0;
-const INFLIGHT = 1;
+const INFLIGHT = 1;  // its pack is downloading
 const SETTLED = 2;
-const DECODING = 3; // downloaded, createImageBitmap still running
+const DECODING = 3;  // pack downloaded, createImageBitmap queued or running
 
 // Frames each transition had decoded before its loader was released (budget or
 // window pass). A frame missing from a fresh loader but present here is waiting
@@ -82,21 +130,30 @@ const decodedBefore = new Map<string, Uint8Array>();
 
 export type StandInCause = 'a' | 'b' | 'c';
 
+export interface PackJob {
+  /** Pack number within its loader. */
+  index: number;
+  level: number;
+  /** Decoded size of the frames it will add (frames × frameBytes). */
+  bytes: number;
+}
+
 export class FrameLoader {
   private frames: (FrameSource | null)[] = [];
   private state: Uint8Array;
-  private levels: number[][];
-  private cursors: number[];
-  private urgent: number[] = [];
+  private packs: readonly FramePack[];
+  private packOf: Int16Array;       // frame index → pack number (-1 = in no pack)
+  private packState: Uint8Array;    // PENDING | INFLIGHT | SETTLED per pack
+  private packCursor = 0;
+  private urgent: number[] = [];    // pack numbers the canvas is waiting for
   private lastDrawnIndex = -1;
   private pending: number;
 
   public cancelled = false;
-  /** Called with the frame's URL once it has settled (decoded or failed). */
-  public onFrameDone?: (src: string) => void;
+  /** Called with a pack's URL once all its frames have settled (decoded or given up). */
+  public onSettled?: (src: string) => void;
 
   readonly id: string;
-  private readonly framesDir: string;
   private readonly frameCount: number;
   // Bytes per decoded frame (W*H*4), used for the global memory accounting above.
   readonly frameBytes: number;
@@ -104,23 +161,14 @@ export class FrameLoader {
   constructor(transition: Transition, tier: FrameTier, frameBytes: number) {
     const assets    = tierAssets(transition, tier);
     this.id         = transition.id;
-    this.framesDir  = assets.framesDir;
     this.frameCount = assets.frameCount;
     this.frameBytes = frameBytes;
+    this.packs      = FRAME_PACKS[assets.framesDir] ?? [];
     this.state      = new Uint8Array(this.frameCount);
-    this.pending    = this.framesDir ? this.frameCount : 0;
-    const seen = new Set<number>();
-    this.levels = PASS_STRIDES.map((stride, lvl) => {
-      const idx: number[] = [];
-      for (let i = 0; i < this.frameCount; i += stride) if (!seen.has(i)) { seen.add(i); idx.push(i); }
-      // The last frame is where the next station rests — part of the first pass.
-      if (lvl === 0 && this.frameCount > 0 && !seen.has(this.frameCount - 1)) {
-        seen.add(this.frameCount - 1);
-        idx.push(this.frameCount - 1);
-      }
-      return idx;
-    });
-    this.cursors = this.levels.map(() => 0);
+    this.packState  = new Uint8Array(this.packs.length);
+    this.packOf     = new Int16Array(this.frameCount).fill(-1);
+    this.packs.forEach((p, k) => p.frames.forEach(([i]) => { if (i < this.frameCount) this.packOf[i] = k; }));
+    this.pending    = this.packOf.reduce((n, k) => n + (k >= 0 ? 1 : 0), 0);
   }
 
   getFrame(index: number): FrameSource | null {
@@ -152,9 +200,9 @@ export class FrameLoader {
     return this.frameCount;
   }
 
-  /** URLs of the first (coarsest) pass — what the Preloader waits for. */
+  /** URL of the first (coarsest) pack — what the Preloader waits for. */
   coarseSrcs(): string[] {
-    return this.levels[0].map(i => this.frameSrc(i));
+    return this.packs.length > 0 ? [this.packs[0].url] : [];
   }
 
   /**
@@ -187,68 +235,100 @@ export class FrameLoader {
     return this.state[index] === DECODING ? 'b' : 'a';
   }
 
-  /** URL of frame `index` (0-based) — also the key passed to onFrameDone. */
-  frameSrc(index: number): string {
-    return `${this.framesDir}/frame_${String(index + 1).padStart(4, '0')}.webp`;
-  }
-
   /**
    * Asks for this exact frame to jump the queue — used while the canvas is
-   * showing a stand-in for it. Only the newest few requests are kept: the
-   * visitor has already scrolled past the older ones.
+   * showing a stand-in for it. If its pack hasn't been requested, that pack goes
+   * next; if the pack is here but the frame is still waiting to be decoded, the
+   * frame goes first. Only the newest few requests are kept: the visitor has
+   * already scrolled past the older ones.
    */
   want(index: number): void {
     if (this.cancelled || index < 0 || index >= this.frameCount) return;
-    if (this.state[index] !== PENDING || this.urgent.includes(index)) return;
-    this.urgent.push(index);
-    if (this.urgent.length > URGENT_MAX) this.urgent.shift();
-    frameScheduler.pump();
+    const k = this.packOf[index];
+    if (k < 0) return;
+    if (this.packState[k] === PENDING) {
+      if (this.urgent.includes(k)) return;
+      this.urgent.push(k);
+      if (this.urgent.length > URGENT_MAX) this.urgent.shift();
+      frameScheduler.pump();
+    } else if (this.state[index] === DECODING) {
+      prioritizeDecode(this, index);
+    }
   }
 
-  /** Next frame to fetch and its pass (-1 = urgent), without claiming it. */
-  peek(): { index: number; level: number } | null {
+  /** Next pack to fetch and its pass (-1 = urgent), without claiming it. */
+  peek(): PackJob | null {
     if (this.cancelled || this.pending === 0) return null;
     while (this.urgent.length > 0) {
-      const index = this.urgent[this.urgent.length - 1];
-      if (this.state[index] === PENDING) return { index, level: -1 };
+      const k = this.urgent[this.urgent.length - 1];
+      if (this.packState[k] === PENDING) return this.job(k, -1);
       this.urgent.pop();
     }
-    for (let lvl = 0; lvl <= LAST_LEVEL; lvl++) {
-      const list = this.levels[lvl];
-      let c = this.cursors[lvl];
-      while (c < list.length && this.state[list[c]] !== PENDING) c++;
-      this.cursors[lvl] = c;
-      if (c < list.length) return { index: list[c], level: lvl };
-    }
+    while (this.packCursor < this.packs.length && this.packState[this.packCursor] !== PENDING) this.packCursor++;
+    if (this.packCursor < this.packs.length) return this.job(this.packCursor, this.packs[this.packCursor].level);
     return null;
   }
 
-  /** Fetches, decodes and stores one frame (claimed via peek()). */
-  async fetchFrame(index: number): Promise<void> {
-    if (this.state[index] !== PENDING) return;
-    this.state[index] = INFLIGHT;
-    const src = this.frameSrc(index);
-    try {
-      const res = await fetch(src);
-      if (this.cancelled) return;
-      const blob = await res.blob();
-      if (this.cancelled) return;
-      this.state[index] = DECODING;
-      const frame = await decodeFrame(blob);
-      if (!this.cancelled) {
-        this.frames[index] = frame;
-        liveBytes += this.frameBytes;
-        liveBitmaps++;
-      } else {
-        closeFrame(frame);
-        return;
+  private job(k: number, level: number): PackJob {
+    return { index: k, level, bytes: this.packs[k].frames.length * this.frameBytes };
+  }
+
+  /** Downloads one pack (claimed via peek()), then decodes its frames. */
+  async fetchPack(k: number): Promise<void> {
+    if (this.packState[k] !== PENDING) return;
+    this.packState[k] = INFLIGHT;
+    const pack = this.packs[k];
+    for (const [i] of pack.frames) this.state[i] = INFLIGHT;
+
+    let blob: Blob | null = null;
+    for (let attempt = 0; attempt <= PACK_RETRIES && !blob && !this.cancelled; attempt++) {
+      try {
+        const res = await fetch(pack.url);
+        if (!res.ok) throw new Error(`pack ${pack.url}: ${res.status}`);
+        blob = await res.blob();
+      } catch {
+        blob = null; // retried once; after that the frames are given up below
       }
+    }
+    if (this.cancelled) return;
+
+    if (blob) {
+      for (const [i] of pack.frames) this.state[i] = DECODING;
+      await Promise.all(pack.frames.map(([i, offset, len]) =>
+        enqueueDecode(this, i, blob!.slice(offset, offset + len, 'image/webp'))));
+    } else {
+      // Gave up on this pack: its frames stay null and the canvas keeps using the
+      // nearest decoded frame — one bad pack must not fail the whole scene.
+      for (const [i] of pack.frames) {
+        this.frames[i] = null;
+        this.state[i] = SETTLED;
+        this.pending--;
+      }
+    }
+    if (this.cancelled) return;
+    this.packState[k] = SETTLED;
+    this.onSettled?.(pack.url);
+  }
+
+  /** Decodes one frame of a downloaded pack (called by the shared decode queue). */
+  async decodeOne(index: number, blob: Blob): Promise<void> {
+    let frame: FrameSource | null = null;
+    try {
+      frame = await decodeFrame(blob);
     } catch {
-      this.frames[index] = null;
+      frame = null;
+    }
+    if (this.cancelled) {
+      if (frame) closeFrame(frame);
+      return;
+    }
+    this.frames[index] = frame;
+    if (frame) {
+      liveBytes += this.frameBytes;
+      liveBitmaps++;
     }
     this.state[index] = SETTLED;
     this.pending--;
-    this.onFrameDone?.(src);
   }
 
   /**
@@ -275,16 +355,16 @@ export class FrameLoader {
 }
 
 // ── Scheduler: one connection budget shared by every loader ────────────
-// Picks the next frame across all live loaders. Cost = pass number, plus a
+// Picks the next pack across all live loaders. Cost = pass number, plus a
 // penalty when the loader isn't the active scene, so the order is:
 //   active 1/8 → every scene's 1/8 → active 1/4 → next 1/4 → active 1/2 → …
-// i.e. every scene gets its coarse pass early (no waiting for lp > 0.6), and
-// finer passes go to the active scene first. A frame the canvas is waiting
-// for (urgent) always goes first.
+// i.e. every scene gets its coarse pack early (no waiting for lp > 0.6), and
+// finer passes go to the active scene first. A pack holding a frame the canvas
+// is waiting for (urgent) always goes first.
 //
-// Non-active scenes are also bounded by the memory budget (a frame is only
-// started if it still fits) and, for their fine passes, paused while the
-// visitor is actively scrolling.
+// Non-active scenes are also bounded by the memory budget (a pack is only
+// started if its frames still fit) and, for their fine passes, paused while
+// the visitor is actively scrolling.
 const NEXT_PENALTY = 1.5;
 const COARSE_PENALTY = 0.5;
 const SCROLL_IDLE_MS = 150;
@@ -294,30 +374,31 @@ class FrameScheduler {
   private loaders = new Set<FrameLoader>();
   private active: FrameLoader | null = null;
   private inflight = 0;
-  private reserved = 0;           // bytes of fetches in flight (not yet in liveBytes)
+  private reserved = 0;           // bytes of packs in flight (not yet in liveBytes)
   private lastScrollAt = 0;
   private resumeTimer: ReturnType<typeof setTimeout> | null = null;
-  private concurrency = 6;
+  private concurrency = 4;
   private budget = Infinity;
   /**
    * Set by Canvas: frees whatever is furthest from the active scene. Called
-   * whenever decoded memory is over budget after a frame lands — the draw loop
+   * whenever decoded memory is over budget after a pack lands — the draw loop
    * parks while the scene is at rest, so it can't be relied on to notice.
    */
   onOverBudget?: () => void;
   /**
    * Set by Canvas: false while the Preloader is still waiting. Until it opens,
-   * only the active scene's coarse pass is fetched, so the stills and that first
-   * pass are not queued behind a connection saturated by everything else.
+   * only the active scene's coarse pack is fetched, so the stills and that first
+   * pack are not queued behind a connection saturated by everything else.
    */
   gateOpen?: () => boolean;
 
   /**
-   * Concurrency follows the protocol: HTTP/2+ multiplexes many requests on one
-   * connection, and each frame is ~50 KB, so with ~40-700 ms of latency per
-   * request the connection sits idle unless many are in flight. HTTP/1.1 is
-   * capped at ~6 connections per host by the browser anyway. Phones (and iOS
-   * Safari in particular) decode on less memory/CPU, so they get fewer.
+   * Concurrency follows the protocol. A pack is ~0.3-0.9 MB, so a few in flight
+   * already fill the connection; HTTP/2+ multiplexes them on one connection and
+   * HTTP/1.1 is capped at ~6 per host by the browser anyway, and leaving room
+   * for the stills and the page's own requests keeps those from queueing behind
+   * the packs. Phones (and iOS Safari in particular) decode on less memory/CPU,
+   * so they get fewer.
    */
   configure(tier: FrameTier, budgetBytes: number): void {
     this.budget = budgetBytes;
@@ -328,9 +409,9 @@ class FrameScheduler {
     } catch { /* keep default */ }
     const multiplexed = proto === 'h2' || proto === 'h3';
     const phone = tier !== 'desktop';
-    let n = multiplexed ? (phone ? 6 : 12) : (phone ? 4 : 6);
+    let n = multiplexed ? (phone ? 4 : 6) : (phone ? 3 : 4);
     if (typeof navigator !== 'undefined' && /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)) {
-      n = Math.min(n, 4);
+      n = Math.min(n, 3);
     }
     this.concurrency = n;
   }
@@ -362,22 +443,22 @@ class FrameScheduler {
     while (this.inflight < this.concurrency) {
       const pick = this.pick();
       if (!pick) return;
-      const { loader, index } = pick;
+      const { loader, job } = pick;
       this.inflight++;
-      this.reserved += loader.frameBytes;
-      loader.fetchFrame(index).finally(() => {
+      this.reserved += job.bytes;
+      loader.fetchPack(job.index).finally(() => {
         this.inflight--;
-        this.reserved -= loader.frameBytes;
+        this.reserved -= job.bytes;
         if (liveBytes > this.budget) this.onOverBudget?.();
         this.pump();
       });
     }
   }
 
-  private pick(): { loader: FrameLoader; index: number } | null {
+  private pick(): { loader: FrameLoader; job: PackJob } | null {
     const scrolling = performance.now() - this.lastScrollAt < SCROLL_IDLE_MS;
     const held = this.gateOpen ? !this.gateOpen() : false;
-    let best: { loader: FrameLoader; index: number } | null = null;
+    let best: { loader: FrameLoader; job: PackJob } | null = null;
     let bestCost = Infinity;
     for (const loader of this.loaders) {
       const job = loader.peek();
@@ -387,14 +468,14 @@ class FrameScheduler {
       let cost = job.level;
       if (!isActive) {
         if (job.level >= FINE_LEVEL && scrolling) continue;
-        if (liveBytes + this.reserved + loader.frameBytes > this.budget) continue;
-        // Every scene's coarse pass (1/8, ~17 frames) is cheap and is what keeps
+        if (liveBytes + this.reserved + job.bytes > this.budget) continue;
+        // Every scene's coarse pack (1/8, ~18 frames) is cheap and is what keeps
         // a fast scrub within 4 frames of the exact one, so it only waits for
-        // the active scene's own coarse pass; finer passes queue behind the
+        // the active scene's own coarse pack; finer passes queue behind the
         // active scene's.
         cost += job.level === 0 ? COARSE_PENALTY : NEXT_PENALTY;
       }
-      if (cost < bestCost) { bestCost = cost; best = { loader, index: job.index }; }
+      if (cost < bestCost) { bestCost = cost; best = { loader, job }; }
     }
     return best;
   }

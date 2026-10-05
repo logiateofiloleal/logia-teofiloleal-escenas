@@ -60,7 +60,7 @@ scripts/
   process-stills.mjs       ← convierte JPEGs fuente → WebP 1280×720
   extract-frames.sh        ← extrae frames de video con ffmpeg
 public/
-  frames/v1/{desktop,tablet,mobile}/escena-N/  ← secuencias de frames por tier (versionadas)
+  frames/v1/{desktop,tablet,mobile}/escena-N/  ← packs + stills por tier (generados, ver "Frames")
   assets/                  ← logo, iconos, retratos
 ```
 
@@ -80,12 +80,19 @@ Los frames tablet se extraen de los masters 4K (fuera del repo) con `node script
 
 ---
 
-## Frames versionados
+## Frames: fuente, packs y versionado
 
-Los frames viven en `public/frames/v1/<tier>/escena-N/` y se sirven con
-`Cache-Control: public, max-age=31536000, immutable` (`netlify.toml`).
-Como el navegador no los revalida nunca, **regenerar frames = nueva versión de
-ruta (`v2`), nunca sobrescribir `v1`**: copia la carpeta a `public/frames/v2/…`,
-cambia las rutas en `src/config/segments.ts`, el `source` de `next.config.ts` y
-el `for` de `netlify.toml`, y despliega. Quien ya tenga `v1` en caché simplemente
-no lo vuelve a pedir.
+- **Fuente** (no se despliega): `assets-src/frames/v1/<tier>/escena-N/frame_NNNN.webp`.
+  Es el único material fuente (ya no hay .mp4): no se borra ni se edita a mano.
+- **Entrega**: `node scripts/build-frame-packs.mjs` concatena esos WebP, sin
+  re-codificar, en `public/frames/v1/<tier>/escena-N/pack-<k>.bin` (8 packs por
+  escena: pasada 1/8, 1/4, 1/2 en 2 y el resto en 4), copia los stills
+  `frame_0001`/`frame_0130` que usan el preloader y las estaciones, y genera
+  `src/config/framePacks.generated.ts` (índice de offsets; **generado, no editar
+  a mano**). Un visitante descarga ~24 packs por tier en vez de 390 archivos.
+- **Cache**: todo `/frames/v1/*` se sirve con
+  `Cache-Control: public, max-age=31536000, immutable` (`netlify.toml`). Como el
+  navegador no lo revalida nunca, **regenerar frames = nueva versión de ruta
+  (`v2`), nunca sobrescribir `v1`**: crea `assets-src/frames/v2/…`, cambia
+  `VERSION` en `build-frame-packs.mjs`, las rutas de `src/config/segments.ts`, el
+  `source` de `next.config.ts` y el `for` de `netlify.toml`, regenera y despliega.

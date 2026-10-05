@@ -238,7 +238,7 @@ export default function Canvas() {
 
     if (t0 && t0Loader && !loadersRef.current.has(t0.id)) {
       loadersRef.current.set(t0.id, t0Loader);
-      t0Loader.onFrameDone = reportPreloadItemDone;
+      t0Loader.onSettled = reportPreloadItemDone;
       frameScheduler.setActive(t0Loader);
       frameScheduler.add(t0Loader);
     }
