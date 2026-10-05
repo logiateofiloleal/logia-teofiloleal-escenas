@@ -95,7 +95,6 @@ export default function Canvas() {
   const { register } = useSceneSnap();
 
   const [W, H]     = DIMS[tier];
-  const frameBytes = frameBytesFor(tier); // decoded RGBA size of one frame — memory accounting unit
 
   // Preloaded stills — HTMLImageElement (sync drawImage once .complete)
   const imgsRef    = useRef<Map<string, HTMLImageElement>>(new Map());
@@ -113,6 +112,12 @@ export default function Canvas() {
   // Loaders the budget pass just released, barred from being re-created for as
   // long as the same transition stays active — otherwise "prefetch → over
   // budget → release → prefetch" would re-download them in a loop.
+  // Tier the frame loaders are built for: read from the viewport at mount (like
+  // the preload effect). `tier` from useFrameTier is still 'desktop' during the
+  // first render, and loaders created then — now possible from the very first
+  // draw tick, since later scenes get their loader early — would fetch desktop
+  // frames on a phone and account them at desktop size.
+  const loaderTierRef = useRef<FrameTier>('desktop');
   const budgetReleasedRef = useRef<{ forSeg: number; ids: Set<string> }>({ forSeg: -1, ids: new Set() });
 
   // Read once at mount, same pattern as useFrameTier — avoids reloading
@@ -167,6 +172,7 @@ export default function Canvas() {
   // the prop here could eager-load the desktop frames on a phone or tablet.
   useEffect(() => {
     const tierNow = readFrameTier();
+    loaderTierRef.current = tierNow;
 
     const srcs = new Set<string>();
     // Desktop stills are the desktop tier's own; phones and tablets only need
@@ -294,7 +300,7 @@ export default function Canvas() {
    */
   const enforceBudget = useCallback(
     (activeSegIdx: number) => {
-      const budget         = MEM_BUDGET[tier];
+      const budget         = MEM_BUDGET[loaderTierRef.current];
       const activeId       = SEGMENTS[activeSegIdx]?.id;
       const activeOrdinal  = activeId ? transitionOrdinal(activeId) : -1;
 
@@ -313,7 +319,7 @@ export default function Canvas() {
         releaseLoader(furthestId);
       }
     },
-    [tier, releaseLoader],
+    [releaseLoader],
   );
 
   /**
@@ -328,13 +334,14 @@ export default function Canvas() {
       if (loadersRef.current.has(seg.id)) return;
       const blocked = budgetReleasedRef.current;
       if (blocked.forSeg === activeSegIdxRef.current && blocked.ids.has(seg.id)) return;
-      if (seg.mode !== 'frames' || effectiveFrameCount(seg, tier) === 0) return;
-      frameScheduler.configure(tier, MEM_BUDGET[tier]);
-      const loader = new FrameLoader(seg, tier, frameBytes);
+      const loaderTier = loaderTierRef.current;
+      if (seg.mode !== 'frames' || effectiveFrameCount(seg, loaderTier) === 0) return;
+      frameScheduler.configure(loaderTier, MEM_BUDGET[loaderTier]);
+      const loader = new FrameLoader(seg, loaderTier, frameBytesFor(loaderTier));
       loadersRef.current.set(seg.id, loader);
       frameScheduler.add(loader);
     },
-    [tier, frameBytes],
+    [],
   );
 
   /**
@@ -501,6 +508,10 @@ export default function Canvas() {
     // which clears the canvas — the current station must be painted again.
     arrivalDrawnRef.current = -1;
 
+    // Frames keep landing while the loop is parked (station at rest): the
+    // scheduler asks for the budget pass itself when memory goes over.
+    frameScheduler.onOverBudget = () => enforceBudget(activeSegIdxRef.current);
+
     // Context cached for this effect's lifetime (the canvas element is stable;
     // a resize of the backing store keeps the same context).
     let ctx: CanvasRenderingContext2D | null = null;
@@ -628,6 +639,7 @@ export default function Canvas() {
     ensureLoopRunningRef.current();
 
     return () => {
+      frameScheduler.onOverBudget = undefined;
       if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current);
       loopRunningRef.current = false;
     };

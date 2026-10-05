@@ -275,6 +275,12 @@ class FrameScheduler {
   private resumeTimer: ReturnType<typeof setTimeout> | null = null;
   private concurrency = 6;
   private budget = Infinity;
+  /**
+   * Set by Canvas: frees whatever is furthest from the active scene. Called
+   * whenever decoded memory is over budget after a frame lands — the draw loop
+   * parks while the scene is at rest, so it can't be relied on to notice.
+   */
+  onOverBudget?: () => void;
 
   /**
    * Concurrency follows the protocol: HTTP/2+ multiplexes many requests on one
@@ -332,6 +338,7 @@ class FrameScheduler {
       loader.fetchFrame(index).finally(() => {
         this.inflight--;
         this.reserved -= loader.frameBytes;
+        if (liveBytes > this.budget) this.onOverBudget?.();
         this.pump();
       });
     }
