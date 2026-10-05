@@ -127,4 +127,17 @@ ${body}
 };
 `,
 );
+// Read every pack back and compare each frame with its source file; a pack that
+// does not round-trip byte for byte must never ship. (scripts/verify-frame-packs.mjs
+// repeats this and also replays the packs through the streaming assembler.)
+for (const [dir, packs] of Object.entries(index)) {
+  for (const pack of packs) {
+    const bin = await fs.readFile(path.join(ROOT, 'public', pack.url));
+    for (const [i, offset, len] of pack.frames) {
+      const original = await fs.readFile(path.join(ROOT, 'assets-src', dir.replace(/^\//, ''), `frame_${String(i + 1).padStart(4, '0')}.webp`));
+      if (!bin.subarray(offset, offset + len).equals(original)) throw new Error(`${pack.url}: frame ${i} does not match its source`);
+    }
+  }
+}
+
 console.log(`\n${totalPacks} packs, ${(totalBytes / 1048576).toFixed(1)} MB → ${path.relative(ROOT, INDEX_TS)}`);

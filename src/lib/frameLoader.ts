@@ -2,6 +2,7 @@ import { tierAssets, type Transition, type FrameTier } from '@/config/segments';
 import { FRAME_PACKS, type FramePack } from '@/config/framePacks.generated';
 import { scheduleIdle } from '@/lib/scheduleIdle';
 import { recordEvent } from '@/lib/perfProbe';
+import { PackAssembler } from '@/lib/packStream';
 
 // Loads a transition's frame sequence as ImageBitmaps (decoded off-main-thread).
 // Memory management: call release() when the segment is far behind (RELEASE_LAG).
@@ -288,41 +289,70 @@ export class FrameLoader {
     return { index: k, level, bytes: this.packs[k].frames.length * this.frameBytes };
   }
 
-  /** Downloads one pack (claimed via peek()), then decodes its frames. */
+  /**
+   * Downloads one pack (claimed via peek()) and decodes its frames. With a
+   * streaming body each frame is cut out and queued for decode as soon as its
+   * byte range is complete (see packStream.ts); without one (old browsers) the
+   * whole pack is awaited, as before.
+   */
   async fetchPack(k: number): Promise<void> {
     if (this.packState[k] !== PENDING) return;
     this.packState[k] = INFLIGHT;
     const pack = this.packs[k];
-    const bytes = pack.frames.length ? pack.frames[pack.frames.length - 1][1] + pack.frames[pack.frames.length - 1][2] : 0;
+    const last = pack.frames[pack.frames.length - 1];
+    const bytes = last ? last[1] + last[2] : 0;
     recordEvent('pack-start', { id: this.id, pack: k, level: pack.level, bytes });
     for (const [i] of pack.frames) this.state[i] = INFLIGHT;
 
-    let blob: Blob | null = null;
-    for (let attempt = 0; attempt <= PACK_RETRIES && !blob && !this.cancelled; attempt++) {
+    const decodes: Promise<void>[] = [];
+    // A frame already settled by an earlier attempt (a stream that broke half way)
+    // is not decoded twice.
+    const queue = (index: number, blob: Blob) => {
+      if (this.state[index] === SETTLED || this.state[index] === DECODING) return;
+      this.state[index] = DECODING;
+      decodes.push(enqueueDecode(this, index, blob));
+    };
+
+    let ok = false;
+    for (let attempt = 0; attempt <= PACK_RETRIES && !ok && !this.cancelled; attempt++) {
       try {
         const res = await fetch(pack.url);
         if (!res.ok) throw new Error(`pack ${pack.url}: ${res.status}`);
-        blob = await res.blob();
+        const reader = res.body?.getReader?.();
+        if (reader) {
+          const assembler = new PackAssembler(pack.frames, bytes);
+          for (;;) {
+            const { done, value } = await reader.read();
+            if (this.cancelled) { void reader.cancel(); return; }
+            if (done) break;
+            for (const f of assembler.push(value)) queue(f.index, f.blob);
+          }
+          if (!assembler.complete) throw new Error(`pack ${pack.url}: short body`);
+        } else {
+          const blob = await res.blob();
+          if (this.cancelled) return;
+          for (const [i, offset, len] of pack.frames) queue(i, blob.slice(offset, offset + len, 'image/webp'));
+        }
+        ok = true;
       } catch {
-        blob = null; // retried once; after that the frames are given up below
+        // Retried once; after that the pack is given up below.
       }
     }
     if (this.cancelled) return;
+    await Promise.all(decodes);
+    if (this.cancelled) return;
 
-    if (blob) {
-      for (const [i] of pack.frames) this.state[i] = DECODING;
-      await Promise.all(pack.frames.map(([i, offset, len]) =>
-        enqueueDecode(this, i, blob!.slice(offset, offset + len, 'image/webp'))));
-    } else {
-      // Gave up on this pack: its frames stay null and the canvas keeps using the
-      // nearest decoded frame — one bad pack must not fail the whole scene.
+    if (!ok) {
+      // Gave up on this pack: whatever it did not deliver stays null and the
+      // canvas keeps using the nearest decoded frame — one bad pack must not
+      // fail the whole scene.
       for (const [i] of pack.frames) {
+        if (this.state[i] === SETTLED) continue;
         this.frames[i] = null;
         this.state[i] = SETTLED;
         this.pending--;
       }
     }
-    if (this.cancelled) return;
     this.packState[k] = SETTLED;
     recordEvent('pack-end', { id: this.id, pack: k, level: pack.level, bytes });
     this.onSettled?.(pack.url);
