@@ -40,6 +40,7 @@ export interface PerfEvent {
   pack?: number;
   level?: number;
   bytes?: number;
+  live?: number; // decoded frame memory (MB) when the event happened
 }
 const timeline: PerfEvent[] = [];
 const marked = new Set<string>();
@@ -77,7 +78,8 @@ export function recordDraw(id: string, lp: number, dist: number, cause?: StandIn
   if (dist === 0) return;
   t.fallback++; b.fallback++;
   if (cause) { t.causes[cause]++; if (dist >= 2) t.causesFar2[cause]++; }
-  if (dist < 0) { t.noFrame++; return; }
+  // Nothing decoded at all is at least as bad as a far stand-in: count it there too.
+  if (dist < 0) { t.noFrame++; t.far2++; t.far5++; return; }
   t.distSum += dist;
   if (dist >= 2 && info) { t.farLevels[info.level] = (t.farLevels[info.level] ?? 0) + 1; t.farPackState[info.packState] = (t.farPackState[info.packState] ?? 0) + 1; }
   if (dist >= 2) t.far2++;

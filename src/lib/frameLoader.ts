@@ -301,7 +301,7 @@ export class FrameLoader {
     const pack = this.packs[k];
     const last = pack.frames[pack.frames.length - 1];
     const bytes = last ? last[1] + last[2] : 0;
-    recordEvent('pack-start', { id: this.id, pack: k, level: pack.level, bytes });
+    recordEvent('pack-start', { id: this.id, pack: k, level: pack.level, bytes, live: Math.round(liveBytes / 1048576) });
     for (const [i] of pack.frames) this.state[i] = INFLIGHT;
 
     const decodes: Promise<void>[] = [];
@@ -354,7 +354,7 @@ export class FrameLoader {
       }
     }
     this.packState[k] = SETTLED;
-    recordEvent('pack-end', { id: this.id, pack: k, level: pack.level, bytes });
+    recordEvent('pack-end', { id: this.id, pack: k, level: pack.level, bytes, live: Math.round(liveBytes / 1048576) });
     this.onSettled?.(pack.url);
   }
 
@@ -374,6 +374,9 @@ export class FrameLoader {
     if (frame) {
       liveBytes += this.frameBytes;
       liveBitmaps++;
+      // With streaming, frames land one by one while their pack is still on the
+      // wire: waiting for the pack to finish let memory run past the budget.
+      frameScheduler.checkBudget();
     }
     this.state[index] = SETTLED;
     this.pending--;
@@ -485,6 +488,11 @@ class FrameScheduler {
     this.lastScrollAt = performance.now();
     if (this.resumeTimer != null) clearTimeout(this.resumeTimer);
     this.resumeTimer = setTimeout(() => { this.resumeTimer = null; this.pump(); }, SCROLL_IDLE_MS + 10);
+  }
+
+  /** Asks Canvas for a budget pass if decoded memory is over the ceiling. */
+  checkBudget(): void {
+    if (liveBytes > this.budget) this.onOverBudget?.();
   }
 
   pump(): void {

@@ -100,7 +100,7 @@ async function runProfile() {
     });
 
     const t0 = Date.now();
-    await page.goto(`${base}/?perf=1&memdebug=1`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${base}/?perf=1&memdebug=1`, { waitUntil: 'domcontentloaded', timeout: 120000 });
     await page.waitForFunction(() => document.body.style.overflow === 'hidden', null, { timeout: 15000 }).catch(() => {});
     await page.waitForFunction(() => document.body.style.overflow !== 'hidden', null, { timeout: 180000 });
     const preloaderMs = Date.now() - t0;
@@ -191,7 +191,7 @@ async function runProfile() {
         far2Pct: pct(t.far2),      // main metric: stand-in 2+ frames away (distance 1 is not perceptible)
         far5Pct: pct(t.far5),
         fallbackPct: pct(t.fallback),
-        noFramePct: pct(t.noFrame),
+        noFramePct: pct(t.noFrame), // also counted in far2/far5
         maxDist: t.maxDist,
         // Why the exact frame was missing, for stand-ins 2+ frames away (share of those draws).
         farLevels: t.farLevels ?? [0, 0, 0, 0],
@@ -250,6 +250,7 @@ for (let v = 0; v < all[0].length; v++) {
       far5Pct: col(v, (x) => x.transitions[id]?.far5Pct ?? 0),
       fallbackPct: col(v, (x) => x.transitions[id]?.fallbackPct ?? 0),
       maxDist: col(v, (x) => x.transitions[id]?.maxDist ?? 0),
+      noFramePct: col(v, (x) => x.transitions[id]?.noFramePct ?? 0),
       far2Causes: sumCauses(id, 'far2Causes'),
       allCauses: sumCauses(id, 'allCauses'),
       farLevels: [0, 1, 2, 3].map((l) => all.reduce((n, r) => n + (r[v].transitions[id]?.farLevels?.[l] ?? 0), 0)),
@@ -285,7 +286,7 @@ if (asJson) {
       const tot = c.a + c.b + c.c;
       const share = (n) => (tot ? `${Math.round((100 * n) / tot)}%` : '-');
       console.log(
-        `${id}: a ≥2 frames ${fmt(t.far2Pct)}% · a ≥5 ${fmt(t.far5Pct)}% · cualquier stand-in ${fmt(t.fallbackPct)}% · dist máx ${fmt(t.maxDist, 0)}` +
+        `${id}: a ≥2 frames ${fmt(t.far2Pct)}% · a ≥5 ${fmt(t.far5Pct)}% · cualquier stand-in ${fmt(t.fallbackPct)}% · sin ningún frame ${fmt(t.noFramePct)}% · dist máx ${fmt(t.maxDist, 0)}` +
         `  | causa de los ≥2 (suma ${runs} corr.): a(no descargado) ${c.a} ${share(c.a)} · b(sin decodificar) ${c.b} ${share(c.b)} · c(liberado) ${c.c} ${share(c.c)}`,
       );
       if (t.farLevels.some((n) => n > 0)) {
