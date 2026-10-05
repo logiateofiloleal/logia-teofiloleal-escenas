@@ -1,6 +1,7 @@
 import { tierAssets, type Transition, type FrameTier } from '@/config/segments';
 import { FRAME_PACKS, type FramePack } from '@/config/framePacks.generated';
 import { scheduleIdle } from '@/lib/scheduleIdle';
+import { recordEvent } from '@/lib/perfProbe';
 
 // Loads a transition's frame sequence as ImageBitmaps (decoded off-main-thread).
 // Memory management: call release() when the segment is far behind (RELEASE_LAG).
@@ -130,6 +131,12 @@ const decodedBefore = new Map<string, Uint8Array>();
 
 export type StandInCause = 'a' | 'b' | 'c';
 
+/** Measurement only: where the missing frame's pack stands (see perfProbe). */
+export interface MissingInfo {
+  level: number;
+  packState: 'sin pedir' | 'descargando' | 'decodificando' | 'sin pack';
+}
+
 export interface PackJob {
   /** Pack number within its loader. */
   index: number;
@@ -235,6 +242,14 @@ export class FrameLoader {
     return this.state[index] === DECODING ? 'b' : 'a';
   }
 
+  missingInfo(index: number): MissingInfo {
+    const k = this.packOf[index];
+    if (k < 0) return { level: 3, packState: 'sin pack' };
+    const level = this.packs[k].level;
+    if (this.packState[k] === PENDING) return { level, packState: 'sin pedir' };
+    return { level, packState: this.state[index] === DECODING ? 'decodificando' : 'descargando' };
+  }
+
   /**
    * Asks for this exact frame to jump the queue — used while the canvas is
    * showing a stand-in for it. If its pack hasn't been requested, that pack goes
@@ -278,6 +293,8 @@ export class FrameLoader {
     if (this.packState[k] !== PENDING) return;
     this.packState[k] = INFLIGHT;
     const pack = this.packs[k];
+    const bytes = pack.frames.length ? pack.frames[pack.frames.length - 1][1] + pack.frames[pack.frames.length - 1][2] : 0;
+    recordEvent('pack-start', { id: this.id, pack: k, level: pack.level, bytes });
     for (const [i] of pack.frames) this.state[i] = INFLIGHT;
 
     let blob: Blob | null = null;
@@ -307,6 +324,7 @@ export class FrameLoader {
     }
     if (this.cancelled) return;
     this.packState[k] = SETTLED;
+    recordEvent('pack-end', { id: this.id, pack: k, level: pack.level, bytes });
     this.onSettled?.(pack.url);
   }
 

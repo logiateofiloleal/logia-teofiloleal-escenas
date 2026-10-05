@@ -9,10 +9,14 @@
 //
 // Options:
 //   --target  prod | local | <url>     (default local)
-//   --throttle                         Network.emulateNetworkConditions: 10 Mbps down, 40 ms latency
+//   --net 10|50                        Network.emulateNetworkConditions: 10 Mbps / 40 ms or 50 Mbps / 30 ms (default: none)
+//   --throttle                         alias of --net 10
 //   --speed   normal | fast            (default normal: ~9 s end to end; fast: ~3 s)
 //   --viewport 1440x900                (default 1440x900; 390x844 with --mobile)
 //   --mobile                           mobile emulation (touch, DPR 3, portrait → "mobile" frame tier)
+//   --path realistic                   scroll at normal speed (~1100 px/s) between the 4 stations (El Umbral, Los Principios,
+//                                      La Memoria, La Puerta), pausing 3 s at each — what a person does. Replaces the
+//                                      non-stop scroll (--speed), which stays as a harsher reference.
 //   --down-only                        scroll down only (a first-time visitor; the way back re-fetches released scenes)
 //   --warm                             visit twice in the SAME browser context: the first visit is cold and fills the
 //                                      HTTP cache, the second is warm. The report adds, per visit, how the frame
@@ -37,7 +41,13 @@ const base =
   targetArg === 'prod' ? 'https://logiateofiloleal.com'
   : targetArg === 'local' ? 'http://localhost:3111'
   : String(targetArg).replace(/\/$/, '');
-const throttle = Boolean(opt('throttle', false));
+const NETS = { 10: { latency: 40, mbps: 10 }, 50: { latency: 30, mbps: 50 } };
+const netKey = opt('net', opt('throttle', false) ? '10' : 'none');
+if (netKey !== 'none' && !NETS[netKey]) throw new Error(`--net must be 10 or 50 (got ${netKey})`);
+const net = netKey === 'none' ? null : NETS[netKey];
+const throttle = Boolean(net);
+const realistic = opt('path', 'continuous') === 'realistic';
+const PAUSE_MS = 3000;
 const speed = opt('speed', 'normal');
 const mobile = Boolean(opt('mobile', false));
 const [vw, vh] = String(opt('viewport', mobile ? '390x844' : '1440x900')).split('x').map(Number);
@@ -66,12 +76,12 @@ async function runProfile() {
     const cdp = await ctx.newCDPSession(page);
     await cdp.send('Network.enable');
     await cdp.send('Network.setCacheDisabled', { cacheDisabled: !warm });
-    if (throttle) {
+    if (net) {
       await cdp.send('Network.emulateNetworkConditions', {
         offline: false,
-        latency: 40,
-        downloadThroughput: (10 * 1024 * 1024) / 8,
-        uploadThroughput: (5 * 1024 * 1024) / 8,
+        latency: net.latency,
+        downloadThroughput: (net.mbps * 1024 * 1024) / 8,
+        uploadThroughput: (net.mbps * 1024 * 1024) / 16,
       });
     }
 
@@ -98,14 +108,14 @@ async function runProfile() {
     await page.evaluate(() => window.__perfProbe?.reset());
 
     // Scroll top → bottom of the hero at constant speed, then back up.
-    const result = await page.evaluate(async ([ms, downOnly]) => {
+    const result = await page.evaluate(async ([ms, downOnly, realistic, pauseMs]) => {
       const hero = document.documentElement.scrollHeight - innerHeight;
       // `instant`: the page sets scroll-behavior: smooth, which would turn every
       // scrollTo into an animation and the run into a measurement of that.
-      const run = (from, to) => new Promise((res) => {
+      const run = (from, to, dur = ms) => new Promise((res) => {
         const t = performance.now();
         (function f(n) {
-          const p = Math.min(1, (n - t) / ms);
+          const p = Math.min(1, (n - t) / dur);
           scrollTo({ top: from + (to - from) * p, behavior: 'instant' });
           p < 1 ? requestAnimationFrame(f) : res();
         })(t);
@@ -117,15 +127,32 @@ async function runProfile() {
         const m = el && /memory:\s*([\d.]+)/.exec(el.textContent);
         if (m) peakMb = Math.max(peakMb, +m[1]);
       }, 200);
-      await run(0, hero);
-      if (!downOnly) await run(hero, 0);
+      window.__perfProbe?.mark('scroll-start');
+      if (realistic) {
+        // Station by station at the same pace as the continuous "normal" run, resting 3 s on each.
+        const pxPerMs = hero / ms;
+        const stations = (window.__perfProbe?.stations ?? []).slice(0, 4);
+        let y = 0;
+        for (const target of stations) {
+          if (target > y) {
+            const dist = target - y;
+            await run(y, target, dist / pxPerMs);
+            y = target;
+          }
+          await new Promise((r) => setTimeout(r, pauseMs));
+        }
+      } else {
+        await run(0, hero);
+        if (!downOnly) await run(hero, 0);
+      }
       await new Promise((r) => setTimeout(r, 500));
       clearInterval(sampler);
       return {
         peakMb,
         probe: window.__perfProbe ? JSON.parse(JSON.stringify(window.__perfProbe.data)) : null,
+        timeline: window.__perfProbe ? JSON.parse(JSON.stringify(window.__perfProbe.timeline)) : [],
       };
-    }, [SCROLL_MS, downOnly]);
+    }, [SCROLL_MS, downOnly, realistic, PAUSE_MS]);
     await page.close();
 
     // How the frame requests were served. `repeated*` only counts URLs the
@@ -155,6 +182,7 @@ async function runProfile() {
       peakDecodedMb: result.peakMb,
       probeMissing: !result.probe,
       transitions: {},
+      timeline: result.timeline,
     };
     for (const [id, t] of Object.entries(result.probe ?? {})) {
       const pct = (n) => +((100 * n) / Math.max(1, t.draws)).toFixed(1);
@@ -166,6 +194,8 @@ async function runProfile() {
         noFramePct: pct(t.noFrame),
         maxDist: t.maxDist,
         // Why the exact frame was missing, for stand-ins 2+ frames away (share of those draws).
+        farLevels: t.farLevels ?? [0, 0, 0, 0],
+        farPackState: t.farPackState ?? {},
         far2Causes: t.causesFar2 ?? { a: 0, b: 0, c: 0 },
         allCauses: t.causes ?? { a: 0, b: 0, c: 0 },
       };
@@ -222,7 +252,13 @@ for (let v = 0; v < all[0].length; v++) {
       maxDist: col(v, (x) => x.transitions[id]?.maxDist ?? 0),
       far2Causes: sumCauses(id, 'far2Causes'),
       allCauses: sumCauses(id, 'allCauses'),
+      farLevels: [0, 1, 2, 3].map((l) => all.reduce((n, r) => n + (r[v].transitions[id]?.farLevels?.[l] ?? 0), 0)),
+      farPackState: all.reduce((acc, r) => {
+        for (const [k, n] of Object.entries(r[v].transitions[id]?.farPackState ?? {})) acc[k] = (acc[k] ?? 0) + n;
+        return acc;
+      }, {}),
     }])),
+    timelines: all.map((r) => r[v].timeline ?? []),
   });
 }
 
@@ -252,6 +288,24 @@ if (asJson) {
         `${id}: a ≥2 frames ${fmt(t.far2Pct)}% · a ≥5 ${fmt(t.far5Pct)}% · cualquier stand-in ${fmt(t.fallbackPct)}% · dist máx ${fmt(t.maxDist, 0)}` +
         `  | causa de los ≥2 (suma ${runs} corr.): a(no descargado) ${c.a} ${share(c.a)} · b(sin decodificar) ${c.b} ${share(c.b)} · c(liberado) ${c.c} ${share(c.c)}`,
       );
+      if (t.farLevels.some((n) => n > 0)) {
+        console.log(
+          `    ≥2 por pasada del pack que falta (1/8, 1/4, 1/2, resto): ${t.farLevels.join(' / ')} · estado del pack: ` +
+          Object.entries(t.farPackState).map(([k, n]) => `${k} ${n}`).join(', '),
+        );
+      }
     }
+    // Pack timeline of the first scene per run: when each pack started/ended vs the preloader leaving (ms since navigation).
+    v.timelines.forEach((tl, i) => {
+      const gate = tl.find((e) => e.ev === 'gate-open')?.t;
+      const scroll = tl.find((e) => e.ev === 'scroll-start')?.t;
+      const t1 = tl.filter((e) => e.id === 't1' && e.ev === 'pack-end').sort((a, b) => a.pack - b.pack);
+      const starts = Object.fromEntries(tl.filter((e) => e.id === 't1' && e.ev === 'pack-start').map((e) => [e.pack, e.t]));
+      const fmtPack = (e) => `p${e.pack}(1/${[8, 4, 2, 1][e.level]}) ${starts[e.pack] ?? '?'}→${e.t}`;
+      console.log(
+        `  línea de tiempo t1, corrida ${i + 1}: puerta del preloader @${gate ?? '?'} ms, inicio del scroll @${scroll ?? '?'} ms | packs ` +
+        (t1.slice(0, 5).map(fmtPack).join(' · ') || 'ninguno'),
+      );
+    });
   }
 }

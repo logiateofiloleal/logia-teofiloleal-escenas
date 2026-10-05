@@ -6,7 +6,7 @@ import { useSceneSnap, type SceneState } from '@/context/SceneSnap';
 import { SEGMENTS, tierAssets, type Transition, type Station, type FrameTier } from '@/config/segments';
 import { FrameLoader, frameScheduler, getLiveBytes } from '@/lib/frameLoader';
 import { expectPreloadItems, reportPreloadItemDone, isPreloadReady, subscribePreload } from '@/lib/preloadGate';
-import { recordDraw } from '@/lib/perfProbe';
+import { recordDraw, recordEvent } from '@/lib/perfProbe';
 import styles from './Canvas.module.css';
 
 // Backing store dimensions MUST match frame dimensions exactly.
@@ -190,7 +190,7 @@ export default function Canvas() {
     const t0 = TRANSITIONS[0];
     frameScheduler.configure(tierNow, MEM_BUDGET[tierNow]);
     frameScheduler.gateOpen = isPreloadReady;
-    const unsubscribeGate = subscribePreload(() => { if (isPreloadReady()) frameScheduler.pump(); });
+    const unsubscribeGate = subscribePreload(() => { if (isPreloadReady()) { recordEvent('gate-open'); frameScheduler.pump(); } });
 
     const reducedMotion = prefersReducedMotionRef.current;
     const t0Loader =
@@ -388,7 +388,7 @@ export default function Canvas() {
       const exact = loader.getFrame(targetIdx);
       const nearIdx = exact ? targetIdx : loader.nearestIndex(targetIdx);
       const frame = exact ?? (nearIdx >= 0 ? loader.getFrame(nearIdx) : null);
-      recordDraw(transition.id, lp, nearIdx < 0 ? -1 : Math.abs(nearIdx - targetIdx), exact ? undefined : loader.causeOf(targetIdx));
+      recordDraw(transition.id, lp, nearIdx < 0 ? -1 : Math.abs(nearIdx - targetIdx), exact ? undefined : loader.causeOf(targetIdx), exact ? undefined : loader.missingInfo(targetIdx));
       if (!exact) loader.want(targetIdx); // stand-in on screen: fetch this frame next
       if (frame) {
         ctx.drawImage(frame, 0, 0, W, H);
