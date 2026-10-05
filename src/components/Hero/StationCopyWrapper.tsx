@@ -59,6 +59,12 @@ export default function StationCopyWrapper({
     const prevTransIdx = stationIndex - 1; // transition arriving at this station
     const nextTransIdx = stationIndex;     // transition leaving this station
 
+    // Last written values — scroll emits every frame, but most frames leave a
+    // panel at the same opacity (0 or 1), and rewriting identical styles still
+    // costs a style recalc.
+    let lastOpacity = -1;
+    let lastPointer = '';
+
     return register((state: SceneState) => {
       let opacity = 0;
       const lp = state.direction === 1 ? state.progress : 1 - state.progress;
@@ -73,9 +79,16 @@ export default function StationCopyWrapper({
         }
       }
 
-      el.style.opacity       = String(opacity);
-      el.style.setProperty('--_reveal-y', `${(1 - opacity) * 14}px`);
-      el.style.pointerEvents = opacity > interactiveThreshold ? 'auto' : 'none';
+      if (opacity !== lastOpacity) {
+        lastOpacity = opacity;
+        el.style.opacity = String(opacity);
+        el.style.setProperty('--_reveal-y', `${(1 - opacity) * 14}px`);
+      }
+      const pointer = opacity > interactiveThreshold ? 'auto' : 'none';
+      if (pointer !== lastPointer) {
+        lastPointer = pointer;
+        el.style.pointerEvents = pointer;
+      }
       // Same condition for the keyboard: a hidden panel's links (S3 portrait,
       // S4 CTA) must not be tab stops while invisible.
       const inert = opacity <= interactiveThreshold;

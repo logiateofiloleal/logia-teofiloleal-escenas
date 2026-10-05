@@ -222,18 +222,6 @@ export default function Canvas() {
     }
   }, []);
 
-  const drawStation = useCallback(
-    (ctx: CanvasRenderingContext2D, frameImg: string, lp: number) => {
-      const img = imgsRef.current.get(frameImg);
-      if (!img?.complete || img.naturalWidth === 0) return;
-      const scale      = 1.045 - lp * 0.035;
-      const brightness = 0.82  + lp * 0.10;
-      const saturate   = 1.04  + lp * 0.04;
-      drawImg(ctx, img, scale, `brightness(${brightness}) contrast(1.06) saturate(${saturate})`);
-    },
-    [drawImg],
-  );
-
   const drawTransitionStills = useCallback(
     (ctx: CanvasRenderingContext2D, startImg: string, endImg: string, lp: number) => {
       const imgA = imgsRef.current.get(startImg);
@@ -494,9 +482,14 @@ export default function Canvas() {
     // which clears the canvas — the current station must be painted again.
     arrivalDrawnRef.current = -1;
 
+    // Context cached for this effect's lifetime (the canvas element is stable;
+    // a resize of the backing store keeps the same context).
+    let ctx: CanvasRenderingContext2D | null = null;
+    let lastRunAt = -Infinity;
+
     const driver = () => {
-      const c = canvasRef.current;
-      const ctx = c?.getContext('2d');
+      lastRunAt = performance.now();
+      ctx ??= canvasRef.current?.getContext('2d') ?? null;
       if (!ctx) { rafIdRef.current = requestAnimationFrame(driver); return; }
 
       const state = targetStateRef.current;
@@ -578,10 +571,23 @@ export default function Canvas() {
       }
     };
 
+    // Called by the SceneSnap callback, which fires inside ScrollEngine's rAF.
+    // Draw right there instead of waiting for the next frame: otherwise the
+    // overlays (updated by the same emit) and the canvas land one frame
+    // apart. Any rAF already pending is replaced, so the lerp advances once
+    // per frame. Two kicks within the same frame (<2 ms) just leave the
+    // pending rAF to pick up the new target.
     ensureLoopRunningRef.current = () => {
-      if (loopRunningRef.current) return;
+      if (performance.now() - lastRunAt < 2) {
+        if (!loopRunningRef.current) {
+          loopRunningRef.current = true;
+          rafIdRef.current = requestAnimationFrame(driver);
+        }
+        return;
+      }
+      if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current);
       loopRunningRef.current = true;
-      rafIdRef.current = requestAnimationFrame(driver);
+      driver();
     };
 
     // Draw the initial state immediately (mirrors the old register-fires-

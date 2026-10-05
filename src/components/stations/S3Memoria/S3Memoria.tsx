@@ -79,6 +79,14 @@ export default function S3Memoria() {
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const texts = TEXTS.map(([cls, a, b]) => [root.querySelector<HTMLElement>(`.${styles[cls]}`), a, b] as const);
     let geom: Geometry | null = null;
+    // Section's document-space top and height, cached by measure(): reading
+    // getBoundingClientRect on every scroll frame forced a synchronous layout
+    // right after the other subscribers had dirtied styles.
+    let secTop = 0;
+    let secH = 1;
+    // Inputs of the last apply() — identical inputs leave every output as is.
+    let lastP = -1;
+    let lastPanelOp = -1;
     let raf = 0;
     let shown = -1; // displayed station progress (-1 = snap to target on next frame)
 
@@ -104,6 +112,10 @@ export default function S3Memoria() {
       const b = marco.getBoundingClientRect();
       const r = root.getBoundingClientRect();
       panel.style.setProperty('--_reveal-y', reveal || '0px');
+      secTop = section.getBoundingClientRect().top + window.scrollY;
+      secH = section.offsetHeight || 1;
+      lastP = -1; // force the next apply() to write
+
       const turn = window.matchMedia('(max-width: 768px)').matches ? 0 : RESTING_TURN_DEG;
       geom = {
         dx: a.left + a.width / 2 - (b.left + b.width / 2),
@@ -120,11 +132,14 @@ export default function S3Memoria() {
     const apply = () => {
       raf = 0;
       if (!geom) return;
-      const s = section.getBoundingClientRect();
-      const target = reduced ? 1 : clamp01(-s.top / s.height);
+      const target = reduced ? 1 : clamp01((window.scrollY - secTop) / secH);
       shown = shown < 0 || reduced ? target : shown + (target - shown) * LERP;
       if (Math.abs(target - shown) < LERP_EPSILON) shown = target;
       const p = shown;
+      const panelOp = parseFloat(panel.style.opacity) || 0;
+      if (p === lastP && panelOp === lastPanelOp) return;
+      lastP = p;
+      lastPanelOp = panelOp;
       const e = reduced ? 1 : fase(TRAVEL, p);
       const k = 1 - e;
       const kTurn = reduced ? 0 : 1 - fase(TURN, p);
@@ -134,7 +149,7 @@ export default function S3Memoria() {
       // Depth of field follows the arrival (settling just after it) and
       // fades with the block itself (StationCopyWrapper drives the panel's
       // opacity on entry/exit).
-      const op = (reduced ? 1 : fase(BLUR, p)) * (parseFloat(panel.style.opacity) || 0);
+      const op = (reduced ? 1 : fase(BLUR, p)) * panelOp;
       veil.style.opacity = op.toFixed(3);
       veil.style.visibility = op > 0.001 ? 'visible' : 'hidden';
       if (shown !== target) schedule(); // keep easing toward the scroll position
