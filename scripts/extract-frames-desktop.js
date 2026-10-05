@@ -18,7 +18,7 @@ const args = process.argv.slice(2);
 const frameRate = parseInt(args[0]) || 16;
 
 const videoPath = 'public/assets/frames-1.mp4';
-const desktopDir = 'public/frames/escena-1-desktop';
+const desktopDir = 'public/frames/v1/desktop/escena-1';
 
 console.log(`\nExtracting: ${videoPath}`);
 console.log(`FPS: ${frameRate}`);
@@ -43,7 +43,7 @@ try {
   const frames = fs.readdirSync(desktopDir).filter(f => f.endsWith('.webp'));
   console.log(`✓ DESKTOP: ${frames.length} frames`);
   console.log(`\nUpdate segments.ts t1:`);
-  console.log(`  framesDir: '/frames/escena-1-desktop',`);
+  console.log(`  framesDir: '/frames/v1/desktop/escena-1',`);
   console.log(`  frameCount: ${frames.length},`);
 } catch (err) {
   console.error(`✗ Extraction failed:`, err.message);

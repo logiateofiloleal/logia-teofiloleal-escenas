@@ -20,15 +20,15 @@ const frameRate = parseInt(args[0]) || 16;
 const SCENES = [
   {
     video: 'public/frames/mobile/1-escena-mobile.mp4',
-    outDir: 'public/frames/mobile/escena-1',
+    outDir: 'public/frames/v1/mobile/escena-1',
   },
   {
     video: 'public/frames/mobile/2-escena-mobile.mp4',
-    outDir: 'public/frames/mobile/escena-2',
+    outDir: 'public/frames/v1/mobile/escena-2',
   },
   {
     video: 'public/frames/mobile/3-escena-mobile.mp4',
-    outDir: 'public/frames/mobile/escena-3',
+    outDir: 'public/frames/v1/mobile/escena-3',
   },
 ];
 
