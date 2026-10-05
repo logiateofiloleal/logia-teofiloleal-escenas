@@ -112,15 +112,21 @@ export class FrameLoader {
     return this.frameCount;
   }
 
-  /** Returns nearest available frame at or before targetIndex, then searches forward. */
-  nearestFrame(targetIndex: number): FrameSource | null {
+  /** Index of the nearest available frame at or before targetIndex, then searching forward (-1 if none). */
+  nearestIndex(targetIndex: number): number {
     for (let i = targetIndex; i >= 0; i--) {
-      if (this.frames[i]) return this.frames[i]!;
+      if (this.frames[i]) return i;
     }
     for (let i = targetIndex + 1; i < this.frameCount; i++) {
-      if (this.frames[i]) return this.frames[i]!;
+      if (this.frames[i]) return i;
     }
-    return null;
+    return -1;
+  }
+
+  /** Returns nearest available frame at or before targetIndex, then searches forward. */
+  nearestFrame(targetIndex: number): FrameSource | null {
+    const i = this.nearestIndex(targetIndex);
+    return i < 0 ? null : this.frames[i];
   }
 
   /** URL of frame `index` (0-based) — also the key passed to onFrameDone. */

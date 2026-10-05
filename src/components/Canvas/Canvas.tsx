@@ -7,6 +7,7 @@ import { SEGMENTS, tierAssets, type Transition, type Station, type FrameTier } f
 import { FrameLoader, getLiveBytes } from '@/lib/frameLoader';
 import { expectPreloadItems, reportPreloadItemDone } from '@/lib/preloadGate';
 import { scheduleIdle } from '@/lib/scheduleIdle';
+import { recordDraw } from '@/lib/perfProbe';
 import styles from './Canvas.module.css';
 
 // Backing store dimensions MUST match frame dimensions exactly.
@@ -354,7 +355,9 @@ export default function Canvas() {
       if (targetIdx === lastDrawn) return true; // no-op guard
 
       const exact = loader.getFrame(targetIdx);
-      const frame = exact ?? loader.nearestFrame(targetIdx);
+      const nearIdx = exact ? targetIdx : loader.nearestIndex(targetIdx);
+      const frame = exact ?? (nearIdx >= 0 ? loader.getFrame(nearIdx) : null);
+      recordDraw(transition.id, lp, nearIdx < 0 ? -1 : Math.abs(nearIdx - targetIdx));
       if (frame) {
         ctx.drawImage(frame, 0, 0, W, H);
         // Only an exact hit is recorded — a stand-in is redrawn (and
