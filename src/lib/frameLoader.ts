@@ -281,6 +281,12 @@ class FrameScheduler {
    * parks while the scene is at rest, so it can't be relied on to notice.
    */
   onOverBudget?: () => void;
+  /**
+   * Set by Canvas: false while the Preloader is still waiting. Until it opens,
+   * only the active scene's coarse pass is fetched, so the stills and that first
+   * pass are not queued behind a connection saturated by everything else.
+   */
+  gateOpen?: () => boolean;
 
   /**
    * Concurrency follows the protocol: HTTP/2+ multiplexes many requests on one
@@ -346,12 +352,14 @@ class FrameScheduler {
 
   private pick(): { loader: FrameLoader; index: number } | null {
     const scrolling = performance.now() - this.lastScrollAt < SCROLL_IDLE_MS;
+    const held = this.gateOpen ? !this.gateOpen() : false;
     let best: { loader: FrameLoader; index: number } | null = null;
     let bestCost = Infinity;
     for (const loader of this.loaders) {
       const job = loader.peek();
       if (!job) continue;
       const isActive = loader === this.active;
+      if (held && !(isActive && job.level <= 0)) continue;
       let cost = job.level;
       if (!isActive) {
         if (job.level >= FINE_LEVEL && scrolling) continue;

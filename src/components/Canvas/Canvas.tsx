@@ -5,7 +5,7 @@ import { useFrameTier, readFrameTier } from '@/hooks/useFrameTier';
 import { useSceneSnap, type SceneState } from '@/context/SceneSnap';
 import { SEGMENTS, tierAssets, type Transition, type Station, type FrameTier } from '@/config/segments';
 import { FrameLoader, frameScheduler, getLiveBytes } from '@/lib/frameLoader';
-import { expectPreloadItems, reportPreloadItemDone } from '@/lib/preloadGate';
+import { expectPreloadItems, reportPreloadItemDone, isPreloadReady, subscribePreload } from '@/lib/preloadGate';
 import { recordDraw } from '@/lib/perfProbe';
 import styles from './Canvas.module.css';
 
@@ -189,6 +189,8 @@ export default function Canvas() {
     }
     const t0 = TRANSITIONS[0];
     frameScheduler.configure(tierNow, MEM_BUDGET[tierNow]);
+    frameScheduler.gateOpen = isPreloadReady;
+    const unsubscribeGate = subscribePreload(() => { if (isPreloadReady()) frameScheduler.pump(); });
 
     const reducedMotion = prefersReducedMotionRef.current;
     const t0Loader =
@@ -240,6 +242,8 @@ export default function Canvas() {
       frameScheduler.setActive(t0Loader);
       frameScheduler.add(t0Loader);
     }
+
+    return unsubscribeGate;
   }, []);
 
   const drawTransitionStills = useCallback(
