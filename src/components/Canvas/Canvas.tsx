@@ -4,9 +4,9 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useFrameTier, readFrameTier } from '@/hooks/useFrameTier';
 import { useSceneSnap, type SceneState } from '@/context/SceneSnap';
 import { SEGMENTS, tierAssets, type Transition, type Station, type FrameTier } from '@/config/segments';
-import { FrameLoader, getLiveBytes } from '@/lib/frameLoader';
-import { expectPreloadItems, reportPreloadItemDone } from '@/lib/preloadGate';
-import { scheduleIdle } from '@/lib/scheduleIdle';
+import { FrameLoader, frameScheduler, getLiveBytes } from '@/lib/frameLoader';
+import { expectPreloadItems, reportPreloadItemDone, isPreloadReady, subscribePreload } from '@/lib/preloadGate';
+import { recordDraw, recordEvent } from '@/lib/perfProbe';
 import styles from './Canvas.module.css';
 
 // Backing store dimensions MUST match frame dimensions exactly.
@@ -49,13 +49,16 @@ const frameBytesFor = (tier: FrameTier) => DIMS[tier][0] * DIMS[tier][1] * 4;
 //    have 3 transitions resident at once. It always spares the active
 //    transition and releases whichever remaining one is ordinally
 //    furthest first.
-const LOOKAHEAD          = 1;
+const LOOKAHEAD          = 2; // all later transitions keep (at least) their coarse pass
 const LOOKBEHIND         = 0;
 const MB = 1024 * 1024;
 const MEM_BUDGET: Record<FrameTier, number> = {
-  mobile:  480 * MB,  // fits 2 mobile transitions (~407MB), not 3 (~610MB)
-  tablet:  560 * MB,  // fits 2 tablet transitions (~514MB), not 3 (~771MB)
-  desktop: 1100 * MB, // fits 2 desktop transitions (~914MB), not 3 (~1371MB)
+  // One full transition (mobile ~203MB, tablet ~257MB, desktop ~457MB) plus the
+  // coarse passes of its neighbour. The scheduler (frameLoader.ts) only admits
+  // a non-active scene's frame while it still fits.
+  mobile:  256 * MB,
+  tablet:  320 * MB,
+  desktop: 640 * MB,
 };
 
 // Smooths the mapping from scroll-derived progress to displayed frame index
@@ -92,7 +95,6 @@ export default function Canvas() {
   const { register } = useSceneSnap();
 
   const [W, H]     = DIMS[tier];
-  const frameBytes = frameBytesFor(tier); // decoded RGBA size of one frame — memory accounting unit
 
   // Preloaded stills — HTMLImageElement (sync drawImage once .complete)
   const imgsRef    = useRef<Map<string, HTMLImageElement>>(new Map());
@@ -103,9 +105,20 @@ export default function Canvas() {
 
   // SEGMENTS index of the currently-active transition — kept up to date by
   // the draw loop below, read by startLoader's budget check so a loader
-  // admitted from a deferred (scheduleIdle) prefetch still knows what's
+  // admitted by an earlier-scheduled prefetch still knows what's
   // "active" at the time it actually lands, not when it was scheduled.
   const activeSegIdxRef = useRef(0);
+
+  // Loaders the budget pass just released, barred from being re-created for as
+  // long as the same transition stays active — otherwise "prefetch → over
+  // budget → release → prefetch" would re-download them in a loop.
+  // Tier the frame loaders are built for: read from the viewport at mount (like
+  // the preload effect). `tier` from useFrameTier is still 'desktop' during the
+  // first render, and loaders created then — now possible from the very first
+  // draw tick, since later scenes get their loader early — would fetch desktop
+  // frames on a phone and account them at desktop size.
+  const loaderTierRef = useRef<FrameTier>('desktop');
+  const budgetReleasedRef = useRef<{ forSeg: number; ids: Set<string> }>({ forSeg: -1, ids: new Set() });
 
   // Read once at mount, same pattern as useFrameTier — avoids reloading
   // assets mid-session if the OS setting changes.
@@ -159,20 +172,25 @@ export default function Canvas() {
   // the prop here could eager-load the desktop frames on a phone or tablet.
   useEffect(() => {
     const tierNow = readFrameTier();
+    loaderTierRef.current = tierNow;
 
     const srcs = new Set<string>();
+    // Desktop stills are the desktop tier's own; phones and tablets only need
+    // their tier's first/last-frame stills (last frames are what the canvas
+    // draws when resting at a station — see drawArrival), not 9 desktop JPEGs.
     for (const seg of SEGMENTS) {
-      if (seg.type === 'station') srcs.add(seg.frameImg);
-      else { srcs.add(seg.startImg); srcs.add(seg.endImg); }
+      if (tierNow === 'desktop') {
+        if (seg.type === 'station') srcs.add(seg.frameImg);
+        else { srcs.add(seg.startImg); srcs.add(seg.endImg); }
+      } else if (seg.type === 'transition') {
+        srcs.add(effectiveStartImg(seg, tierNow));
+        srcs.add(effectiveEndImg(seg, tierNow));
+      }
     }
     const t0 = TRANSITIONS[0];
-    // Also preload this tier's first/last-frame stills (last frames are what
-    // the canvas draws when resting at a station — see drawArrival)
-    for (const seg of SEGMENTS) {
-      if (seg.type === 'station' || tierNow === 'desktop') continue;
-      srcs.add(effectiveStartImg(seg, tierNow));
-      srcs.add(effectiveEndImg(seg, tierNow));
-    }
+    frameScheduler.configure(tierNow, MEM_BUDGET[tierNow]);
+    frameScheduler.gateOpen = isPreloadReady;
+    const unsubscribeGate = subscribePreload(() => { if (isPreloadReady()) { recordEvent('gate-open'); frameScheduler.pump(); } });
 
     const reducedMotion = prefersReducedMotionRef.current;
     const t0Loader =
@@ -180,15 +198,17 @@ export default function Canvas() {
         ? (loadersRef.current.get(t0.id) ?? new FrameLoader(t0, tierNow, frameBytesFor(tierNow)))
         : null;
 
-    // Gate waits for every still PLUS all of t0's frames — intentional:
-    // the Preloader stays up until the first scene can scrub smoothly from
-    // frame 1, not just until it can start loading. Reduced-motion visitors
+    // Gate waits for every still PLUS t0's first (coarse) pass — every 8th
+    // frame, so the first scene can already scrub anywhere within 4 frames of
+    // the exact one. The finer passes keep loading behind the preloader's exit
+    // (see FrameScheduler), instead of holding the whole page for all 130
+    // frames. Reduced-motion visitors
     // never fetch the frame sequence at all (see drawTransitionFrames
     // below), so there's nothing extra to wait for. Keys are asset URLs, so
     // re-declaring on a re-run keeps whatever was already reported.
     const expected = Array.from(srcs);
     if (t0Loader) {
-      for (let i = 0; i < t0Loader.count; i++) expected.push(t0Loader.frameSrc(i));
+      expected.push(...t0Loader.coarseSrcs());
     }
     expectPreloadItems(expected);
 
@@ -218,21 +238,13 @@ export default function Canvas() {
 
     if (t0 && t0Loader && !loadersRef.current.has(t0.id)) {
       loadersRef.current.set(t0.id, t0Loader);
-      t0Loader.load(reportPreloadItemDone);
+      t0Loader.onSettled = reportPreloadItemDone;
+      frameScheduler.setActive(t0Loader);
+      frameScheduler.add(t0Loader);
     }
-  }, []);
 
-  const drawStation = useCallback(
-    (ctx: CanvasRenderingContext2D, frameImg: string, lp: number) => {
-      const img = imgsRef.current.get(frameImg);
-      if (!img?.complete || img.naturalWidth === 0) return;
-      const scale      = 1.045 - lp * 0.035;
-      const brightness = 0.82  + lp * 0.10;
-      const saturate   = 1.04  + lp * 0.04;
-      drawImg(ctx, img, scale, `brightness(${brightness}) contrast(1.06) saturate(${saturate})`);
-    },
-    [drawImg],
-  );
+    return unsubscribeGate;
+  }, []);
 
   const drawTransitionStills = useCallback(
     (ctx: CanvasRenderingContext2D, startImg: string, endImg: string, lp: number) => {
@@ -292,7 +304,7 @@ export default function Canvas() {
    */
   const enforceBudget = useCallback(
     (activeSegIdx: number) => {
-      const budget         = MEM_BUDGET[tier];
+      const budget         = MEM_BUDGET[loaderTierRef.current];
       const activeId       = SEGMENTS[activeSegIdx]?.id;
       const activeOrdinal  = activeId ? transitionOrdinal(activeId) : -1;
 
@@ -305,10 +317,13 @@ export default function Canvas() {
           if (dist > furthestDist) { furthestDist = dist; furthestId = id; }
         }
         if (!furthestId) break; // only the active loader is left — stop
+        const blocked = budgetReleasedRef.current;
+        if (blocked.forSeg !== activeSegIdx) { blocked.forSeg = activeSegIdx; blocked.ids.clear(); }
+        blocked.ids.add(furthestId);
         releaseLoader(furthestId);
       }
     },
-    [tier, releaseLoader],
+    [releaseLoader],
   );
 
   /**
@@ -321,12 +336,16 @@ export default function Canvas() {
   const startLoader = useCallback(
     (seg: Transition) => {
       if (loadersRef.current.has(seg.id)) return;
-      if (seg.mode !== 'frames' || effectiveFrameCount(seg, tier) === 0) return;
-      const loader = new FrameLoader(seg, tier, frameBytes);
+      const blocked = budgetReleasedRef.current;
+      if (blocked.forSeg === activeSegIdxRef.current && blocked.ids.has(seg.id)) return;
+      const loaderTier = loaderTierRef.current;
+      if (seg.mode !== 'frames' || effectiveFrameCount(seg, loaderTier) === 0) return;
+      frameScheduler.configure(loaderTier, MEM_BUDGET[loaderTier]);
+      const loader = new FrameLoader(seg, loaderTier, frameBytesFor(loaderTier));
       loadersRef.current.set(seg.id, loader);
-      loader.load();
+      frameScheduler.add(loader);
     },
-    [tier, frameBytes],
+    [],
   );
 
   /**
@@ -360,13 +379,17 @@ export default function Canvas() {
       const loader = loadersRef.current.get(transition.id);
       if (!loader) return true; // startLoader declined (shouldn't happen — fc > 0 checked above)
 
+      frameScheduler.setActive(loader);
       const targetIdx = Math.floor(lp * (fc - 1));
       const lastDrawn = lastFrameRef.current.get(transition.id) ?? -2;
 
       if (targetIdx === lastDrawn) return true; // no-op guard
 
       const exact = loader.getFrame(targetIdx);
-      const frame = exact ?? loader.nearestFrame(targetIdx);
+      const nearIdx = exact ? targetIdx : loader.nearestIndex(targetIdx);
+      const frame = exact ?? (nearIdx >= 0 ? loader.getFrame(nearIdx) : null);
+      recordDraw(transition.id, lp, nearIdx < 0 ? -1 : Math.abs(nearIdx - targetIdx), exact ? undefined : loader.causeOf(targetIdx), exact ? undefined : loader.missingInfo(targetIdx));
+      if (!exact) loader.want(targetIdx); // stand-in on screen: fetch this frame next
       if (frame) {
         ctx.drawImage(frame, 0, 0, W, H);
         // Only an exact hit is recorded — a stand-in is redrawn (and
@@ -385,26 +408,20 @@ export default function Canvas() {
       }
       // else: keep last valid frame on canvas (no clear)
 
-      // Prefetch the next transition once we're most of the way through this
-      // one, and the previous transition if scrolling back near the start
-      // (covers reversing direction without a visible stall). Scheduled on
-      // idle so it never competes with the active scrub's decode work.
-      // Only when actually moving backward: going forward, the previous
-      // transition was just released by the window pass, and re-fetching it
-      // here meant decoding all its frames again only for the budget pass to
-      // release them a moment later (measured: 260 wasted decodes per lap).
-      if (lp > 0.6) {
-        const nextIdx = segIdx + NEXT_TRANSITION_STEP;
-        const next = SEGMENTS[nextIdx];
-        if (next?.type === 'transition' && !loadersRef.current.has(next.id)) {
-          scheduleIdle(() => startLoader(next));
-        }
-      } else if (lp < 0.4 && movingBackRef.current) {
-        const prevIdx = segIdx - NEXT_TRANSITION_STEP;
-        const prev = SEGMENTS[prevIdx];
-        if (prev?.type === 'transition' && !loadersRef.current.has(prev.id)) {
-          scheduleIdle(() => startLoader(prev));
-        }
+      // Every later transition gets a loader right away: the scheduler decides
+      // when its frames go (coarse pass right after this scene's own, finer
+      // passes behind the active scene's, all bounded by the memory budget —
+      // see FrameScheduler), so there is no lp threshold to wait for. The
+      // previous one is re-fetched only when scrolling back toward it: going
+      // forward it was just released by the window pass, and re-fetching it
+      // would only be undone by the budget.
+      for (let k = 1; k <= LOOKAHEAD; k++) {
+        const next = SEGMENTS[segIdx + k * NEXT_TRANSITION_STEP];
+        if (next?.type === 'transition') startLoader(next);
+      }
+      if (lp < 0.4 && movingBackRef.current) {
+        const prev = SEGMENTS[segIdx - NEXT_TRANSITION_STEP];
+        if (prev?.type === 'transition' && !loadersRef.current.has(prev.id)) startLoader(prev);
       }
 
       return exact != null || !loader.isLoading;
@@ -469,6 +486,7 @@ export default function Canvas() {
   useEffect(() => {
     return register((state: SceneState) => {
       targetStateRef.current = state;
+      frameScheduler.noteScroll();
       ensureLoopRunningRef.current();
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -494,9 +512,18 @@ export default function Canvas() {
     // which clears the canvas — the current station must be painted again.
     arrivalDrawnRef.current = -1;
 
+    // Frames keep landing while the loop is parked (station at rest): the
+    // scheduler asks for the budget pass itself when memory goes over.
+    frameScheduler.onOverBudget = () => enforceBudget(activeSegIdxRef.current);
+
+    // Context cached for this effect's lifetime (the canvas element is stable;
+    // a resize of the backing store keeps the same context).
+    let ctx: CanvasRenderingContext2D | null = null;
+    let lastRunAt = -Infinity;
+
     const driver = () => {
-      const c = canvasRef.current;
-      const ctx = c?.getContext('2d');
+      lastRunAt = performance.now();
+      ctx ??= canvasRef.current?.getContext('2d') ?? null;
       if (!ctx) { rafIdRef.current = requestAnimationFrame(driver); return; }
 
       const state = targetStateRef.current;
@@ -551,6 +578,20 @@ export default function Canvas() {
         // idle — every station paints its own resting frame explicitly;
         // never rely on whatever the previous transition left on canvas.
         activeTransIdRef.current = null;
+        // Resting at station N: the transition leaving it is the one the
+        // visitor scrolls into next — it becomes the active scene (loads
+        // first, protected from the budget pass); the one that brought us here
+        // is already painted and is what the budget pass sacrifices first.
+        const upcoming = TRANSITIONS[state.station];
+        if (upcoming && !prefersReducedMotionRef.current) {
+          activeSegIdxRef.current = SEGMENTS.indexOf(upcoming);
+          startLoader(upcoming);
+          frameScheduler.setActive(loadersRef.current.get(upcoming.id) ?? null);
+          for (let k = 1; k <= LOOKAHEAD; k++) {
+            const after = TRANSITIONS[state.station + k];
+            if (after) startLoader(after);
+          }
+        }
         enforceBudget(activeSegIdxRef.current);
         if (state.station === 0) {
           const t0       = TRANSITIONS[0];
@@ -578,10 +619,23 @@ export default function Canvas() {
       }
     };
 
+    // Called by the SceneSnap callback, which fires inside ScrollEngine's rAF.
+    // Draw right there instead of waiting for the next frame: otherwise the
+    // overlays (updated by the same emit) and the canvas land one frame
+    // apart. Any rAF already pending is replaced, so the lerp advances once
+    // per frame. Two kicks within the same frame (<2 ms) just leave the
+    // pending rAF to pick up the new target.
     ensureLoopRunningRef.current = () => {
-      if (loopRunningRef.current) return;
+      if (performance.now() - lastRunAt < 2) {
+        if (!loopRunningRef.current) {
+          loopRunningRef.current = true;
+          rafIdRef.current = requestAnimationFrame(driver);
+        }
+        return;
+      }
+      if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current);
       loopRunningRef.current = true;
-      rafIdRef.current = requestAnimationFrame(driver);
+      driver();
     };
 
     // Draw the initial state immediately (mirrors the old register-fires-
@@ -589,10 +643,11 @@ export default function Canvas() {
     ensureLoopRunningRef.current();
 
     return () => {
+      frameScheduler.onOverBudget = undefined;
       if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current);
       loopRunningRef.current = false;
     };
-  }, [drawTransitionStills, drawTransitionFrames, drawArrival, releaseOutsideWindow, enforceBudget, tier, W, H]);
+  }, [drawTransitionStills, drawTransitionFrames, drawArrival, releaseOutsideWindow, enforceBudget, startLoader, tier, W, H]);
 
   // ── Release everything on unmount (route change, etc.) ──────
   useEffect(() => {

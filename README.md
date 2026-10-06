@@ -19,7 +19,7 @@ npm run dev
 npm run build && npm start
 ```
 
-> `Cache-Control: immutable` en `/frames/**` solo aplica con `npm start`, no con `npm run dev`.
+> `Cache-Control: immutable` en `/frames/v1/**` lo aplica `next.config.ts` con `npm start` (no con `npm run dev`) y `netlify.toml` en Netlify, donde el `headers()` de Next no afecta a los archivos de `/public`.
 
 ---
 
@@ -40,7 +40,7 @@ Tras extraer, editar `src/config/segments.ts` para esa transición:
 { id: 't1', mode: 'stills', frameCount: 0 }
 
 // Después (frames reales):
-{ id: 't1', mode: 'frames', framesDir: '/frames/desktop/t1', frameCount: 240 }
+{ id: 't1', mode: 'frames', framesDir: '/frames/v1/desktop/t1', frameCount: 240 }
 ```
 
 No hay más cambios de código. Cada transición migra de forma independiente.
@@ -60,8 +60,7 @@ scripts/
   process-stills.mjs       ← convierte JPEGs fuente → WebP 1280×720
   extract-frames.sh        ← extrae frames de video con ffmpeg
 public/
-  frames/desktop/          ← stills y carpetas de transición cuando estén listas
-  frames/mobile/           ← placeholder para assets 9:16 (480×854)
+  frames/v1/{desktop,tablet,mobile}/escena-N/  ← packs + stills por tier (generados, ver "Frames")
   assets/                  ← logo, iconos, retratos
 ```
 
@@ -78,3 +77,22 @@ El canvas se fija al tamaño del tier (`src/hooks/useFrameTier.ts`), leído una 
 El CSS lo muestra a pantalla completa con `object-fit: cover`: conserva la proporción y recorta el sobrante (nunca estira ni pone barras). Con `prefers-reduced-motion` no se descargan las secuencias: cada estación y transición muestra la imagen fija del propio tier.
 
 Los frames tablet se extraen de los masters 4K (fuera del repo) con `node scripts/extract-frames-tablet.js --videos "<carpeta>"`.
+
+---
+
+## Frames: fuente, packs y versionado
+
+- **Fuente** (no se despliega): `assets-src/frames/v1/<tier>/escena-N/frame_NNNN.webp`.
+  Es el único material fuente (ya no hay .mp4): no se borra ni se edita a mano.
+- **Entrega**: `node scripts/build-frame-packs.mjs` concatena esos WebP, sin
+  re-codificar, en `public/frames/v1/<tier>/escena-N/pack-<k>.bin` (8 packs por
+  escena: pasada 1/8, 1/4, 1/2 en 2 y el resto en 4), copia los stills
+  `frame_0001`/`frame_0130` que usan el preloader y las estaciones, y genera
+  `src/config/framePacks.generated.ts` (índice de offsets; **generado, no editar
+  a mano**). Un visitante descarga ~24 packs por tier en vez de 390 archivos.
+- **Cache**: todo `/frames/v1/*` se sirve con
+  `Cache-Control: public, max-age=31536000, immutable` (`netlify.toml`). Como el
+  navegador no lo revalida nunca, **regenerar frames = nueva versión de ruta
+  (`v2`), nunca sobrescribir `v1`**: crea `assets-src/frames/v2/…`, cambia
+  `VERSION` en `build-frame-packs.mjs`, las rutas de `src/config/segments.ts`, el
+  `source` de `next.config.ts` y el `for` de `netlify.toml`, regenera y despliega.
