@@ -110,6 +110,10 @@ export default function Header() {
           <div className={styles.name}>
             <b>Logia Teófilo Leal N° 115</b>
             <span>Oriente de Barquisimeto</span>
+            <small className={styles.jurisdiccion}>
+              Bajo la jurisdicción de la Muy Respetable<br />
+              Gran Logia de la República de Venezuela
+            </small>
           </div>
         </Link>
 
