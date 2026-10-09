@@ -1,8 +1,0 @@
-# Frames are versioned by path (/frames/v1/...) and never overwritten, so the
-# browser can keep them forever without revalidating. Regenerating frames means
-# a new version folder (/frames/v2/...), see README → "Frames versionados".
-# next.config.ts headers() do not apply to Netlify's static /public files.
-[[headers]]
-  for = "/frames/v1/*"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
