@@ -73,7 +73,7 @@ export default function UmbralOverlay() {
       <p className={styles.kicker}>
         Respetable Logia Simbólica · Oriente de Barquisimeto
       </p>
-      <p className={styles.lema}>A∴ L∴ G∴ D∴ G∴ A∴ D∴ U∴</p>
+      <p className={styles.lema}>A L∴ G∴ D∴ G∴ A∴ D∴ U∴</p>
     </div>
   );
 }

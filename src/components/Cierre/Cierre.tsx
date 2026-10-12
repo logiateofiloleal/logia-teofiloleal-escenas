@@ -29,7 +29,7 @@ export default function Cierre() {
 
         <p className={styles.firma}>
           Respetable Logia Simbólica Teófilo Leal N° 115<br />
-          Or∴ de Barquisimeto · A∴ L∴ G∴ D∴ G∴ A∴ D∴ U∴
+          Or∴ de Barquisimeto · A L∴ G∴ D∴ G∴ A∴ D∴ U∴
         </p>
 
       </div>
