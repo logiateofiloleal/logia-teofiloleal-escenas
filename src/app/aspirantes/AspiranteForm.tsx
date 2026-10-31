@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useRef } from 'react';
 import { enviarSolicitud, type EstadoSolicitud } from './actions';
-import { CAMPOS, CAMPO_TRAMPA, LIMITES, valoresFormulario, type CampoFormulario } from '@/lib/aspiranteValidation';
+import { CAMPOS, CAMPO_TRAMPA, LIMITES, fechaHaceAnios, valoresFormulario, type CampoFormulario } from '@/lib/aspiranteValidation';
 import styles from './aspirantes.module.css';
 
 const INICIAL: EstadoSolicitud = { status: 'idle', intento: 0 };
@@ -105,20 +105,20 @@ export default function AspiranteForm() {
 
       <div className={styles.row}>
         <div className={styles.field}>
-          <label className={styles.label} htmlFor="edad">Edad</label>
+          <label className={styles.label} htmlFor="fechaNacimiento">Fecha de nacimiento</label>
           <input
             className={styles.input}
-            id="edad"
-            name="edad"
-            type="text"
-            inputMode="numeric"
-            placeholder="Años cumplidos"
-            maxLength={3}
+            id="fechaNacimiento"
+            name="fechaNacimiento"
+            type="date"
+            autoComplete="bday"
+            min={fechaHaceAnios(LIMITES.edad.max)}
+            max={fechaHaceAnios(LIMITES.edad.min)}
             required
-            defaultValue={val.edad}
-            {...a11y('edad')}
+            defaultValue={val.fechaNacimiento}
+            {...a11y('fechaNacimiento')}
           />
-          <FieldError campo="edad" msg={err.edad} />
+          <FieldError campo="fechaNacimiento" msg={err.fechaNacimiento} />
         </div>
 
         <div className={styles.field}>

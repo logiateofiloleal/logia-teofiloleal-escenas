@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { describirError } from '@/lib/describirError';
 import { listarAspirantes, type ListadoAspirantes } from '@/lib/aspirantes';
 import { requerirSesion } from '@/lib/session';
 import { claseEstado, formatearFecha } from './formato';
@@ -15,7 +16,7 @@ export default async function PanelPage() {
   try {
     listado = await listarAspirantes();
   } catch (err) {
-    console.error('[panel] no se pudieron listar las solicitudes:', err instanceof Error ? `${err.name}: ${err.message}` : err);
+    console.error('[panel] no se pudieron listar las solicitudes:', describirError(err));
   }
 
   return (

@@ -1,5 +1,6 @@
 'use server';
 
+import { describirError } from '@/lib/describirError';
 import { crearAspirante, existeEmail, existeTelefono } from '@/lib/aspirantes';
 import {
   CAMPO_TRAMPA,
@@ -83,7 +84,7 @@ export async function enviarSolicitud(prev: EstadoSolicitud, fd: FormData): Prom
     };
   } catch (err) {
     // Solo el tipo de error: nunca datos del aspirante en los logs.
-    console.error('[aspirantes] error de almacenamiento:', err instanceof Error ? `${err.name}: ${err.message}` : err);
+    console.error('[aspirantes] error de almacenamiento:', describirError(err));
     return { status: 'error', mensaje: ERROR_ALMACENAMIENTO, valores, intento };
   }
 }

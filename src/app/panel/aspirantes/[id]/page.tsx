@@ -1,8 +1,9 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { describirError } from '@/lib/describirError';
 import { ESTADOS, obtenerAspirante, type Aspirante } from '@/lib/aspirantes';
 import { requerirSesion } from '@/lib/session';
-import { claseEstado, formatearFecha } from '../../formato';
+import { claseEstado, formatearFecha, formatearFechaNacimiento } from '../../formato';
 import CambioEstadoForm from './CambioEstadoForm';
 import styles from '../../panel.module.css';
 
@@ -18,7 +19,7 @@ export default async function AspirantePage({ params }: PageProps<'/panel/aspira
   try {
     a = await obtenerAspirante(id);
   } catch (err) {
-    console.error('[panel] no se pudo leer la solicitud:', err instanceof Error ? `${err.name}: ${err.message}` : err);
+    console.error('[panel] no se pudo leer la solicitud:', describirError(err));
     return (
       <>
         <Link href="/panel" className={styles.volver}>← Volver a la lista</Link>
@@ -48,7 +49,7 @@ export default async function AspirantePage({ params }: PageProps<'/panel/aspira
           <h2 className={styles.bloqueTitulo} id="h-datos">Datos de contacto</h2>
           <dl className={styles.datos}>
             <div><dt>Nombre</dt><dd>{a.nombre}</dd></div>
-            <div><dt>Edad</dt><dd>{a.edad ?? '—'}</dd></div>
+            <div><dt>Fecha de nacimiento</dt><dd>{formatearFechaNacimiento(a.fechaNacimiento)}</dd></div>
             <div><dt>Teléfono</dt><dd><a href={`tel:${a.telefono}`}>{a.telefono}</a></dd></div>
             <div><dt>Correo</dt><dd><a href={`mailto:${a.email}`}>{a.email}</a></dd></div>
             <div><dt>Fecha de solicitud</dt><dd>{formatearFecha(a.timestamp)}</dd></div>

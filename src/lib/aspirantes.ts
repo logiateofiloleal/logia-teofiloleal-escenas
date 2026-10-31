@@ -48,7 +48,7 @@ function db(): SupabaseClient {
 interface Fila {
   id: string;
   nombre: string;
-  edad: number;
+  fecha_nacimiento: string;
   telefono: string;
   email: string;
   descripcion: string;
@@ -64,7 +64,7 @@ function aAspirante(f: Fila): Aspirante {
   return {
     id: f.id,
     nombre: f.nombre,
-    edad: f.edad,
+    fechaNacimiento: f.fecha_nacimiento,
     telefono: f.telefono,
     email: f.email,
     descripcion: f.descripcion,
@@ -93,7 +93,11 @@ export async function crearAspirante(input: AspiranteInput): Promise<ResultadoAl
   const ahora = new Date().toISOString();
   const { error } = await db().from(TABLA).insert({
     id,
-    ...input,
+    nombre: input.nombre,
+    fecha_nacimiento: input.fechaNacimiento,
+    telefono: input.telefono,
+    email: input.email,
+    descripcion: input.descripcion,
     estado: 'Nuevo',
     historial_estados: [{ estado: 'Nuevo', fecha: ahora, nota: 'Solicitud registrada' }],
     consentimiento_fecha: ahora,

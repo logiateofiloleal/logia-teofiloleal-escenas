@@ -4,7 +4,7 @@
 // valida en el navegador (noValidate) para que todos los errores lleguen
 // con el mismo texto y la misma presentación accesible.
 
-export const CAMPOS = ['nombre', 'edad', 'telefono', 'email', 'descripcion'] as const;
+export const CAMPOS = ['nombre', 'fechaNacimiento', 'telefono', 'email', 'descripcion'] as const;
 export type Campo = (typeof CAMPOS)[number];
 export type CampoFormulario = Campo | 'consentimiento';
 export type ErroresCampo = Partial<Record<CampoFormulario, string>>;
@@ -14,14 +14,17 @@ export const CAMPO_TRAMPA = 'sitio_web';
 
 export const LIMITES = {
   nombre: { min: 3, max: 120 },
-  edad: { min: 18, max: 99 },
+  // Edad cumplida, calculada desde la fecha de nacimiento. 21 es el mínimo
+  // para ingresar a la institución.
+  edad: { min: 21, max: 99 },
   email: { max: 254 },
   descripcion: { min: 20, max: 2000 },
 } as const;
 
 export interface AspiranteInput {
   nombre: string;
-  edad: number;
+  /** Fecha de nacimiento, YYYY-MM-DD. */
+  fechaNacimiento: string;
   telefono: string;
   email: string;
   descripcion: string;
@@ -41,6 +44,35 @@ export function valoresFormulario(fd: FormData): ValoresFormulario {
   for (const campo of CAMPOS) valores[campo] = texto(fd.get(campo)).slice(0, 4000);
   return valores;
 }
+/** Fecha de hoy (YYYY-MM-DD) en Venezuela; el servidor corre en UTC. */
+export function hoyCaracas(): string {
+  return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Caracas' }).format(new Date());
+}
+
+/** YYYY-MM-DD → [año, mes, día], o null si no es una fecha real (p. ej. 2000-02-30). */
+function partesFecha(fecha: string): [number, number, number] | null {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(fecha);
+  if (!m) return null;
+  const [y, mes, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const f = new Date(Date.UTC(y, mes - 1, d));
+  return f.getUTCFullYear() === y && f.getUTCMonth() === mes - 1 && f.getUTCDate() === d ? [y, mes, d] : null;
+}
+
+/** Años cumplidos a `hoy` (YYYY-MM-DD); null si la fecha no es válida. */
+export function edadCumplida(fechaNacimiento: string, hoy: string = hoyCaracas()): number | null {
+  const nac = partesFecha(fechaNacimiento);
+  const act = partesFecha(hoy);
+  if (!nac || !act) return null;
+  const cumplioEsteAnio = act[1] > nac[1] || (act[1] === nac[1] && act[2] >= nac[2]);
+  return act[0] - nac[0] - (cumplioEsteAnio ? 0 : 1);
+}
+
+/** Fecha de hace `anios` años (YYYY-MM-DD): ayuda para min/max del selector de fecha. */
+export function fechaHaceAnios(anios: number): string {
+  const [y, m, d] = partesFecha(hoyCaracas())!;
+  return new Date(Date.UTC(y - anios, m - 1, d)).toISOString().slice(0, 10);
+}
+
 const colapsar = (s: string) => s.replace(/\s+/g, ' ').trim();
 
 /**
@@ -78,12 +110,14 @@ export function validarAspirante(fd: FormData): ResultadoValidacion {
   else if (nombre.length > LIMITES.nombre.max)
     errores.nombre = `El nombre no puede superar ${LIMITES.nombre.max} caracteres.`;
 
-  const edadRaw = texto(fd.get('edad')).trim();
-  const edad = /^\d{1,3}$/.test(edadRaw) ? Number(edadRaw) : NaN;
-  if (!edadRaw) errores.edad = 'Indica tu edad.';
-  else if (Number.isNaN(edad)) errores.edad = 'La edad debe ser un número entero.';
-  else if (edad < LIMITES.edad.min) errores.edad = 'Debes tener al menos 18 años para presentar tu solicitud.';
-  else if (edad > LIMITES.edad.max) errores.edad = 'Indica una edad entre 18 y 99 años.';
+  const fechaRaw = texto(fd.get('fechaNacimiento')).trim();
+  const edad = edadCumplida(fechaRaw);
+  if (!fechaRaw) errores.fechaNacimiento = 'Indica tu fecha de nacimiento.';
+  else if (edad === null) errores.fechaNacimiento = 'Escribe una fecha de nacimiento válida.';
+  else if (edad < LIMITES.edad.min)
+    errores.fechaNacimiento = `Debes tener al menos ${LIMITES.edad.min} años para presentar tu solicitud.`;
+  else if (edad > LIMITES.edad.max)
+    errores.fechaNacimiento = `Revisa la fecha: indica una edad entre ${LIMITES.edad.min} y ${LIMITES.edad.max} años.`;
 
   const telefonoRaw = texto(fd.get('telefono'));
   const telefono = normalizarTelefono(telefonoRaw);
@@ -106,5 +140,5 @@ export function validarAspirante(fd: FormData): ResultadoValidacion {
     errores.consentimiento = 'Necesitamos tu autorización para tratar estos datos.';
 
   if (Object.keys(errores).length > 0) return { ok: false, errores };
-  return { ok: true, data: { nombre, edad, telefono: telefono!, email, descripcion } };
+  return { ok: true, data: { nombre, fechaNacimiento: fechaRaw, telefono: telefono!, email, descripcion } };
 }

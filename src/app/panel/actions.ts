@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
+import { describirError } from '@/lib/describirError';
 import { cambiarEstado, esEstado } from '@/lib/aspirantes';
 import { obtenerSesion } from '@/lib/session';
 
@@ -42,7 +43,7 @@ export async function actualizarEstado(prev: EstadoCambio, fd: FormData): Promis
       intento,
     };
   } catch (err) {
-    console.error('[panel] no se pudo cambiar el estado:', err instanceof Error ? `${err.name}: ${err.message}` : err);
+    console.error('[panel] no se pudo cambiar el estado:', describirError(err));
     return { status: 'error', mensaje: 'No se pudo guardar el cambio. Inténtalo de nuevo en unos minutos.', intento };
   }
 }
