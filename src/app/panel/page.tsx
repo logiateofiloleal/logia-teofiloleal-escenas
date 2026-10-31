@@ -5,7 +5,7 @@ import { claseEstado, formatearFecha } from './formato';
 import styles from './panel.module.css';
 
 // ── Panel: solicitudes de aspirantes ─────────────────────────────────
-// Lista leída del store "aspirantes" (Netlify Blobs) en el servidor, más
+// Lista leída de la tabla "aspirantes" (Supabase) en el servidor, más
 // recientes primero. Cada fila abre /panel/aspirantes/[id].
 
 export default async function PanelPage() {

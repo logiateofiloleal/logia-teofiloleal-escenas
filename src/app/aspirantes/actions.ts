@@ -23,10 +23,9 @@ export interface EstadoSolicitud {
 const ERROR_ALMACENAMIENTO =
   'No pudimos registrar tu solicitud en este momento. Tus datos siguen en el formulario: inténtalo de nuevo en unos minutos.';
 
-// El SDK de Blobs reintenta hasta 5 veces con 5 s de pausa; sin tope, una
-// caída del almacenamiento dejaría "Enviando…" ~25 s y superaría el límite
-// de tiempo de la función en Netlify (10 s). Por encima de esto se responde
-// con el aviso de error.
+// Tope de espera al almacenamiento: si Supabase no responde, se contesta con
+// el aviso de error en lugar de dejar "Enviando…" colgado hasta el límite de
+// tiempo de la función.
 const LIMITE_ALMACENAMIENTO_MS = 8000;
 
 function conLimite<T>(tarea: Promise<T>, ms: number): Promise<T> {
